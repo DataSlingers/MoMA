@@ -1,0 +1,43 @@
+language: R
+sudo: false
+cache: packages
+warnings_are_errors: true
+
+os:
+  - linux
+  - osx
+
+# Settings to mimic CRAN build
+# Modified from github.com/jeroen/jsonlite
+osx_image: xcode9
+
+r_packages:
+  - Rcpp
+  - RcppArmadillo
+  - ggplot2
+  - glmnet
+  - ncvreg
+  - covr
+
+before_install:
+  - Rscript -e "source('build_steps.R'); before_install()"
+
+after_success:
+  - Rscript -e "source('build_steps.R'); after_success(); unlink('build_steps.R')"
+
+branches:
+  except:
+    - build # Don't build "build" branch or else we get in an infinite loop
+
+r_build_args: --no-manual --no-resave-data
+r_check_args: --no-manual
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  on:
+    branch: master
+  local_dir: .
+  target_branch: build
+  condition: $TRAVIS_OS_NAME = "linux"

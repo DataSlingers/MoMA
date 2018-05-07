@@ -1,0 +1,25 @@
+Package: MoMA
+Title: MoMA - Modern Multivariate Analysis in R
+Version: 0.1
+Date: 2018-05-07
+Authors@R: c(
+    person("Michael", "Weylandt", email="michael.weylandt@rice.edu", role=c("aut", "cre")),
+    person("Genevera", "Allen", email="gallen@rice.edu", role="aut"),
+    person("Luofeng", "Liao", email="luofengl@student.unimelb.edu.au", role="aut")
+    )
+Description: Unified approach to modern multivariate analysis providing sparse,
+    smooth, and structured versions of PCA, PLS, LDA, and CCA.
+License: GPL (>= 2)
+Imports: Rcpp
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat,
+    covr,
+    devtools,
+    stringr
+LinkingTo: Rcpp (>= 0.12.0), RcppArmadillo (>= 0.8.300.1.0)
+RoxygenNote: 6.0.1
+VignetteBuilder: knitr
+URL: https://github.com/michaelweylandt/MoMA
+BugReports: https://github.com/michaelweylandt/MoMA/issues

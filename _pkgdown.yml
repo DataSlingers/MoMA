@@ -1,0 +1,9 @@
+template:
+  params:
+    bootswatch: paper
+
+navbar:
+  type: inverse
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/michaelweylandt/MoMA
