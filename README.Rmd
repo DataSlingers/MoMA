@@ -21,6 +21,8 @@ knitr::opts_chunk$set(
 
 **TODO -- PACKAGE TEXT GOES HERE**
 
+
+
 ## Installation
 
 The newest version of the package can be installed from Github:
