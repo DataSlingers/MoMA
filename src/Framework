@@ -1,0 +1,55 @@
+
+
+
+class MoMA{
+
+private:
+    Matrix X;
+    Matrix Y;
+    double lu;
+    double lv;
+    double au;
+    double av;
+    Matrix Su;
+    Matrix Sv;
+
+    Grad *Gu;
+    Grad *Gv;
+    Prox *Pu;
+    Prox *Pv;
+public:
+
+    run(){
+        while(notConverge){
+            while(uNotConverge){
+                u = Gu.take_step(u,stepsize);
+                u = Pu.take_step(u,stepsize);
+            }
+            while(vNotConverge){
+                ...
+            }
+        }
+        return list(...)
+    }
+}
+
+class Prox{
+    double gamma; // not valid when LASSO
+protected:
+    virtual double value(vec x) {} 
+    virtual double take_step(vec x, double stepsize) {} 
+}
+
+class lasso: public Prox{
+};
+class scad: public Prox{
+};
+
+
+class Grad{
+    Matrix A;
+    vec constant;
+
+    virtual double take_stpe(vec x) {}
+
+}
