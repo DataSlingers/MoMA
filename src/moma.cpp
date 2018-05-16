@@ -10,6 +10,7 @@ using namespace arma;
 int doubleMe(const int & x) {
     return x+x;
 }
+<<<<<<< HEAD
 
 
 // [[Rcpp::export]]
@@ -42,3 +43,5 @@ arma::vec test(arma::vec x,double l){
     return a->prox(x,l);
 }
 
+=======
+>>>>>>> parent of 1ab6991... Try to build class
