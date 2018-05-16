@@ -4,5 +4,6 @@
 
 // [[Rcpp::export]]
 int doubleMe(const int & x) {
+
     return x+x;
 }
