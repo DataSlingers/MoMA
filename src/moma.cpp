@@ -21,6 +21,6 @@ public:
 arma::vec test(arma::vec x, double l)
 {
     Lasso a;
-
+// not working
     return x;
 }
