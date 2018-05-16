@@ -21,6 +21,8 @@ public:
 
 arma::vec Lasso(arma::vec x, double l)
 {
+    class Lasso a;
+
     cout << "lassoing" << endl;
     return sign(x) % max(abs(x) - l, zeros(size(x)));
 };
