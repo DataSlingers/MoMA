@@ -19,6 +19,7 @@ test_that("INFO and DEBUG message print as expected", {
 
     expect_output(MoMA:::moma_info("A message"), "[INFO]")
     expect_output(MoMA:::moma_info("A message"), "A message")
+
     expect_output(MoMA:::moma_debug("The message"), "[DEBUG]")
     expect_output(MoMA:::moma_debug("The message"), "The message")
 
