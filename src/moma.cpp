@@ -35,9 +35,12 @@ public:
         arma::vec sgn = sign(x);
         for (int i = 0; i < n; i++) // Probably need vectorization
         {
-            z(i) = abs(i) > gamma * l ? x(i)
-                                    : (abs(i) > 2 * l ? ((gamma - 1) * x(i) - sgn(i) * gamma * l) / (gamma - 2)
-                                                        : sgn(i) * MAX(double(abs(i) - l),0.0));
+            // this implementation follows ariable Selection via Nonconcave Penalized Likelihood and its Oracle Properties
+            // Jianqing Fan and Runze Li, formula(2.8)
+         
+            z(i) = abs(i) > gamma * l ? x(i) : 
+                                    (abs(i) > 2 * l ? (gamma - 1) * x(i) - sgn(i) * gamma * l) / (gamma - 2)
+                                    : sgn(i) * MAX(double(abs(i) - l),0.0));
         }
         return z;    
     }
@@ -47,9 +50,8 @@ public:
 class Mcp: public Prox{
 private:
     double gamma; // >= 1
-    
 public:
-    Mcp(double g=3.7){
+    Mcp(double g=4){
         if(g<1) stop("Gamma for MCP should be larger than 2!\n");
         gamma=g;}
     arma::vec prox(const arma::vec &x, double l){
@@ -59,11 +61,10 @@ public:
         arma::vec sgn = sign(x);
         for (int i = 0; i < n; i++) // Probably need vectorization
         {
-// this implementation follows ariable Selection via Nonconcave Penalized Likelihood and its Oracle Properties
-// Jianqing Fan and Runze Li, formula(2.8)
+            // http://myweb.uiowa.edu/pbreheny/7600/s16/notes/2-29.pdf
+            // slide 19
             z(i) = abs(i) > gamma * l ? x(i)
-                                    : (abs(i) > 2 * l ? ((gamma - 1) * x(i) - sgn(i) * gamma * l) / (gamma - 2)
-                                                        : sgn(i) * MAX(double(abs(i) - l),0.0));
+                                    : gamma/(gamma-1)*sgn(i) * MAX(double(abs(i) - l),0.0));
         }
         return z;    
     }
@@ -71,7 +72,7 @@ public:
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-arma::vec test_lasso(arma::vec x, double l)
+arma::vec prox_lasso(arma::vec x, double l)
 {
     Lasso a;
     return a.prox(x,l);
@@ -80,7 +81,7 @@ arma::vec test_lasso(arma::vec x, double l)
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-arma::vec test_scad(arma::vec x, double l,double g=3.7)
+arma::vec prox_scad(arma::vec x, double l,double g=3.7)
 {
     Scad a(g);
     return a.prox(x,l);
