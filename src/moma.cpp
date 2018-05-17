@@ -116,7 +116,7 @@ arma::vec prox_scad(arma::vec x, double l, double g=3.7)
 // [[Rcpp::export]]
 arma::vec prox_mcp(arma::vec x, double l, double g=4)
 {
-  
+    
     Mcp a(g);
     return a.prox(x,l);
 };
