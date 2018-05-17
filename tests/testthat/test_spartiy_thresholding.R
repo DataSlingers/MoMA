@@ -9,9 +9,10 @@ test_that("Logging controls work", {
     x <- seq(-10,10,0.01)
     plot(x,x,type="l")
     lines(x,prox_scad(x,1,3),type="l")
-    lines(x,prox_lasso(x,1),type="l",col=1)
 
     lines(x,prox_mcp(x,1,3),type="l")
+    lines(x,prox_lasso(x,1),type="l",col=1)
+
 
     moma_logger_level("MESSAGE")
 })

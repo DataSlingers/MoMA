@@ -81,7 +81,7 @@ public:
             // http://myweb.uiowa.edu/pbreheny/7600/s16/notes/2-29.pdf
             // slide 19
             z(i) = absx(i) > gamma * l ? absx(i)
-                                    : (gamma/(gamma-1)) * MAX(double(absx(i) - l),0.0);
+                                    : (gamma/(gamma-1)) * double(MAX(double(absx(i) - l),0.0));
             // if(absx(i) <= gamma*l){
             //     Rcout << i << "\t";
             //     Rcout << sgn(i)*(gamma/(gamma-1)) <<"\t";
@@ -90,7 +90,7 @@ public:
             // }
            
         }
-        return z;    
+        return z%sgn;    
     }
 };
 
