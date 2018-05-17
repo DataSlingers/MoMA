@@ -6,21 +6,23 @@ using namespace arma;
 
 class Prox{
 public:
-    virtual arma::vec thres(arma::vec x, double l);
+    virtual arma::vec thres(const arma::vec &x, double l)=0;
 };
 
 class Lasso: public Prox{
 public:
-    arma::vec thres(arma::vec x, double l){
-        printf("In Lasso.prox");
+    arma::vec thres(const arma::vec &x, double l){
+        Rcpp::Rcout<<("In Lasso.prox\n");
         return sign(x) % max(abs(x) - l, zeros(size(x)));
     }
 };
 
+// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
 arma::vec test(arma::vec x, double l)
 {
     Lasso a;
-// not working
-    return x;
-}
+    
+    Rcpp::Rcout<< "In Test\n"<< std::endl;
+    return a.thres(x,l);;
+};
