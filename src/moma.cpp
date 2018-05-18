@@ -75,7 +75,7 @@ private:
 public:
 
     void check_valid();
-    Solver string_to_ST(const std::string &s);
+    Solver string_to_SolverT(const std::string &s);
     Prox* string_to_SparseT(const std::string &s,double gamma);
     // turn user input into what we need to run the algorithm
     MoMA(arma::mat X,
@@ -102,7 +102,7 @@ public:
     // Step 0: easy setup
     MAX_ITER = i_MAX_ITER;
     EPS = i_EPS;
-    solver_type = string_to_ST(i_solver);
+    solver_type = string_to_SolverT(i_solver);
 
     // Step 1: find Su,Sv
     arma::mat U;
@@ -133,7 +133,7 @@ public:
     prox_v = string_to_SparseT(P_v,gamma);
 
     // Step 4: match gradient operator
-    
+
     };
 
 
@@ -146,14 +146,15 @@ void MoMA::check_valid(){
     Rcpp::Rcout << "Checking input validity\n";
 }
 
-Solver MoMA::string_to_ST(const std::string &s){
+Solver MoMA::string_to_SolverT(const std::string &s){
     // we can first make s to upper case and provide more flexibility
     if (s.compare("ISTA") == 0)
         return Solver::ISTA;
     else if (s.compare("FISTA") == 0)
         return Solver::FISTA;
-    else
-        MoMALogger::error("Your choice of algorithm not provided") << s;
+    // // assume `s` is in the set {ISTA, FISTA}
+    // else
+    //     MoMALogger::error("Your choice of algorithm not provided") << s;
 }
 
 Prox* MoMA::string_to_SparseT(const std::string &s,double gamma){
@@ -165,6 +166,7 @@ Prox* MoMA::string_to_SparseT(const std::string &s,double gamma){
         return new Scad(gamma);
     else if (s.compare("MCP") == 0)
         return new Mcp(gamma);
-    else
-        MoMALogger::error("Your sparse penalty is not provided!\n");
+    // // assume `s` is in the set {ISTA, FISTA}
+    // else
+    //     MoMALogger::error("Your sparse penalty is not provided!\n");
 }
