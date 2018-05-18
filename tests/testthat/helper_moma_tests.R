@@ -9,6 +9,7 @@ expect_no_warning <- function(object, ..., all=FALSE, info=NULL, label=NULL){
     expect_warning(object, regexp=NA, ..., all=all, info=info, label=label)
 }
 
+
 expect_no_message <- function(object, ..., all=FALSE, info=NULL, label=NULL){
     expect_message(object, regexp=NA, ..., all=all, info=info, label=label)
 }
