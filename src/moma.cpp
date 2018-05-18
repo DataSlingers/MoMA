@@ -4,16 +4,12 @@
 using namespace Rcpp;
 using namespace arma;
 #define MAX(a,b) (a)>(b)?(a):(b)
+#define THRES_P(x,l) (MAX(x-l,0.0)) // takes two doubles, shrink a positive value by `l`
 
 inline arma::vec soft_thres(const arma::vec &x, double l){
     return sign(x) % arma::max(abs(x) - l, zeros(size(x)));
 }
-inline double soft_thres_e(double x, double l){
-    double sgn;
-    if(x>0) sgn = 1;
-    else sgn = -1;
-    return sgn * MAX(sgn*x - l,0);
-}
+
 class Prox{
 public:
     virtual arma::vec prox(const arma::vec &x, double l)=0;
@@ -28,8 +24,7 @@ public:
 
 class Scad: public Prox{
 private:
-    double gamma; // >= 2
-    
+    double gamma; // gamma_SCAD >= 2
 public:
     Scad(double g=3.7){
         if(g<2) 
@@ -41,17 +36,15 @@ public:
         arma::vec z(n);
         arma::vec absx = arma::abs(x);
         arma::vec sgn = sign(x);
-        // arma::vec test = (absx >2);
+        // arma::vec flag = (absx >2);
         for (int i = 0; i < n; i++) // Probably need vectorization
         {
             // the implementation follows Variable Selection via Nonconcave Penalized Likelihood and its Oracle Properties
             // Jianqing Fan and Runze Li, formula(2.8)
-        //    z(i) = sgn(i) * MAX(double(absx(i) - l),0.0);
-            z(i) = absx(i) > gamma * l ? absx(i) : (
-                                                    absx(i) > 2 * l ? ((gamma - 1) * absx(i) - gamma * l)/ (gamma - 2)
-                                                   // absx(i) > 2 * l ? (gamma-1)/(gamma-2)*sgn(i) * MAX(double(absx(i) - gamma*l/(gamma-1)),0.0)
-                                                    : MAX(double(absx(i) - l),0.0)
-                                                );
+            z(i) = absx(i) > gamma * l ? absx(i) : (absx(i) > 2 * l ? //(gamma-1)/(gamma-2) * THRES_P(absx(i),gamma*l/(gamma-1)) 
+                                                    ((gamma - 1) * absx(i) - gamma * l)/ (gamma - 2)
+                                                    : THRES_P(absx(i),l)
+                                                    );
         }
         return z%sgn;    
     }
@@ -60,10 +53,10 @@ public:
 
 class Mcp: public Prox{
 private:
-    double gamma; // >= 1
+    double gamma; // gamma_MCP >= 1
 public:
     Mcp(double g=4){
-        if(g<1) stop("Gamma for MCP should be larger than 1!\n");
+        if(g<1) Rcpp::stop("Gamma for MCP should be larger than 1!\n");
         gamma=g;
     }
     arma::vec prox(const arma::vec &x, double l){
@@ -82,14 +75,7 @@ public:
             // http://myweb.uiowa.edu/pbreheny/7600/s16/notes/2-29.pdf
             // slide 19
             z(i) = absx(i) > gamma * l ? absx(i)
-                                    : (gamma/(gamma-1)) * double(MAX(double(absx(i) - l),0.0));
-            // if(absx(i) <= gamma*l){
-            //     Rcout << i << "\t";
-            //     Rcout << sgn(i)*(gamma/(gamma-1)) <<"\t";
-            //     Rcout << (MAX(double(absx(i) - l),0.0));
-            //     Rcout << endl;
-            // }
-           
+                                    : (gamma/(gamma-1)) * THRES_P(absx(i),l);         
         }
         return z%sgn;    
     }
@@ -117,7 +103,6 @@ arma::vec prox_scad(arma::vec x, double l, double g=3.7)
 // [[Rcpp::export]]
 arma::vec prox_mcp(arma::vec x, double l, double g=4)
 {
-    
     Mcp a(g);
     return a.prox(x,l);
 };
