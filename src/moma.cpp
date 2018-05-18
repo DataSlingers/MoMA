@@ -41,6 +41,7 @@ public:
         arma::vec z(n);
         arma::vec absx = arma::abs(x);
         arma::vec sgn = sign(x);
+        // arma::vec test = (absx >2);
         for (int i = 0; i < n; i++) // Probably need vectorization
         {
             // the implementation follows Variable Selection via Nonconcave Penalized Likelihood and its Oracle Properties
