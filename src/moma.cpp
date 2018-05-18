@@ -1,6 +1,8 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 #include "RcppArmadillo.h"
+#include "moma_logging.h"
 #include "moma.h"
+
 using namespace Rcpp;
 using namespace arma;
 #define MAX(a,b) (a)>(b)?(a):(b)
@@ -40,12 +42,13 @@ public:
         int n = x.n_elem;
         arma::vec z(n);
         arma::vec absx = arma::abs(x);
+       
         arma::vec sgn = sign(x);
         for (int i = 0; i < n; i++) // Probably need vectorization
         {
             // the implementation follows Variable Selection via Nonconcave Penalized Likelihood and its Oracle Properties
             // Jianqing Fan and Runze Li, formula(2.8)
-        //    z(i) = sgn(i) * MAX(double(absx(i) - l),0.0);
+
             z(i) = absx(i) > gamma * l ? absx(i) : (
                                                     absx(i) > 2 * l ? ((gamma - 1) * absx(i) - gamma * l)/ (gamma - 2)
                                                    // absx(i) > 2 * l ? (gamma-1)/(gamma-2)*sgn(i) * MAX(double(absx(i) - gamma*l/(gamma-1)),0.0)
@@ -116,7 +119,7 @@ arma::vec prox_scad(arma::vec x, double l, double g=3.7)
 // [[Rcpp::export]]
 arma::vec prox_mcp(arma::vec x, double l, double g=4)
 {
-    
+  
     Mcp a(g);
     return a.prox(x,l);
 };
