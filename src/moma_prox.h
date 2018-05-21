@@ -17,6 +17,7 @@ inline arma::vec soft_thres(const arma::vec &x, double l){
 class Prox{
 public:
     virtual arma::vec prox(const arma::vec &x, double l)=0;
+    virtual ~Prox() = default;
 };
 
 class Lasso: public Prox{
