@@ -89,7 +89,7 @@ public:
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-arma::vec prox_lasso(arma::vec x, double l)
+arma::vec prox_lasso(const arma::vec &x, double l)
 {
     Lasso a;
     return a.prox(x,l);
@@ -98,7 +98,7 @@ arma::vec prox_lasso(arma::vec x, double l)
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-arma::vec prox_scad(arma::vec x, double l, double g=3.7)
+arma::vec prox_scad(const arma::vec &x, double l, double g=3.7)
 {
     Scad a(g);
     return a.prox(x,l);
@@ -107,7 +107,7 @@ arma::vec prox_scad(arma::vec x, double l, double g=3.7)
 
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::export]]
-arma::vec prox_mcp(arma::vec x, double l, double g=4)
+arma::vec prox_mcp(const arma::vec &x, double l, double g=4)
 {
     Mcp a(g);
     return a.prox(x,l);

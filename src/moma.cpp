@@ -10,6 +10,13 @@ enum class Solver{
     ISTA,
     FISTA
 };
+
+
+double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special case when S_u = I, i.e., alpha_u = 0.
+{
+    return sqrt(as_scalar(u.t() * S_u * u));
+}
+
 // enum class SparsityType{
 //     LASSO,
 //     NONEGLASSO,
@@ -64,6 +71,8 @@ private:
     long MAX_ITER;
     double EPS;
 
+
+    arma::mat X;
     // final results
     arma::vec u; 
     arma::vec v;
@@ -85,7 +94,7 @@ public:
     Prox* string_to_Proxptr(const std::string &s,double gamma);
 
     // turn user input into what we need to run the algorithm
-    MoMA(arma::mat X,
+    MoMA(arma::mat X_,   // should I use arma::mat &X?
         /* sparsity*/
         std::string P_v,std::string P_u, // assume for now they have same type of penalty
         double lambda_v,double lambda_u,
@@ -102,6 +111,7 @@ public:
         check_valid();
         Rcpp::Rcout<< "Setting up\n";
 
+        X = X_;
         n = X.n_rows;
         p = X.n_cols;
         // Step 0: training para. setup
@@ -142,57 +152,60 @@ public:
     };
 
     void fit(){
-        arma::vec oldu = zeros(size(sol.u));
-        arma::vec oldv = zeros(size(sol.v));
-        // last step
-        arma::vec oldui = zeros(size(sol.u));
-        arma::vec oldvi = zeros(size(sol.v));
+        arma::vec oldu1 = zeros<vec>(n);
+        arma::vec oldv1 = zeros<vec>(p);
+        // last stepn
+        arma::vec oldu2 = zeros<vec>(n);
+        arma::vec oldv2 = zeros<vec>(p);
 
         // stopping tolerance
         int iter = 0;
+
         int indu = 1;
         int indv = 1;
         int indo = 1;
-         if (solver_type == Solver::ISTA)
+
+        if (solver_type == Solver::ISTA)
         {
-            while (indo > sol.EPS && iter < sol.MAX_ITER)
+            while (indo > EPS && iter < MAX_ITER)
             {
                 // ready for a new round of updates
-                oldu = sol.u;
-                oldv = sol.v;
+                oldu1 = u;  // keep the value of u at the start of outer loop, hence call it oldu1
+                oldv1 = v;
                 indu = 1;
                 indv = 1;
-                while (indu > sol.EPS)
+                while (indu > EPS)
                 {
 
-                    oldui = sol.u;
-                    UCONST_VEC = mod.X * sol.v;
-                    // change stepsize
-                    sol.u = (sol.prox_u(sol.u - sol.grad_u(sol.u) * sol.grad_u_step, sol.prox_u_step));
-                    norm(sol.u) > 0 ? sol.u /= mat_norm(sol.u, sol.Su) : sol.u.zeros();
+                    oldu2 = u;  // keep the value of u at the start of inner loop
+                    // gradient step
+                    u = u + grad_u_step * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
+                    // proxiaml step
+                    u = prox_u->prox(u,prox_u_step);
+                    // nomalize w.r.t S_u
+                    norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();
 
-                    indu = norm(sol.u - oldui) / norm(oldui);
-                    if (DEBUG)
-                        cout << "AFTER iindu = norm(sol.u - oldui) / norm" << endl;
+                    indu = norm(u - oldu2) / norm(oldu2);
+                    
                 }
 
-                while (indv > sol.EPS)
+                while (indv > EPS)
                 {
-                    oldvi = sol.v;
-                    VCONST_VEC = mod.X.t() * sol.u;
-                    sol.v = sol.prox_v(sol.v - sol.grad_v_step * sol.grad_v(sol.v),
-                                    sol.prox_v_step);
-                    norm(sol.v) > 0 ? sol.v /= mat_norm(sol.v, sol.Sv) : sol.v.zeros();
+                    oldv2 = v;
+                    // gradient step
+                    v = v + grad_v_step * (X.t()*u - S_v*v);    // TODO: special case
+                    // proximal step
+                    v = prox_v->prox(v,prox_v_step);
+                    norm(v) > 0 ? v /= mat_norm(v, S_v) : v.zeros();
 
-                    indv = norm(sol.v - oldvi) / norm(oldvi);
+                    indv = norm(v - oldv2) / norm(oldv2);
                 }
-
-                indo = norm(oldu - sol.u) / norm(oldu) + norm(oldv - sol.v) / norm(oldv);
+                indo = norm(oldu1 - u) / norm(oldu1) + norm(oldv1 - v) / norm(oldv1);
                 iter++;
             }
         }
-        else if (sol.solver_type == FISTA){
-            throw std::invalid_argument("FISTA is buidding");
+        else if (solver_type == Solver::FISTA){
+            MoMALogger::error("FISTA is not provided yet!\n");
         }
     }
 
@@ -205,7 +218,7 @@ void MoMA::check_valid(){
 }
 
 Solver MoMA::string_to_SolverT(const std::string &s){
-    Solver res;
+    Solver res = Solver::ISTA;
     // we can first make s to upper case and provide more flexibility
     if (s.compare("ISTA") == 0)
         res = Solver::ISTA;
