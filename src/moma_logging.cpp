@@ -28,4 +28,3 @@ void moma_log_cpp(int level, Rcpp::StringVector x){
         MoMALogger::debug(msg);
     }
 }
-

@@ -1,4 +1,3 @@
-library(stringr)
 context("Logging Tests")
 
 test_that("Logging controls work", {
@@ -20,7 +19,6 @@ test_that("INFO and DEBUG message print as expected", {
 
     expect_output(MoMA:::moma_info("A message"), "[INFO]")
     expect_output(MoMA:::moma_info("A message"), "A message")
-
     expect_output(MoMA:::moma_debug("The message"), "[DEBUG]")
     expect_output(MoMA:::moma_debug("The message"), "The message")
 
@@ -83,7 +81,7 @@ test_that("Function capture works at R level", {
     f <- function(x){MoMA:::moma_error("ERROR MESSAGE")}
 
     e <- tryCatch(f(), error=identity)
-    print(e$message)
+
     expect_str_contains(e$message, "ERROR MESSAGE")
     expect_str_contains(e$message, "(Called from f)")
     expect_true(is.null(e$call))
