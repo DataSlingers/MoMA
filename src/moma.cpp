@@ -19,40 +19,35 @@ double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special cas
     return sqrt(as_scalar(u.t() * S_u * u));
 }
 
-// enum class SparsityType{
-//     LASSO,
-//     NONEGLASSO,
-//     SCAD,
-//     MCP
-// };
 
 /////////////////
 // Section 2: MoMA class
 /////////////////
 
-// // 
-// class Grad{
+// // Gradient class
+// class LinearNGrad{  // negative linear gradient
 // protected:
+//     const arma::mat &A;
 //     arma::vec b;  // keeps changing when training
 // public:
-//     Grad() = delete; // has to be initialized
-//     Grad(const arma::vec &b_){b=b_;}
+//     LinearNGrad() = delete; // has to be initialized
+//     LinearNGrad(const arma::mat &A_, arma::vec &b_):b(b_),A(A_){}
+ 
+      
 //     void update(const arma::vec &b_){b=b_;}
 //     virtual arma::vec desc(const arma::vec &x, double stepsize){
-//         return x - stepsize * (x + b);
+//         return x + stepsize * (A*x - b);
 //     }
 // };
 
-// class Comm:Grad{    // Common case when A != I
-//     arma::mat A;    // unchanged during training
+// class IdenNGrad: public LinearNGrad{    // spectial arma::mat A;    // unchanged during training
 // public:
-//     Comm() = delete;
-//     Comm(const arma::vec &b_,const arma::mat &A_){
-//         A = A_;
+//     IdenNGrad() = delete;
+//     IdenNGrad(arma::vec b_){
 //         b = b_;
 //     }
 //     arma::vec desc(const arma::vec &x, double stepsize){
-//         return x - stepsize * (A*x + b);
+//         return x + stepsize * (x - b);
 //     }
 // };
 
@@ -73,7 +68,6 @@ private:
     long MAX_ITER;
     double EPS;
 
-
     const arma::mat &X; // careful about reference, if it refenrences something that will be released in the constructor, things go wrong
     // final results
     arma::vec u; 
@@ -82,7 +76,7 @@ private:
     Prox *prox_u; // careful about memory leak and destructor stuff, can be replaced by Prox &prox_u;
     Prox *prox_v;
     // S = I + alpha*Omeg
-    arma::mat S_u;  // to be special case
+    arma::mat S_u;  // to be special-cased
     arma::mat S_v;
     
     
@@ -95,8 +89,6 @@ public:
     Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
     Prox* string_to_Proxptr(const std::string &s,double gamma);
    
-   
-   
     // turn user input into what we need to run the algorithm
     MoMA(const arma::mat &X_,   // note it is a reference
         /* sparsity*/
@@ -107,12 +99,10 @@ public:
         arma::mat Omega_u,arma::mat Omega_v,
         double alpha_u,double alpha_v,
         /* training para. */
-        double i_EPS,
-        long i_MAX_ITER,
-        std::string i_solver):X(X_) // X has to be written in the initialization list
+        double i_EPS,long i_MAX_ITER,std::string i_solver):X(X_) // X has to be written in the initialization list
     {
         check_valid();
-        Rcpp::Rcout<< "Setting up\n";
+        MoMALogger::info("Setting up PCA\n");
 
        
         n = X.n_rows;
@@ -184,7 +174,7 @@ Solver MoMA::string_to_SolverT(const std::string &s){
     else{
         MoMALogger::error("Your choice of algorithm not provided") << s;
     }
-    return res;   
+    return res;
 }
 
 Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma){   // free it!
@@ -208,7 +198,7 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma){   // free it!
 Rcpp::List sfpca(
     const arma::mat &X ,
 
-    arma::mat Omega_u,arma::mat Omega_v,
+    arma::mat Omega_u,arma::mat Omega_v,  /* any idea to set up default values for these matrices? */
     double alpha_u = 0,double alpha_v = 0,
 
     std::string P_u = "LASSO",std::string P_v = "LASSO",
@@ -290,10 +280,10 @@ void MoMA::fit(){
                     // proxiaml step
                     u = prox_u->prox(u,prox_u_step);
                     // nomalize w.r.t S_u
-                    norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();
+                    norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();    // Sometimes mat_norm(u,S_u) is so close to zero that u becomes NaN
 
                     in_u_tol = norm(u - oldu2) / norm(oldu2);
-                //    if(iter_u == 0)
+                //    if(iter_u %100 == 0)
                         MoMALogger::debug("---update u ") << iter_u << "--\n" 
                             << "in_u_tol:" << in_u_tol << "\t iter" << iter_u;
                 }

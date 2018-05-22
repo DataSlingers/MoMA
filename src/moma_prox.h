@@ -22,8 +22,21 @@ public:
 
 class Lasso: public Prox{
 public:
+    Lasso(){
+        MoMALogger::debug("A Lasso prox\n");
+    }
     arma::vec prox(const arma::vec &x, double l){
         return soft_thres(x,l);
+    }
+};
+
+class NNLasso: public Prox{
+    NNLasso(){
+        MoMALogger::debug("A Non-negative Lasso prox\n");
+    }
+public:
+    arma::vec prox(const arma::vec &x, double l){
+        return arma::max(abs(x) - l, zeros(arma::size(x)));
     }
 };
 
@@ -32,6 +45,7 @@ private:
     double gamma; // gamma_SCAD >= 2
 public:
     Scad(double g=3.7){
+        MoMALogger::debug("A Scad prox\n");
         if(g<2) 
         Rcpp::stop("Gamma for MCP should be larger than 2!\n");
         gamma=g;
@@ -61,6 +75,8 @@ private:
     double gamma; // gamma_MCP >= 1
 public:
     Mcp(double g=4){
+        MoMALogger::debug("A MC+ prox\n");
+
         if(g<1) Rcpp::stop("Gamma for MCP should be larger than 1!\n");
         gamma=g;
     }
