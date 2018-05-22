@@ -1,5 +1,6 @@
 .onAttach <- function(...) { # nocov start
     if(interactive()){
+
         msg <- c("Thank you for using MoMA!",
                  "The current logging level is",
                  sQuote(paste0(moma_logger_level(), ".")),
