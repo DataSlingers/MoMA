@@ -3,6 +3,7 @@
 #-------------------
 norm_vec <- function(x) sqrt(sum(x^2))
 
+# generate second order difference matrix
 SSD <- function(n){
     a <- 6*diag(n)
     for(i in 1:n){
@@ -14,6 +15,7 @@ SSD <- function(n){
     return(a);
 }
 
+# a vector with norm 1
 uni <- function(n){
     u_1 <- as.vector(rnorm(n))
     return(u_1/norm_vec(u_1))
@@ -24,9 +26,9 @@ uni <- function(n){
 # Generate data
 #-------------------
 set.seed(42)
-n <- 199
+n <- 199 # set n != p to test bugs
 p <- 200
-ind <- as.vector(seq(p))
+ind <- as.vector(seq(p)) # index from 1 to p
 u_1 <- uni(n)
 u_2 <- uni(n)
 u_3 <- uni(n)
@@ -84,7 +86,9 @@ test_that("Equal to analytic solution when only roughness penalty n", {
     # TODO
 })
 
-test_that("Closed form solution when no sparsity",{})
+test_that("Closed form solution when no sparsity",{
+    # TODO
+})
 
 #-------------------
 # Visual test
@@ -95,20 +99,11 @@ test_that("Closed form solution when no sparsity",{})
 svd <- svd(X)
 plot(s$v[,1],type="l")
 res1 <- sfpca(X,
-              O_u,O_v,1,1,
-              lambda_u=0,lambda_v=0,"LASSO","LASSO",
+              O_u,O_v,0,0,
+              lambda_u=5,lambda_v=5,"LASSO","LASSO",
               solver='ISTA')
 plot(res1$v,type='l')
-res2 <- sfpca(res1$DeflatedX,
-              O_u,O_v,1,1,
-              lambda_u=1,lambda_v=.8,"LASSO","LASSO",gamma=3.7,
-              EPS=1e-9,MAX_ITER=1e+5,solver='ISTA')
-plot(res2$v,type='l')
-res2 <- sfpca(res1$DeflatedX,
-              O_u,O_v,alpha_u=1,alpha_v=1,
-              lambda_u=6.5,lambda_v=1,"LASSO","LASSO",
-              EPS=1e-9,MAX_ITER=1e+5,solver="ISTA")
-plot(res3$v,type='l')
+
 
 #-------------------
 # Demo 2, effects of different penalty levels
@@ -129,43 +124,34 @@ title(main="Effects of penalty parameters",
       xlab="Sparsity", ylab="Smoothness")
 
 
-W = matrix(c(0,1,0,0,1,0,1,0,0,1,0,1,0,0,1,0),4,4)
-I = diag(4)
-C = I - 0.3*W
-V = 4 * solve(t(C) %*% C)
-image(-V)
-
-print(xtable(V), floating=FALSE, tabular.environment="bmatrix", hline.after=NULL, include.rownames=FALSE, include.colnames=FALSE)
-
-
 # Generate animation
-install.packages("animation")
-library(animation)
-par(mfrow = c(1,1))
-ani.options(interval=.05)
-sparse.p = c("l1","scad")
-cnt = 1
-for(l in seq(1,10,0.5)){
-    l1 <- sfpca(
-                X=X,
-                Omega_u=O_u,Omega_v=O_v,0,0,
-                lambda_u=l,lambda_v=l,"LASSO","LASSO",gamma=3.7,
-                EPS=1e-9,MAX_ITER=1e+5, solver='ISTA')
-    scad <- sfpca(
-                X=X,
-                Omega_u=O_u,Omega_v=O_v,0,0,
-                lambda_u=l,lambda_v=l,"SCAD","SCAD",gamma=3.7,
-                EPS=1e-9,MAX_ITER=1e+5, solver='ISTA')
-    l1nonneg <- sfpca(
-                X=X,
-                Omega_u=O_u,Omega_v=O_v,0,0,
-                lambda_u=l,lambda_v=l,"MCP","MCP",gamma=3.7,
-                EPS=1e-9,MAX_ITER=1e+5, solver='ISTA')
-    plot(l1$v,type='l',xlab=paste("scad/l1/Non-nega l1","lambda=",l),xlim=c(0,70))
-    lines(scad$v,col=cnt+2)
-    lines(l1nonneg$v,col=cnt+1)
-    save.image()
-}
-dev.off()
+# install.packages("animation")
+# library(animation)
+# par(mfrow = c(1,1))
+# ani.options(interval=.05)
+# sparse.p = c("l1","scad")
+# cnt = 1
+# for(l in seq(1,10,0.5)){
+#     l1 <- sfpca(
+#                 X=X,
+#                 Omega_u=O_u,Omega_v=O_v,0,0,
+#                 lambda_u=l,lambda_v=l,"LASSO","LASSO",gamma=3.7,
+#                 EPS=1e-9,MAX_ITER=1e+5, solver='ISTA')
+#     scad <- sfpca(
+#                 X=X,
+#                 Omega_u=O_u,Omega_v=O_v,0,0,
+#                 lambda_u=l,lambda_v=l,"SCAD","SCAD",gamma=3.7,
+#                 EPS=1e-9,MAX_ITER=1e+5, solver='ISTA')
+#     l1nonneg <- sfpca(
+#                 X=X,
+#                 Omega_u=O_u,Omega_v=O_v,0,0,
+#                 lambda_u=l,lambda_v=l,"MCP","MCP",gamma=3.7,
+#                 EPS=1e-9,MAX_ITER=1e+5, solver='ISTA')
+#     plot(l1$v,type='l',xlab=paste("scad/l1/Non-nega l1","lambda=",l),xlim=c(0,70))
+#     lines(scad$v,col=cnt+2)
+#     lines(l1nonneg$v,col=cnt+1)
+#     save.image()
+# }
+# dev.off()
 
 
