@@ -10,40 +10,44 @@ enum class Solver{
     ISTA,
     FISTA
 };
-// enum class SparsityType{
-//     LASSO,
-//     NONEGLASSO,
-//     SCAD,
-//     MCP
-// };
+
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special case when S_u = I, i.e., alpha_u = 0.
+{
+    return sqrt(as_scalar(u.t() * S_u * u));
+}
+
 
 /////////////////
 // Section 2: MoMA class
 /////////////////
 
-// // 
-// class Grad{
+// // Gradient class
+// class LinearNGrad{  // negative linear gradient
 // protected:
+//     const arma::mat &A;
 //     arma::vec b;  // keeps changing when training
 // public:
-//     Grad() = delete; // has to be initialized
-//     Grad(const arma::vec &b_){b=b_;}
+//     LinearNGrad() = delete; // has to be initialized
+//     LinearNGrad(const arma::mat &A_, arma::vec &b_):b(b_),A(A_){}
+ 
+      
 //     void update(const arma::vec &b_){b=b_;}
 //     virtual arma::vec desc(const arma::vec &x, double stepsize){
-//         return x - stepsize * (x + b);
+//         return x + stepsize * (A*x - b);
 //     }
 // };
 
-// class Comm:Grad{    // Common case when A != I
-//     arma::mat A;    // unchanged during training
+// class IdenNGrad: public LinearNGrad{    // spectial arma::mat A;    // unchanged during training
 // public:
-//     Comm() = delete;
-//     Comm(const arma::vec &b_,const arma::mat &A_){
-//         A = A_;
+//     IdenNGrad() = delete;
+//     IdenNGrad(arma::vec b_){
 //         b = b_;
 //     }
 //     arma::vec desc(const arma::vec &x, double stepsize){
-//         return x - stepsize * (A*x + b);
+//         return x + stepsize * (x - b);
 //     }
 // };
 
@@ -51,7 +55,7 @@ enum class Solver{
 class MoMA{
 
 private:
-    
+    /* matrix size */
     int n;
     int p;
 
@@ -64,14 +68,15 @@ private:
     long MAX_ITER;
     double EPS;
 
+    const arma::mat &X; // careful about reference, if it refenrences something that will be released in the constructor, things go wrong
     // final results
     arma::vec u; 
     arma::vec v;
     // sparse penalty
-    Prox *prox_u; // careful about release space and destructor stuff
+    Prox *prox_u; // careful about memory leak and destructor stuff, can be replaced by Prox &prox_u;
     Prox *prox_v;
     // S = I + alpha*Omeg
-    arma::mat S_u;  // to be special case
+    arma::mat S_u;  // to be special-cased
     arma::mat S_v;
     
     
@@ -83,27 +88,26 @@ public:
     void check_valid();
     Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
     Prox* string_to_Proxptr(const std::string &s,double gamma);
-
+   
     // turn user input into what we need to run the algorithm
-    MoMA(arma::mat X,
+    MoMA(const arma::mat &X_,   // note it is a reference
         /* sparsity*/
-        std::string P_v,std::string P_u, // assume for now they have same type of penalty
+        std::string P_v,std::string P_u, 
         double lambda_v,double lambda_u,
         double gamma,
-        bool non_neg, // 1 means activate non-negativity constraint
         /* smoothness */
         arma::mat Omega_u,arma::mat Omega_v,
         double alpha_u,double alpha_v,
         /* training para. */
-        double i_EPS,
-        long i_MAX_ITER,
-        std::string i_solver)
+        double i_EPS,long i_MAX_ITER,std::string i_solver):X(X_) // X has to be written in the initialization list
     {
         check_valid();
-        Rcpp::Rcout<< "Setting up\n";
+        MoMALogger::info("Setting up PCA\n");
 
+       
         n = X.n_rows;
         p = X.n_cols;
+
         // Step 0: training para. setup
         MAX_ITER = i_MAX_ITER;
         EPS = i_EPS;
@@ -141,61 +145,17 @@ public:
 
     };
 
-    void fit(){
-        arma::vec oldu = zeros(size(sol.u));
-        arma::vec oldv = zeros(size(sol.v));
-        // last step
-        arma::vec oldui = zeros(size(sol.u));
-        arma::vec oldvi = zeros(size(sol.v));
-
-        // stopping tolerance
-        int iter = 0;
-        int indu = 1;
-        int indv = 1;
-        int indo = 1;
-         if (solver_type == Solver::ISTA)
-        {
-            while (indo > sol.EPS && iter < sol.MAX_ITER)
-            {
-                // ready for a new round of updates
-                oldu = sol.u;
-                oldv = sol.v;
-                indu = 1;
-                indv = 1;
-                while (indu > sol.EPS)
-                {
-
-                    oldui = sol.u;
-                    UCONST_VEC = mod.X * sol.v;
-                    // change stepsize
-                    sol.u = (sol.prox_u(sol.u - sol.grad_u(sol.u) * sol.grad_u_step, sol.prox_u_step));
-                    norm(sol.u) > 0 ? sol.u /= mat_norm(sol.u, sol.Su) : sol.u.zeros();
-
-                    indu = norm(sol.u - oldui) / norm(oldui);
-                    if (DEBUG)
-                        cout << "AFTER iindu = norm(sol.u - oldui) / norm" << endl;
-                }
-
-                while (indv > sol.EPS)
-                {
-                    oldvi = sol.v;
-                    VCONST_VEC = mod.X.t() * sol.u;
-                    sol.v = sol.prox_v(sol.v - sol.grad_v_step * sol.grad_v(sol.v),
-                                    sol.prox_v_step);
-                    norm(sol.v) > 0 ? sol.v /= mat_norm(sol.v, sol.Sv) : sol.v.zeros();
-
-                    indv = norm(sol.v - oldvi) / norm(oldvi);
-                }
-
-                indo = norm(oldu - sol.u) / norm(oldu) + norm(oldv - sol.v) / norm(oldv);
-                iter++;
-            }
-        }
-        else if (sol.solver_type == FISTA){
-            throw std::invalid_argument("FISTA is buidding");
-        }
+    void fit();
+    Rcpp::List wrap(){ 
+        u = u / norm(u);
+        v = v / norm(v);
+        double d = as_scalar(u.t() * X * v);
+            return Rcpp::List::create(
+            Rcpp::Named("u") = u,
+            Rcpp::Named("v") = v,
+            Rcpp::Named("d") = d,
+            Rcpp::Named("DeflatedX") = X - d * u * v.t());
     }
-
 };
 
 
@@ -205,7 +165,7 @@ void MoMA::check_valid(){
 }
 
 Solver MoMA::string_to_SolverT(const std::string &s){
-    Solver res;
+    Solver res = Solver::ISTA;
     // we can first make s to upper case and provide more flexibility
     if (s.compare("ISTA") == 0)
         res = Solver::ISTA;
@@ -214,7 +174,7 @@ Solver MoMA::string_to_SolverT(const std::string &s){
     else{
         MoMALogger::error("Your choice of algorithm not provided") << s;
     }
-    return res;   
+    return res;
 }
 
 Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma){   // free it!
@@ -231,3 +191,129 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma){   // free it!
         MoMALogger::error("Your sparse penalty is not provided!\n");
     return res;
 }
+
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+Rcpp::List sfpca(
+    const arma::mat &X ,
+
+    arma::mat Omega_u,arma::mat Omega_v,  /* any idea to set up default values for these matrices? */
+    double alpha_u = 0,double alpha_v = 0,
+
+    std::string P_u = "LASSO",std::string P_v = "LASSO",
+    double lambda_u = 0,double lambda_v = 0,
+    double gamma = 3.7,
+
+    double EPS = 1e-6,  
+    long MAX_ITER = 1e+3,
+    std::string solver = "ISTA"
+)
+{
+    MoMA model(X,  
+        /* sparsity*/
+         P_v,P_u, 
+        lambda_v,lambda_u,
+        gamma,
+        /* smoothness */
+        Omega_u,Omega_v,
+        alpha_u,alpha_v,
+        /* training para. */
+        EPS,
+        MAX_ITER,
+        solver);
+    model.fit();
+
+    return model.wrap();
+}
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+double test_norm(arma::vec x){
+    return norm(x);
+}
+
+void MoMA::fit(){
+
+        MoMALogger::info("Model info=========\n")<<"n:"<<n<<"\n"
+            <<"p:" << p << "\n";
+        MoMALogger::info("Start fitting.\n");
+
+        // keep the value of u at the start of outer loop, hence call it oldu1
+        arma::vec oldu1 = zeros<vec>(n);
+        arma::vec oldv1 = zeros<vec>(p);
+        // keep the value of u at the start of inner loop
+        arma::vec oldu2 = zeros<vec>(n);
+        arma::vec oldv2 = zeros<vec>(p);
+
+        // stopping tolerance
+        int iter = 0;
+        int iter_u = 0;
+        int iter_v = 0;
+
+        double in_u_tol = 1;   // tolerance for inner loop of u updates
+        double in_v_tol = 1;   // tolerance for inner loop of v updates
+        double out_tol = 1;    // that of outer loop
+
+        if (solver_type == Solver::ISTA)
+        {
+            MoMALogger::info("Running ISTA!\n");
+            MoMALogger::debug("==Before the loop: training setup==\n") 
+                    << "\titer" << iter
+                    << "\tEPS:" << EPS 
+                    << "\tMAX_ITER:" << MAX_ITER << "\n";
+            while (out_tol > EPS && iter < MAX_ITER)
+            {
+                
+                oldu1 = u;  
+                oldv1 = v;
+                in_u_tol = 1;
+                in_v_tol = 1;
+                iter_u = 0;
+                iter_v = 0;
+                while (in_u_tol > EPS)
+                {
+                    iter_u++;
+                    oldu2 = u;  
+                    // gradient step
+                    u = u + grad_u_step * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
+                    // proxiaml step
+                    u = prox_u->prox(u,prox_u_step);
+                    // nomalize w.r.t S_u
+                    norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();    // Sometimes mat_norm(u,S_u) is so close to zero that u becomes NaN
+
+                    in_u_tol = norm(u - oldu2) / norm(oldu2);
+                //    if(iter_u %100 == 0)
+                        MoMALogger::debug("---update u ") << iter_u << "--\n" 
+                            << "in_u_tol:" << in_u_tol << "\t iter" << iter_u;
+                }
+
+                while (in_v_tol > EPS)
+                {
+                    iter_v++;
+                    oldv2 = v;
+                    // gradient step
+                    v = v + grad_v_step * (X.t()*u - S_v*v);    // TODO: special case
+                    // proximal step
+                    v = prox_v->prox(v,prox_v_step);
+                    norm(v) > 0 ? v /= mat_norm(v, S_v) : v.zeros();
+                    in_v_tol = norm(v - oldv2) / norm(oldv2);
+                    // if(iter_v %100 == 0)
+                        MoMALogger::debug("---update v ") << iter_v << "---\n"
+                            << "in_v_tol:" << in_v_tol << "\t iter" << iter_v;
+                }
+
+                out_tol = norm(oldu1 - u) / norm(oldu1) + norm(oldv1 - v) / norm(oldv1);
+                iter++;
+                MoMALogger::debug("--Finish iter:") << iter << "---\n";
+            }
+        }
+        else if (solver_type == Solver::FISTA){
+            MoMALogger::error("FISTA is not provided yet!\n");
+        }
+        else{
+            MoMALogger::error("Your choice of solver is not provided yet!");
+        }
+        MoMALogger::debug("==After the outer loop!==\n") 
+                   << "out_tol:" << out_tol << "\t iter" << iter;
+    }
