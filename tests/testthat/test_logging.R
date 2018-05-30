@@ -83,7 +83,6 @@ test_that("Function capture works at R level", {
     f <- function(x){MoMA:::moma_error("ERROR MESSAGE")}
 
     e <- tryCatch(f(), error=identity)
-    print(e$message)
     expect_str_contains(e$message, "ERROR MESSAGE")
     expect_str_contains(e$message, "(Called from f)")
     expect_true(is.null(e$call))
