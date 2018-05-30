@@ -3,9 +3,7 @@
 #include "moma.h"
 #include "moma_prox.h"
 #include <algorithm>
-using namespace Rcpp;
-using namespace arma;
-using namespace std;
+
 enum class Solver{
     ISTA,
     FISTA
@@ -24,34 +22,6 @@ double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special cas
 // Section 2: MoMA class
 /////////////////
 
-// // Gradient class
-// class LinearNGrad{  // negative linear gradient
-// protected:
-//     const arma::mat &A;
-//     arma::vec b;  // keeps changing when training
-// public:
-//     LinearNGrad() = delete; // has to be initialized
-//     LinearNGrad(const arma::mat &A_, arma::vec &b_):b(b_),A(A_){}
- 
-      
-//     void update(const arma::vec &b_){b=b_;}
-//     virtual arma::vec desc(const arma::vec &x, double stepsize){
-//         return x + stepsize * (A*x - b);
-//     }
-// };
-
-// class IdenNGrad: public LinearNGrad{    // spectial arma::mat A;    // unchanged during training
-// public:
-//     IdenNGrad() = delete;
-//     IdenNGrad(arma::vec b_){
-//         b = b_;
-//     }
-//     arma::vec desc(const arma::vec &x, double stepsize){
-//         return x + stepsize * (x - b);
-//     }
-// };
-
-
 class MoMA{
 
 private:
@@ -68,7 +38,11 @@ private:
     long MAX_ITER;
     double EPS;
 
-    const arma::mat &X; // careful about reference, if it refenrences something that will be released in the constructor, things go wrong
+    const arma::mat &X; 
+    //  careful about reference, if it refenrences 
+    //  something that will be released in the 
+    //  constructor, things go wrong
+    
     // final results
     arma::vec u; 
     arma::vec v;
@@ -102,7 +76,7 @@ public:
         double i_EPS,long i_MAX_ITER,std::string i_solver):X(X_) // X has to be written in the initialization list
     {
         check_valid();
-        MoMALogger::info("Setting up PCA\n");
+        MoMALogger::info("Setting up Our model\n");
 
        
         n = X.n_rows;
@@ -218,7 +192,7 @@ Rcpp::List sfpca(
         /* smoothness */
         Omega_u,Omega_v,
         alpha_u,alpha_v,
-        /* training para. */
+        /* optimizer parameter */
         EPS,
         MAX_ITER,
         solver);
@@ -240,11 +214,11 @@ void MoMA::fit(){
         MoMALogger::info("Start fitting.\n");
 
         // keep the value of u at the start of outer loop, hence call it oldu1
-        arma::vec oldu1 = zeros<vec>(n);
-        arma::vec oldv1 = zeros<vec>(p);
+        arma::vec oldu1 = arma::zeros<arma::vec>(n);
+        arma::vec oldv1 = arma::zeros<arma::vec>(p);
         // keep the value of u at the start of inner loop
-        arma::vec oldu2 = zeros<vec>(n);
-        arma::vec oldv2 = zeros<vec>(p);
+        arma::vec oldu2 = arma::zeros<arma::vec>(n);
+        arma::vec oldv2 = arma::zeros<arma::vec>(p);
 
         // stopping tolerance
         int iter = 0;

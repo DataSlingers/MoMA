@@ -39,6 +39,6 @@ figs/*
 # MacOS files
 *.DS_Store
 
-# vs code configuration files
+# VS Code configuration files
 .vscode/c_cpp_properties.json
 .vscode/settings.json

@@ -14,7 +14,7 @@ X = matrix(runif(n*p),n)
 # test_that
 #-------------------
 
-test_that("Equal to SVD when no penalty", {
+test_that("Equivalent to SVD when no penalty imposed", {
 
     sfpca <- sfpca(X,
                    O_u,O_v, 0,0,
@@ -24,7 +24,6 @@ test_that("Equal to SVD when no penalty", {
     expect_equal(norm(svdd$v[,1]-sfpca$v),0)
     expect_equal(norm(svdd$u[,1]-sfpca$u),0)
     expect_equal(svdd$d[1],sfpca$d);
-    expect_error(moma_logger_level("BAD LEVEL"))
 })
 
 
