@@ -42,3 +42,6 @@ figs/*
 # VS Code configuration files
 .vscode/c_cpp_properties.json
 .vscode/settings.json
+
+# visualization plots
+tests/testthat/*.pdf
