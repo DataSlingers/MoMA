@@ -14,7 +14,7 @@ enum class Solver{
 // [[Rcpp::export]]
 double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special case when S_u = I, i.e., alpha_u = 0.
 {
-    return sqrt(as_scalar(u.t() * S_u * u));
+    return arma::as_scalar(arma::sqrt(u.t() * S_u * u));
 }
 
 
@@ -29,13 +29,13 @@ private:
     int n;
     int p;
 
-    double prox_u_step; 
-    double prox_v_step;
-    double grad_u_step;
-    double grad_v_step;
+    double prox_u_step_size; 
+    double prox_v_step_size;
+    double grad_u_step_size;
+    double grad_v_step_size;
     
     Solver solver_type;
-    long MAX_ITER;
+    arma::uword MAX_ITER;
     double EPS;
 
     const arma::mat &X; 
@@ -61,7 +61,7 @@ public:
     }
     void check_valid();
     Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
-    Prox* string_to_Proxptr(const std::string &s,double gamma);
+    Prox* string_to_Proxptr(const std::string &s, double gamma);
    
     // turn user input into what we need to run the algorithm
     MoMA(const arma::mat &X_,   // note it is a reference
@@ -73,7 +73,7 @@ public:
         arma::mat Omega_u,arma::mat Omega_v,
         double alpha_u,double alpha_v,
         /* training para. */
-        double i_EPS,long i_MAX_ITER,std::string i_solver):X(X_) // X has to be written in the initialization list
+        double i_EPS,arma::uword i_MAX_ITER,std::string i_solver):X(X_) // X has to be written in the initialization list
     {
         check_valid();
         MoMALogger::info("Setting up Our model\n");
@@ -102,10 +102,10 @@ public:
         double Lv = arma::eig_sym(S_v).max() + 0.01;
         
         // Step 1.3: all kinds of stepsize
-        grad_u_step = 1 / Lu;
-        grad_v_step = 1 / Lv;
-        prox_u_step = lambda_u / Lu;
-        prox_v_step = lambda_v / Lv;
+        grad_u_step_size = 1 / Lu;
+        grad_v_step_size = 1 / Lv;
+        prox_u_step_size = lambda_u / Lu;
+        prox_v_step_size = lambda_v / Lv;
 
         // Step 2: initialize with SVD
         v = V.col(0);
@@ -158,9 +158,9 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma){   // free it!
     else if (s.compare("NONNEGLASSO") == 0)
         MoMALogger::error("Nonnegative Lasso not implemented yet!\n");
     else if (s.compare("SCAD") == 0)
-        res = new Scad(gamma);
+        res = new SCAD(gamma);
     else if (s.compare("MCP") == 0)
-        res = new Mcp(gamma);
+        res = new MCP(gamma);
     else
         MoMALogger::error("Your sparse penalty is not provided!\n");
     return res;
@@ -250,9 +250,9 @@ void MoMA::fit(){
                     iter_u++;
                     oldu2 = u;  
                     // gradient step
-                    u = u + grad_u_step * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
+                    u = u + grad_u_step_size * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
                     // proxiaml step
-                    u = prox_u->prox(u,prox_u_step);
+                    u = prox_u->prox(u,prox_u_step_size);
                     // nomalize w.r.t S_u
                     norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();    // Sometimes mat_norm(u,S_u) is so close to zero that u becomes NaN
 
@@ -267,9 +267,9 @@ void MoMA::fit(){
                     iter_v++;
                     oldv2 = v;
                     // gradient step
-                    v = v + grad_v_step * (X.t()*u - S_v*v);    // TODO: special case
+                    v = v + grad_v_step_size * (X.t()*u - S_v*v);    // TODO: special case
                     // proximal step
-                    v = prox_v->prox(v,prox_v_step);
+                    v = prox_v->prox(v,prox_v_step_size);
                     norm(v) > 0 ? v /= mat_norm(v, S_v) : v.zeros();
                     in_v_tol = norm(v - oldv2) / norm(oldv2);
                     // if(iter_v %100 == 0)

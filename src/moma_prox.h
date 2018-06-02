@@ -9,7 +9,7 @@
 // Section 1: Prox operators
 /////////////////
 inline arma::vec soft_thres(const arma::vec &x, double l){
-    return sign(x) % arma::max(abs(x) - l, zeros(arma::size(x)));
+    return arma::sign(x) % arma::max(abs(x) - l, zeros(arma::size(x)));
 }
 
 class Prox{
@@ -29,21 +29,21 @@ public:
 };
 
 class NNLasso: public Prox{
+public:
     NNLasso(){
         MoMALogger::debug("A Non-negative Lasso prox\n");
     }
-public:
     arma::vec prox(const arma::vec &x, double l){
-        return arma::max(abs(x) - l, zeros(arma::size(x)));
+        return arma::max(x - l, zeros(arma::size(x)));
     }
 };
 
-class Scad: public Prox{
+class SCAD: public Prox{
 private:
     double gamma; // gamma_SCAD >= 2
 public:
-    Scad(double g=3.7){
-        MoMALogger::debug("A Scad prox\n");
+    SCAD(double g=3.7){
+        MoMALogger::debug("A SCAD prox\n");
         if(g<2) 
             MoMALogger::error("Gamma for SCAD should be larger than 2!\n");
         gamma=g;
@@ -52,7 +52,7 @@ public:
         int n = x.n_elem;
         arma::vec z(n);
         arma::vec absx = arma::abs(x);
-        arma::vec sgn = sign(x);
+        arma::vec sgn = arma::sign(x);
         // arma::vec flag = (absx >2);
         for (int i = 0; i < n; i++) // Probably need vectorization
         {
@@ -68,11 +68,11 @@ public:
 };
 
 
-class Mcp: public Prox{
+class MCP: public Prox{
 private:
     double gamma; // gamma_MCP >= 1
 public:
-    Mcp(double g=4){
+    MCP(double g=3){
         MoMALogger::debug("A MC+ prox\n");
 
         if(g<1) 
