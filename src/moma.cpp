@@ -3,6 +3,8 @@
 #include "moma.h"
 #include "moma_prox.h"
 #include <algorithm>
+#include <iostream>
+#include <stdio.h>
 
 enum class Solver{
     ISTA,
@@ -211,7 +213,7 @@ void MoMA::fit(){
 
         MoMALogger::info("Model info=========\n")<<"n:"<<n<<"\n"
             <<"p:" << p << "\n";
-        MoMALogger::info("Start fitting.\n");
+        MoMALogger::info("Start fitting.") << "\n";
 
         // keep the value of u at the start of outer loop, hence call it oldu1
         arma::vec oldu1 = arma::zeros<arma::vec>(n);
@@ -235,7 +237,7 @@ void MoMA::fit(){
             MoMALogger::debug("==Before the loop: training setup==\n") 
                     << "\titer" << iter
                     << "\tEPS:" << EPS 
-                    << "\tMAX_ITER:" << MAX_ITER << "\n";
+                    << "\tMAX_ITER:" << MAX_ITER << '\n';
             while (out_tol > EPS && iter < MAX_ITER)
             {
                 
@@ -251,7 +253,7 @@ void MoMA::fit(){
                     oldu2 = u;  
                     // gradient step
                     u = u + grad_u_step_size * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
-                    // proxiaml step
+                    // proximal step
                     u = prox_u->prox(u,prox_u_step_size);
                     // nomalize w.r.t S_u
                     norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();    // Sometimes mat_norm(u,S_u) is so close to zero that u becomes NaN
