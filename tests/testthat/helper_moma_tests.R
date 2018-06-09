@@ -18,5 +18,5 @@ expect_str_contains <- function(object, expected, info=NULL, label=NULL){
     if(!is.character(expected)) expected <- as.character(expected)
 
     expect_true(all(str_detect(object, expected)),
-                info=info, label=label)
+                    info=info, label=label)
 }
