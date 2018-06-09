@@ -74,10 +74,9 @@ private:
 public:
     MCP(double g=3){
         MoMALogger::debug("A MC+ prox\n");
-
         if(g<1) 
             MoMALogger::error("Gamma for MCP should be larger than 1!\n");
-        gamma=g;
+        gamma = g;
     }
     arma::vec prox(const arma::vec &x, double l){
         int n = x.n_elem;
@@ -98,6 +97,6 @@ public:
             z(i) = absx(i) > gamma * l ? absx(i)
                                     : (gamma / (gamma - 1)) * THRES_P(absx(i),l);         
         }
-        return z%sgn;    
+        return z % sgn;    
     }
 };

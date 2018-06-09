@@ -11,8 +11,7 @@ enum class Solver{
 };
 
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
+
 double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special case when S_u = I, i.e., alpha_u = 0.
 {
     return arma::as_scalar(arma::sqrt(u.t() * S_u * u));
@@ -73,7 +72,7 @@ public:
         /* smoothness */
         arma::mat Omega_u,arma::mat Omega_v,
         double alpha_u,double alpha_v,
-        /* training para. */
+        /* optimizer parameters. */
         double i_EPS,arma::uword i_MAX_ITER,std::string i_solver):X(X_) // X has to be written in the initialization list
     {
         check_valid();

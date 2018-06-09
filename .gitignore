@@ -40,8 +40,7 @@ figs/*
 *.DS_Store
 
 # VS Code configuration files
-.vscode/c_cpp_properties.json
-.vscode/settings.json
+.vscode/*
 
 # visualization plots
 tests/testthat/*.pdf
