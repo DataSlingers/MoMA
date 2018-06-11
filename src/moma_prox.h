@@ -29,16 +29,6 @@ public:
     }
 };
 
-class NNLasso: public Prox{
-public:
-    NNLasso(){
-        MoMALogger::debug("Initializing Non-negative Lasso proximal operator object");
-    }
-    arma::vec prox(const arma::vec &x, double l){
-        return arma::max(x - l, zeros(arma::size(x)));
-    }
-};
-
 class SCAD: public Prox{
 private:
     double gamma; // gamma_SCAD >= 2
@@ -47,7 +37,7 @@ public:
         MoMALogger::debug("Initializing SCAD proximal operator object");
 
         if(g < 2){
-            MoMALogger::error("gamma for SCAD should be larger than 2!\n");
+            MoMALogger::error("Non-convexity parameter (gamma) must be larger than or equal to 2 for SCAD");
         }
 
         gamma = g;
@@ -81,7 +71,7 @@ public:
         MoMALogger::debug("Initializing MCP proximal operator object");
 
         if(g < 1){
-            MoMALogger::error("Gamma for MCP should be larger than 1!");
+            MoMALogger::error("Non-convexity parameter (gamma) must be larger than or equal to 1 for MCP");
         }
         gamma = g;
     }
@@ -108,5 +98,25 @@ public:
         return z % sgn;
     }
 };
+
+template<class T>
+class NonNegativeProx : public T{
+public:
+    NonNegativeProx<T>(): T() {
+        MoMALogger::debug("Initializing non-negative prox");
+    };
+
+    NonNegativeProx<T>(double g): T(g) {
+        MoMALogger::debug("Initializing non-negative prox");
+    };
+
+    arma::vec prox(const arma::vec &x, double l){
+        return arma::max(T::prox(x, l), arma::zeros(x.n_elem));
+    }
+};
+
+typedef NonNegativeProx<Lasso> NonNegativeLasso;
+typedef NonNegativeProx<SCAD>  NonNegativeSCAD;
+typedef NonNegativeProx<MCP>   NonNegativeMCP;
 
 #endif
