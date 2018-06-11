@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "random": "cpp",
+        "armadillo": "cpp"
+    }
+}

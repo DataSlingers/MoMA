@@ -38,3 +38,9 @@ figs/*
 
 # MacOS files
 *.DS_Store
+
+# VS Code configuration files
+.vscode/*
+
+# visualization plots
+tests/testthat/*.pdf
