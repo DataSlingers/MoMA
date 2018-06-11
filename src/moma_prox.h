@@ -15,7 +15,7 @@ inline arma::vec soft_thres(const arma::vec &x, double l){
 
 class Prox{
 public:
-    virtual arma::vec prox(const arma::vec &x, double l) = 0;
+    virtual arma::vec operator()(const arma::vec &x, double l) = 0;
     virtual ~Prox() = default;
 };
 
@@ -24,7 +24,7 @@ public:
     Lasso(){
         MoMALogger::debug("Initializing Lasso proximal operator object");
     }
-    arma::vec prox(const arma::vec &x, double l){
+    arma::vec operator()(const arma::vec &x, double l){
         return soft_thres(x,l);
     }
 };
@@ -43,7 +43,7 @@ public:
         gamma = g;
     }
 
-    arma::vec prox(const arma::vec &x, double l){
+    arma::vec operator()(const arma::vec &x, double l){
         int n = x.n_elem;
         arma::vec z(n);
         arma::vec absx = arma::abs(x);
@@ -76,7 +76,7 @@ public:
         gamma = g;
     }
 
-    arma::vec prox(const arma::vec &x, double l){
+    arma::vec operator()(const arma::vec &x, double l){
         int n = x.n_elem;
         arma::vec z(n);
         arma::vec absx = arma::abs(x);
@@ -110,8 +110,8 @@ public:
         MoMALogger::debug("Initializing non-negative prox");
     };
 
-    arma::vec prox(const arma::vec &x, double l){
-        return arma::max(T::prox(x, l), arma::zeros(x.n_elem));
+    arma::vec operator()(const arma::vec &x, double l){
+        return arma::max(T::operator()(x, l), arma::zeros(x.n_elem));
     }
 };
 

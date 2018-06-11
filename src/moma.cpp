@@ -11,7 +11,6 @@ double mat_norm(const arma::vec &u, const arma::mat &S_u){
     return arma::as_scalar(arma::sqrt(u.t() * S_u * u));
 }
 
-
 /////////////////
 // Section 2: MoMA class
 /////////////////
@@ -246,7 +245,7 @@ void MoMA::fit(){
                     // gradient step
                     u = u + grad_u_step_size * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
                     // proximal step
-                    u = prox_u->prox(u,prox_u_step_size);
+                    u = (*prox_u)(u,prox_u_step_size);
                     // nomalize w.r.t S_u
                     norm(u) > 0 ? u /= mat_norm(u, S_u) : u.zeros();    // Sometimes mat_norm(u,S_u) is so close to zero that u becomes NaN
 
@@ -263,7 +262,7 @@ void MoMA::fit(){
                     // gradient step
                     v = v + grad_v_step_size * (X.t()*u - S_v*v);    // TODO: special case
                     // proximal step
-                    v = prox_v->prox(v,prox_v_step_size);
+                    v = (*prox_u)(v,prox_v_step_size);
                     norm(v) > 0 ? v /= mat_norm(v, S_v) : v.zeros();
                     in_v_tol = norm(v - oldv2) / norm(oldv2);
                     // if(iter_v %100 == 0)
