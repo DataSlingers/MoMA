@@ -194,12 +194,6 @@ Rcpp::List sfpca(
     return model.wrap();
 }
 
-// [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::export]]
-double test_norm(arma::vec x){
-    return norm(x);
-}
-
 void MoMA::fit(){
 
         MoMALogger::info("Model info=========\n")<<"n:"<<n<<"\n"
