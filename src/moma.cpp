@@ -1,19 +1,13 @@
 // -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 #include "moma.h"
-#include "moma_prox.h"
-#include <algorithm>
-#include <iostream>
-#include <stdio.h>
 
 enum class Solver{
     ISTA,
     FISTA
 };
 
-
-
-double mat_norm(const arma::vec &u, const arma::mat &S_u)   // TODO: special case when S_u = I, i.e., alpha_u = 0.
-{
+double mat_norm(const arma::vec &u, const arma::mat &S_u){
+    // TODO: special case when S_u = I, i.e., alpha_u = 0.
     return arma::as_scalar(arma::sqrt(u.t() * S_u * u));
 }
 
@@ -29,22 +23,22 @@ private:
     int n;
     int p;
 
-    double prox_u_step_size; 
+    double prox_u_step_size;
     double prox_v_step_size;
     double grad_u_step_size;
     double grad_v_step_size;
-    
+
     Solver solver_type;
     arma::uword MAX_ITER;
     double EPS;
 
-    const arma::mat &X; 
-    //  careful about reference, if it refenrences 
-    //  something that will be released in the 
+    const arma::mat &X;
+    //  careful about reference, if it refenrences
+    //  something that will be released in the
     //  constructor, things go wrong
-    
+
     // final results
-    arma::vec u; 
+    arma::vec u;
     arma::vec v;
     // sparse penalty
     Prox *prox_u; // careful about memory leak and destructor stuff, can be replaced by Prox &prox_u;
@@ -52,8 +46,8 @@ private:
     // S = I + alpha*Omeg
     arma::mat S_u;  // to be special-cased
     arma::mat S_v;
-    
-    
+
+
 public:
     ~MoMA(){
         delete prox_u;
@@ -62,11 +56,11 @@ public:
     void check_valid();
     Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
     Prox* string_to_Proxptr(const std::string &s, double gamma);
-   
+
     // turn user input into what we need to run the algorithm
     MoMA(const arma::mat &X_,   // note it is a reference
         /* sparsity*/
-        std::string P_v,std::string P_u, 
+        std::string P_v,std::string P_u,
         double lambda_v,double lambda_u,
         double gamma,
         /* smoothness */
@@ -78,7 +72,7 @@ public:
         check_valid();
         MoMALogger::info("Setting up Our model\n");
 
-       
+
         n = X.n_rows;
         p = X.n_cols;
 
@@ -100,7 +94,7 @@ public:
         // Step 1.2: find Lu,Lv
         double Lu = arma::eig_sym(S_u).max() + 0.01; // +0.01 for convergence
         double Lv = arma::eig_sym(S_v).max() + 0.01;
-        
+
         // Step 1.3: all kinds of stepsize
         grad_u_step_size = 1 / Lu;
         grad_v_step_size = 1 / Lv;
@@ -120,7 +114,7 @@ public:
     };
 
     void fit();
-    Rcpp::List wrap(){ 
+    Rcpp::List wrap(){
         u = u / norm(u);
         v = v / norm(v);
         double d = as_scalar(u.t() * X * v);
@@ -179,14 +173,14 @@ Rcpp::List sfpca(
     double lambda_u = 0,double lambda_v = 0,
     double gamma = 3.7,
 
-    double EPS = 1e-6,  
+    double EPS = 1e-6,
     long MAX_ITER = 1e+3,
     std::string solver = "ISTA"
 )
 {
-    MoMA model(X,  
+    MoMA model(X,
         /* sparsity*/
-         P_v,P_u, 
+         P_v,P_u,
         lambda_v,lambda_u,
         gamma,
         /* smoothness */
@@ -232,14 +226,14 @@ void MoMA::fit(){
         if (solver_type == Solver::ISTA)
         {
             MoMALogger::info("Running ISTA!\n");
-            MoMALogger::debug("==Before the loop: training setup==\n") 
+            MoMALogger::debug("==Before the loop: training setup==\n")
                     << "\titer" << iter
-                    << "\tEPS:" << EPS 
+                    << "\tEPS:" << EPS
                     << "\tMAX_ITER:" << MAX_ITER << '\n';
             while (out_tol > EPS && iter < MAX_ITER)
             {
-                
-                oldu1 = u;  
+
+                oldu1 = u;
                 oldv1 = v;
                 in_u_tol = 1;
                 in_v_tol = 1;
@@ -248,7 +242,7 @@ void MoMA::fit(){
                 while (in_u_tol > EPS)
                 {
                     iter_u++;
-                    oldu2 = u;  
+                    oldu2 = u;
                     // gradient step
                     u = u + grad_u_step_size * (X*v - S_u*u);  // TODO: special case when alpha_u = 0 => S_u = I
                     // proximal step
@@ -258,7 +252,7 @@ void MoMA::fit(){
 
                     in_u_tol = norm(u - oldu2) / norm(oldu2);
                 //    if(iter_u %100 == 0)
-                        MoMALogger::debug("---update u ") << iter_u << "--\n" 
+                        MoMALogger::debug("---update u ") << iter_u << "--\n"
                             << "in_u_tol:" << in_u_tol << "\t iter" << iter_u;
                 }
 
@@ -288,6 +282,6 @@ void MoMA::fit(){
         else{
             MoMALogger::error("Your choice of solver is not provided yet!");
         }
-        MoMALogger::debug("==After the outer loop!==\n") 
+        MoMALogger::debug("==After the outer loop!==\n")
                    << "out_tol:" << out_tol << "\t iter" << iter;
     }
