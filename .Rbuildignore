@@ -16,3 +16,4 @@ build_steps.R
 LICENSE
 CONTRIBUTORS
 .github/*
+.vscode/*
