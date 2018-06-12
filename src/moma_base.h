@@ -13,4 +13,8 @@
 // We only include RcppArmadillo.h which pulls Rcpp.h in for us
 #include "RcppArmadillo.h"
 
+// For difficult smoothing matrices, we may encounter artificially small eigenvalues:
+// we add a small "nugget" here to regularize the computations
+#define MOMA_EIGENVALUE_REGULARIZATION 0.01
+
 #endif
