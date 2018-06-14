@@ -22,7 +22,9 @@ test_that("When lambda = 0, prox operators are no-ops", {
 
     for(prox_func in c(test_prox_lasso,
                        test_prox_scad,
-                       test_prox_mcp)){
+                       test_prox_mcp,
+                       test_prox_scadvec,
+                       test_prox_mcpvec)){
         expect_equal(x,
                      prox_func(x, lambda))
     }
@@ -39,7 +41,6 @@ test_that("When lambda = 0, non-negative prox operators zero-out negative values
                      prox_func(x, lambda))
     }
 })
-
 
 test_that("Prox operators return correct results for lambda = 3", {
     lambda <- 1
@@ -70,4 +71,21 @@ test_that("Non-negative prox operators match for non-negative input", {
         expect_equal(test_prox_mcp(x, l),
                      test_prox_nnmcp(x, l))
     }
+})
+
+test_that("Group operators return correct results",{
+    x <- c(-3,-5,4,12,3,4,12)
+
+    # When no grouping = lasso
+    gp <- as.factor(c(1,2,3,4,5,6,7))
+    expect_equal(test_prox_lasso(x,0),test_prox_grplasso(x,gp,0))
+    for(lambda in seq(0,10,0.2))
+        expect_equal(test_prox_lasso(x,lambda),test_prox_grplasso(x,gp,lambda))
+
+    # When there is grouping
+    gp <- as.factor(c(1,2,1,2,3,3,3))
+    gpl <- test_prox_grplasso(x,gp,0)
+    nngpl <- test_prox_nngrplasso(x,gp,0)
+    expect_equal(norm(gpl - c(-3,-5,4,12,3,4,12)),0)
+    expect_equal(norm(nngpl - c(0,0,4,12,3,4,12)),0)
 })
