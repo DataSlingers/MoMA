@@ -211,7 +211,7 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
     }
     else if(s.compare("GRPLASSO") == 0){
         if(nonneg)
-            res = new NonNegativeGrpLasso(group);
+            MoMALogger::error("Fusion is not provided yet");
         else
             res = new GrpLasso(group);
     }
@@ -273,9 +273,10 @@ Rcpp::List sfpca(
 
 
 void MoMA::fit(){
-        MoMALogger::info("Model info=========\n")<<"n:"<<n<<"\n"
-            <<"p:" << p << "\n";
-        MoMALogger::info("Start fitting.\n");
+        MoMALogger::info("Model info=========")
+            <<"n:"<<n
+            <<"p:" << p;
+        MoMALogger::info("Start fitting.");
 
         // store the value of u and v at the start of outer loop, hence call it oldu1
         arma::vec oldu1 = arma::zeros<arma::vec>(n);
@@ -295,8 +296,8 @@ void MoMA::fit(){
         double out_tol = 1;    // that of outer loop
 
         if (solver_type == Solver::FISTA){
-            MoMALogger::info("Running FISTA!\n");
-            MoMALogger::debug("==Before the loop: training setup==\n") 
+            MoMALogger::info("Running FISTA!");
+            MoMALogger::debug("==Before the loop: training setup==") 
                     << "\titer" << iter
                     << "\tEPS:" << EPS 
                     << "\tMAX_ITER:" << MAX_ITER;
@@ -332,8 +333,9 @@ void MoMA::fit(){
                     u = u + (oldt - 1) / t * (u - oldu2);
                     // find torlerance
                     in_u_tol = norm(u - oldu2) / norm(oldu2);
-                    MoMALogger::debug("u ") << iter_u << "--" << "% of change " << in_u_tol;
-                }
+                    MoMALogger::debug("---update v ") << iter_v << "---"
+ -                                                  << "in_v_tol:" << in_v_tol
+ -                                                  << "\t iter" << iter_v;                }
                 // nomalize w.r.t S_u
                 mn = mat_norm(u, S_u);
                 mn > 0 ? u /= mn : u.zeros();
@@ -373,12 +375,12 @@ void MoMA::fit(){
                 // Output info
                 out_tol = norm(oldu1 - u) / norm(oldu1) + norm(oldv1 - v) / norm(oldv1);
                 iter++;
-                MoMALogger::info("--Finish iter:") << iter << "---\n";
+                MoMALogger::info("--Finish iter:") << iter << "---";
             }
         }
         else if (solver_type == Solver::ISTA) {
-            MoMALogger::info("Running ISTA!\n");
-            MoMALogger::debug("==Before the loop: training setup==\n")
+            MoMALogger::info("Running ISTA!");
+            MoMALogger::debug("==Before the loop: training setup==")
                     << "\titer" << iter
                     << "\tEPS:" << EPS 
                     << "\tMAX_ITER:" << MAX_ITER;
@@ -443,12 +445,13 @@ void MoMA::fit(){
 
                 out_tol = norm(oldu1 - u) / norm(oldu1) + norm(oldv1 - v) / norm(oldv1);
                 iter++;
-                MoMALogger::info("--Finish iter:") << iter << "---\n";
+                MoMALogger::info("--Finish iter:") << iter << "---";
             }
         }
         else{
             MoMALogger::error("Your choice of solver is not provided yet!");
         }
-        MoMALogger::debug("==After the outer loop!==\n") 
-                   << "out_tol:" << out_tol << "\t iter" << iter;
+        MoMALogger::debug("==After the outer loop!==") 
+                   << "out_tol:" << out_tol 
+                   << "\t iter" << iter;
 }

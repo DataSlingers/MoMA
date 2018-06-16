@@ -24,7 +24,7 @@ Lasso::Lasso(){
 
 arma::vec Lasso::operator()(const arma::vec &x, double l){
     arma::vec absx = arma::abs(x);
-    return arma::sign(x) % soft_thres_p(absx,l);
+    return arma::sign(x) % soft_thres_p(absx, l);
 }
 
 Lasso::~Lasso(){
@@ -97,7 +97,7 @@ arma::vec SCAD::vec_prox(const arma::vec &x, double l){
     // D.col(0) = absx <= 2 * l;
     // D.col(1) = arma::ones<arma::uvec>(n) - D.col(2) - D.col(0);
     z = D.col(0) % soft_thres_p(absx,l) + D.col(1) % ((gamma - 1) * absx - gl) / (gamma-2) + D.col(2) % absx;
-    return sgnx%z;
+    return sgnx % z;
 }
 
 /*
@@ -113,7 +113,7 @@ NonNegativeSCAD::~NonNegativeSCAD(){
 
 arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
     int n = x.n_elem;
-    double gl = gamma*l;
+    double gl = gamma * l;
     arma::vec z(n);
     for (int i = 0; i < n; i++) // Probably need vectorization
     {
@@ -218,6 +218,7 @@ GrpLasso::~GrpLasso(){
 }
 
 arma::vec GrpLasso::operator()(const arma::vec &x, double l){
+    // TODO: benchmark with simple looping!
     arma::vec grp_norms = D.t() * arma::sqrt(D * arma::square(x)); // to_be_thres is of dimension p.
     return (x / grp_norms) % soft_thres_p(grp_norms,l);
 }
@@ -234,6 +235,8 @@ NonNegativeGrpLasso::~NonNegativeGrpLasso(){
 }
 
 arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x, double l){
+    // TODO
+    MoMALogger::error("Non-negative group lasso proximal operator object not implemented");
     arma::vec grp_norms = D.t() * arma::sqrt(D * arma::square(x));    // to_be_thres is of dimension p.
     arma::vec pos_x = x % (x > 0);
     return (pos_x / grp_norms) % soft_thres_p(grp_norms,l);

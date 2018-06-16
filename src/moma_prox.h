@@ -92,25 +92,4 @@ public:
     ~NonNegativeGrpLasso();
     arma::vec operator()(const arma::vec &x, double l);       
 };
-
-// template<class T>
-// class NonNegativeProx : public T{
-// public:
-//     NonNegativeProx<T>(): T() {
-//         MoMALogger::debug("Initializing non-negative prox");
-//     };
-
-//     NonNegativeProx<T>(double g): T(g) {
-//         MoMALogger::debug("Initializing non-negative prox");
-//     };
-
-//     arma::vec operator()(const arma::vec &x, double l){
-//         return arma::max(T::operator()(x, l), arma::zeros(x.n_elem));
-//     }
-// };
-
-// typedef NonNegativeProx<Lasso> NonNegativeLasso;
-// typedef NonNegativeProx<SCAD>  NonNegativeSCAD;
-// typedef NonNegativeProx<MCP>   NonNegativeMCP;
-
 #endif

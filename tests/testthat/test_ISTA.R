@@ -64,10 +64,10 @@ test_that("Closed form solution when no sparsity imposed",{
                    EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
 
     # know that sfpca always return norm 1 vector
-    ista.v = Lv %*% ista$v/norm(Lv %*% ista$v,"E")
-    ista.u = Lu %*% ista$u/norm(Lu %*% ista$u,"E")
-    fista.v = Lv %*% fista$v/norm(Lv %*% fista$v,"E")
-    fista.u = Lu %*% fista$u/norm(Lu %*% fista$u,"E")
+    ista.v = Lv %*% ista$v / norm(Lv %*% ista$v,"E")
+    ista.u = Lu %*% ista$u / norm(Lu %*% ista$u,"E")
+    fista.v = Lv %*% fista$v / norm(Lv %*% fista$v,"E")
+    fista.u = Lu %*% fista$u / norm(Lu %*% fista$u,"E")
 
     # different up to sign
     expect_lte(norm(svd.result$v[,1] - ista.v),1e-5)
@@ -99,5 +99,5 @@ test_that("ISTA and FISTA should yield similar results",{
                    gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
 
     # tests
-    expect_equal(sum((ista$v[,1]-fista$v[,1])^2),0)
+    expect_equal(ista$v[,1],fista$v[,1])
 })
