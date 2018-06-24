@@ -61,7 +61,7 @@ class MCP: public Prox{
 protected:
     double gamma; // gamma_MCP >= 1
 public:
-    MCP(double g = 4);
+    MCP(double g = 3);
     ~MCP();
     arma::vec operator()(const arma::vec &x, double l);
     arma::vec vec_prox(const arma::vec &x, double l);
@@ -69,7 +69,7 @@ public:
 
 class NonNegativeMCP: public MCP{
 public:
-    NonNegativeMCP(double g = 4);
+    NonNegativeMCP(double g = 3);
     ~NonNegativeMCP();
     arma::vec operator()(const arma::vec &x, double l);
 };
