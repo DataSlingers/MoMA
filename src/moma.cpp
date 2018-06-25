@@ -212,7 +212,7 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
     }
     else if(s.compare("GRPLASSO") == 0){
         if(nonneg)
-            MoMALogger::error("Fusion is not provided yet");
+            res = new NonNegativeGrpLasso(group);
         else
             res = new GrpLasso(group);
     }
