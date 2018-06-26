@@ -203,7 +203,9 @@ arma::vec NonNegativeMCP::operator()(const arma::vec &x, double l){
 /*
 * Group lasso
 */
-GrpLasso::GrpLasso(const arma::vec &grp):group(grp - arma::ones<arma::vec>(grp.n_elem)){   // takes in a factor grp, whose indeces start with 1
+GrpLasso::GrpLasso(const arma::vec &grp):
+        group(grp - arma::ones<arma::vec>(grp.n_elem)){   
+        // takes in a factor `grp`, whose indices start with 1
     n_grp = grp.max();
     MoMALogger::debug("Initializing group lasso proximal operator object");
     D = arma::zeros<arma::umat>(n_grp,grp.n_elem);  // density will be 1/p = 1/x.n_elem
