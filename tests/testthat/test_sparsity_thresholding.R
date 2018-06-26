@@ -73,27 +73,55 @@ test_that("Non-negative prox operators match for non-negative input", {
     }
 })
 
-test_that("Group operators return correct results",{
-    x <- c(-3,-5,4,12,3,4,12)
-
+test_that("Group lasso proximal operators return correct results",{
 
     for(grp_prox in c(test_prox_grplasso,
                       test_prox_grplassovec)){
-
-        # When no grouping = lasso
-        gp <- as.factor(c(1,2,3,4,5,6,7))
-        expect_equal(test_prox_lasso(x,0),grp_prox(x,gp,0))
-        for(lambda in seq(0,10,0.2)){
-            expect_equal(test_prox_lasso(x,lambda),grp_prox(x,gp,lambda))
+        for(rep in 1:10){
+            x <- runif(7)
+            # When every element forms a group = lasso
+            gp <- as.factor(c(1,2,3,4,5,6,7))
+            expect_equal(test_prox_lasso(x,0),grp_prox(x,gp,0))
+            for(lambda in seq(0,10,0.2)){
+                expect_equal(test_prox_lasso(x,lambda),grp_prox(x,gp,lambda))
+            }
         }
-
-        # When there is grouping
-        # TODO: change lambda
-        gp <- as.factor(c(1,2,1,2,3,3,3))
-        gpl <- test_prox_grplasso(x,gp,0)
-        expect_equal(norm(gpl - c(-3,-5,4,12,3,4,12)),0)
     }
 
+    for(grp_prox in c(test_prox_grplasso,
+                      test_prox_grplassovec)){
+        # When the all the elements are grouped
+        for(rep in 1:10){
+            x <- runif(10)
+            gp <- factor(rep(0,10))
+            lambda <- seq(0,5,0.2)
+            for(l in lambda){
+                scale <- 1-l/sqrt(sum(x^2))
+                if(scale < 0)
+                    scale = 0
+                expect_equal(matrix(scale*x,10,1),
+                             test_prox_grplasso(x,gp,l))
+            }
+        }
+    }
 
     # TODO: test for non-negative group lasso
+
+    # When the all the elements are grouped
+    for(rep in 1:10){
+        x <- runif(10)
+        gp <- factor(rep(0,10))
+        lambda <- seq(0,1,0.1)
+
+        for(l in lambda){
+            x_pos <- x * (x > 0)
+            scale <- 1-l/sqrt(sum(x^2))
+            expect_equal(matrix(scale*x_pos,10,1),
+                         test_prox_nngrplasso(x,gp,l))
+            if(scale < 0)
+                scale = 0
+            expect_equal(matrix(scale*x_pos,10,1),
+                         test_prox_grplasso(x_pos,gp,l))
+        }
+    }
 })

@@ -249,10 +249,20 @@ NonNegativeGrpLasso::~NonNegativeGrpLasso(){
     MoMALogger::debug("Releasing non-negative group lasso proximal operator object");
 }
 
-arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x, double l){
-    // TODO
-    MoMALogger::error("Non-negative group lasso proximal operator object not implemented");
-    arma::vec grp_norms = D.t() * arma::sqrt(D * arma::square(x));    // to_be_thres is of dimension p.
-    arma::vec pos_x = x % (x > 0);
-    return (pos_x / grp_norms) % soft_thres_p(grp_norms,l);
+arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x_, double l){
+    // Reference: Proximal Methods for Hierarchical Sparse Coding, Lemma 11
+    arma::vec x = soft_thres_p(x_,0);  // zero out negative entries
+    if(x.n_elem != group.n_elem)
+    MoMALogger::debug("Wrong dimension: x dim is") << x.n_elem << "but we take" << group.n_elem;
+    arma::vec grp_norm = arma::zeros<arma::vec>(n_grp);
+    for(int i = 0; i < x.n_elem; i++){
+        grp_norm(group(i)) += x(i)*x(i);
+    }
+    grp_norm = arma::sqrt(grp_norm);
+    arma::vec grp_scale = soft_thres_p(grp_norm,l) / grp_norm;
+    arma::vec scale(x.n_elem);
+    for(int i = 0; i < x.n_elem; i++){
+        scale(i) = grp_scale(group(i));
+    }
+    return x % scale;
 }
