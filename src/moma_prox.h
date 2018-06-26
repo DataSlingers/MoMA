@@ -10,7 +10,7 @@
 #define THRES_P(x,l) (MAX(x-l,0.0)) // shrink a positive value by `l`
 
 inline arma::vec soft_thres(const arma::vec &x, double l){
-    return arma::sign(x) % arma::max(abs(x) - l, zeros(arma::size(x)));
+    return arma::sign(x) % arma::max(abs(x) - l, arma::zeros(arma::size(x)));
 }
 
 // soft-thresholding a non-negative vector
@@ -76,6 +76,8 @@ public:
 
 class GrpLasso: public Prox{
 protected:
+    arma::vec group;
+    int n_grp; // number of gourps
     arma::umat D;  // Probably not using sparse matrix would be faster, TODO
                     // a boolean matrix, D \in R^{g \times p}, g is the number of groups, p the number of parameters.
                     // D_ji = 1 means \beta_i in group j.
@@ -83,13 +85,14 @@ protected:
 public:
     GrpLasso(const arma::vec &grp);
     ~GrpLasso();
-    arma::vec operator()(const arma::vec &x, double l);       
+    arma::vec operator()(const arma::vec &x, double l);
+    arma::vec vec_prox(const arma::vec &x, double l);
 };
 
 class NonNegativeGrpLasso: public GrpLasso{
 public:
     NonNegativeGrpLasso(const arma::vec &grp);
     ~NonNegativeGrpLasso();
-    arma::vec operator()(const arma::vec &x, double l);       
+    arma::vec operator()(const arma::vec &x, double l);
 };
 #endif

@@ -76,18 +76,24 @@ test_that("Non-negative prox operators match for non-negative input", {
 test_that("Group operators return correct results",{
     x <- c(-3,-5,4,12,3,4,12)
 
-    # When no grouping = lasso
-    gp <- as.factor(c(1,2,3,4,5,6,7))
-    expect_equal(test_prox_lasso(x,0),test_prox_grplasso(x,gp,0))
-    for(lambda in seq(0,10,0.2)){
-        expect_equal(test_prox_lasso(x,lambda),test_prox_grplasso(x,gp,lambda))
+
+    for(grp_prox in c(test_prox_grplasso,
+                      test_prox_grplassovec)){
+
+        # When no grouping = lasso
+        gp <- as.factor(c(1,2,3,4,5,6,7))
+        expect_equal(test_prox_lasso(x,0),grp_prox(x,gp,0))
+        for(lambda in seq(0,10,0.2)){
+            expect_equal(test_prox_lasso(x,lambda),grp_prox(x,gp,lambda))
+        }
+
+        # When there is grouping
+        # TODO: change lambda
+        gp <- as.factor(c(1,2,1,2,3,3,3))
+        gpl <- test_prox_grplasso(x,gp,0)
+        expect_equal(norm(gpl - c(-3,-5,4,12,3,4,12)),0)
     }
 
-    # When there is grouping
-    # TODO: change lambda
-    gp <- as.factor(c(1,2,1,2,3,3,3))
-    gpl <- test_prox_grplasso(x,gp,0)
-    expect_equal(norm(gpl - c(-3,-5,4,12,3,4,12)),0)
 
     # TODO: test for non-negative group lasso
 })

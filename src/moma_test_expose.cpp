@@ -58,14 +58,21 @@ arma::vec test_prox_nnmcp(const arma::vec &x, double l, double gamma = 4)
 };
 
 // [[Rcpp::export]]
-arma::vec test_prox_grplasso(const arma::vec &x, const arma::vec &g,double l)
+arma::vec test_prox_grplasso(const arma::vec &x, const arma::vec &g, double l)
 {
     GrpLasso a(g);
     return a(x,l);
 };
 
 // [[Rcpp::export]]
-arma::vec test_prox_nngrplasso(const arma::vec &x, const arma::vec &g,double l)
+arma::vec test_prox_grplassovec(const arma::vec &x, const arma::vec &g, double l)
+{
+    GrpLasso a(g);
+    return a.vec_prox(x,l);
+};
+
+// [[Rcpp::export]]
+arma::vec test_prox_nngrplasso(const arma::vec &x, const arma::vec &g, double l)
 {
     NonNegativeGrpLasso a(g);
     return a(x,l);

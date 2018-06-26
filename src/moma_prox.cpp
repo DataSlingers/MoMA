@@ -203,12 +203,12 @@ arma::vec NonNegativeMCP::operator()(const arma::vec &x, double l){
 /*
 * Group lasso
 */
-GrpLasso::GrpLasso(const arma::vec &grp){   // takes in a factor
+GrpLasso::GrpLasso(const arma::vec &grp):group(grp - arma::ones<arma::vec>(grp.n_elem)){   // takes in a factor grp, whose indeces start with 1
+    n_grp = grp.max();
     MoMALogger::debug("Initializing group lasso proximal operator object");
-    arma::uword num_grp = grp.max();
-    D = arma::zeros<arma::umat>(num_grp,grp.n_elem);  // density will be 1/p = 1/x.n_elem
+    D = arma::zeros<arma::umat>(n_grp,grp.n_elem);  // density will be 1/p = 1/x.n_elem
     for(int i = 0; i < grp.n_elem; i++){
-        arma::uword g = grp(i) - 1; // the i-th parameter is in g-th group. Note factor in R starts from 1
+        arma::uword g = group(i); // the i-th parameter is in g-th group. Note factor in R starts from 1
         D(g,i) = 1;
     }
 }
@@ -219,10 +219,25 @@ GrpLasso::~GrpLasso(){
 
 arma::vec GrpLasso::operator()(const arma::vec &x, double l){
     // TODO: benchmark with simple looping!
+    if(x.n_elem != group.n_elem)
+        MoMALogger::debug("Wrong dimension: x dim is") << x.n_elem << "but we take" << group.n_elem;
+    arma::vec grp_norm = arma::zeros<arma::vec>(n_grp);
+    for(int i = 0; i < x.n_elem; i++){
+        grp_norm(group(i)) += x(i)*x(i);
+    }
+    grp_norm = arma::sqrt(grp_norm);
+    arma::vec grp_scale = soft_thres_p(grp_norm,l) / grp_norm;
+    arma::vec scale(x.n_elem);
+    for(int i = 0; i < x.n_elem; i++){
+        scale(i) = grp_scale(group(i));
+    }
+    return x % scale;
+}
+
+arma::vec GrpLasso::vec_prox(const arma::vec &x, double l){
     arma::vec grp_norms = D.t() * arma::sqrt(D * arma::square(x)); // to_be_thres is of dimension p.
     return (x / grp_norms) % soft_thres_p(grp_norms,l);
-}
-       
+};
 /*
 * Non-negative group lasso
 */
