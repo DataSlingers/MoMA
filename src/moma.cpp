@@ -6,7 +6,7 @@ enum class Solver{
     FISTA
 };
 
-double mat_norm(const arma::vec &u, const arma::mat &S_u){
+inline double mat_norm(const arma::vec &u, const arma::mat &S_u){
     // TODO: special case when S_u = I, i.e., alpha_u = 0.
     return arma::as_scalar(arma::sqrt(u.t() * S_u * u));
 }
@@ -62,8 +62,8 @@ public:
 
     void check_valid();
     Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
-    Prox* string_to_Proxptr(const std::string &s, double gamma);
-
+    Prox* string_to_Proxptr(const std::string &s,double gamma,const arma::vec &group,bool nonneg);
+ 
     // Parse user input into a MoMA object which defines the problem and algorithm
     // used to solve it.
     //
@@ -78,6 +78,13 @@ public:
         double lambda_v, // regularization level
         double lambda_u,
         double gamma,    // Non-convexity parameter
+        bool nonneg_u,   // Non-negativity indicator
+        bool nonneg_v,
+        /* 
+        * grouping 
+        */
+        const arma::vec &group_u,
+        const arma::vec &group_v,
         /*
          * smoothness - enforced through constraints
          */
@@ -138,8 +145,8 @@ public:
         u = U.col(0);
 
         // Step 3: Construct proximal operators
-        prox_u = string_to_Proxptr(P_u, gamma);
-        prox_v = string_to_Proxptr(P_v, gamma);
+        prox_u = string_to_Proxptr(P_u,gamma,group_u,nonneg_u);
+        prox_v = string_to_Proxptr(P_v,gamma,group_v,nonneg_v);
     };
 
     void fit(); // Implemented below
@@ -177,22 +184,38 @@ Solver MoMA::string_to_SolverT(const std::string &s){
     return res;
 }
 
-Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma){
-    // IMPORTANT: This must be freed elsewhere
-    Prox* res = nullptr;
-
+Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec &group,bool nonneg){
+    // IMPORTANT: this must be freed somewhere
+    Prox* res = new Prox();
     if (s.compare("LASSO") == 0){
-       res = new Lasso();
-    } else if (s.compare("NONNEGLASSO") == 0){
-        MoMALogger::error("Nonnegative Lasso not implemented yet!");
-    } else if (s.compare("SCAD") == 0){
-        res = new SCAD(gamma);
-    } else if (s.compare("MCP") == 0){
-        res = new MCP(gamma);
-    } else {
-        MoMALogger::error("Your sparse penalty is not provided!");
+        if(nonneg)
+            res = new NonNegativeLasso();
+        else
+            res = new Lasso();
     }
-
+    else if (s.compare("SCAD") == 0){
+        if(nonneg)
+            res = new NonNegativeSCAD(gamma);
+        else 
+            res = new SCAD(gamma);
+    }
+    else if (s.compare("MCP") == 0){
+        if(nonneg)   
+            res = new NonNegativeMCP(gamma);
+        else 
+            res = new MCP(gamma);
+    }
+    else if(s.compare("GRPLASSO") == 0){
+        if(nonneg)
+            res = new NonNegativeGrpLasso(group);
+        else
+            res = new GrpLasso(group);
+    }
+    else if(s.compare("FUSION") == 0){
+           MoMALogger::error("Fusion is not provided yet");
+    }
+    else
+        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `Prox` by default");
     return res;
 }
 
@@ -208,6 +231,10 @@ Rcpp::List sfpca(
     double lambda_u = 0,
     double lambda_v = 0,
     double gamma = 3.7,
+    bool nonneg_u = 0, 
+    bool nonneg_v = 0,
+    arma::vec group_u = Rcpp::IntegerVector::create(0), 
+    arma::vec group_v = Rcpp::IntegerVector::create(0),
     double EPS = 1e-6,
     long MAX_ITER = 1e+3,
     std::string solver = "ISTA"){
@@ -219,6 +246,12 @@ Rcpp::List sfpca(
               lambda_v,
               lambda_u,
               gamma,
+              /* non-negativity */
+              nonneg_u, 
+              nonneg_v,
+              /* grouping */
+              group_u,
+              group_v,
               /* smoothness */
               Omega_u,
               Omega_v,
