@@ -1,5 +1,4 @@
 context("Thresolding Tests")
-
 test_that("Non-convexity parameter checks", {
     lambda <- 1
     x      <- seq(-4, 4, 0.01)
@@ -74,7 +73,7 @@ test_that("Non-negative prox operators match for non-negative input", {
 })
 
 test_that("Group lasso proximal operators return correct results",{
-
+    set.seed(32)
     for(grp_prox in c(test_prox_grplasso,
                       test_prox_grplassovec)){
         for(rep in 1:10){

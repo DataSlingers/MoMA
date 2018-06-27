@@ -1,5 +1,6 @@
 context("ISTA Tests")
 test_that("Equivalent to SVD when no penalty imposed", {
+    set.seed(32)
     n <- 10 # set n != p to test bugs
     p <- 6
     O_v <- diag(p)
@@ -19,6 +20,7 @@ test_that("Equivalent to SVD when no penalty imposed", {
 })
 
 test_that("Equivalent to SVD when Omega = I and no sparsity",{
+    set.seed(32)
     n <- 10 # set n != p to test bugs
     p <- 6
     O_v <- diag(p)
@@ -77,6 +79,7 @@ test_that("Closed form solution when no sparsity imposed",{
 })
 
 test_that("ISTA and FISTA should yield similar results",{
+    set.seed(32)
     n <- 6 # set n != p to test bugs
     p <- 10
     X = matrix(runif(n*p),n)
