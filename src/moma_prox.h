@@ -19,11 +19,18 @@ inline arma::vec soft_thres_p(const arma::vec &x, double l){
     return arma::max(x - l, arma::zeros<arma::vec>(x.n_elem));
 }
 
+// An abstract class, member functions are implemeted in derived classes
 class Prox{
 public:
-    Prox();
+    virtual arma::vec operator()(const arma::vec &x, double l) = 0;
+    virtual ~Prox() = default;
+};
+
+class NullProx: public Prox{
+public:
+    NullProx();
     virtual arma::vec operator()(const arma::vec &x, double l);
-    virtual ~Prox();
+    virtual ~NullProx();
 };
 
 class Lasso: public Prox{

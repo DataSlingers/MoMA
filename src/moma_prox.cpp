@@ -3,16 +3,16 @@
 /*
 * Prox base class
 */
-Prox::Prox(){
-    MoMALogger::debug("Initializing proximal operator object");
+NullProx::NullProx(){
+    MoMALogger::debug("Initializing null proximal operator object");
 }
 
-arma::vec Prox::operator()(const arma::vec &x, double l){
+arma::vec NullProx::operator()(const arma::vec &x, double l){
     return x;   // to be tested, return a reference might cause extra copying.
 };
 
-Prox::~Prox() {
-    MoMALogger::debug("Releasing proximal operator object");
+NullProx::~NullProx() {
+    MoMALogger::debug("Releasing null proximal operator object");
 };
 
 /*

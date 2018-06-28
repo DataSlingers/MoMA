@@ -191,7 +191,7 @@ Solver MoMA::string_to_SolverT(const std::string &s){
 
 Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec &group,bool nonneg){
     // IMPORTANT: this must be freed somewhere
-    Prox* res = new Prox();
+    Prox* res = new NullProx();
     if (s.compare("LASSO") == 0){
         if(nonneg)
             res = new NonNegativeLasso();
@@ -220,7 +220,7 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
            MoMALogger::error("Fusion is not provided yet");
     }
     else
-        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `Prox` by default");
+        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default");
     return res;
 }
 
