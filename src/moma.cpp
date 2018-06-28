@@ -155,11 +155,11 @@ public:
 
     Rcpp::List wrap(){
         // Wrap results before returning to R
-        if(norm(u)!=0){  // Normalize one more time just in case
-            u = u / norm(u);
+        if(mat_norm(u,S_u) != 0){  // Normalize one more time just in case
+            u = u / mat_norm(u,S_u);
         }
-        if(norm(v)!=0){
-            v = v / norm(v);
+        if(mat_norm(v,S_v) != 0){
+            v = v / mat_norm(v,S_v);
         }
         double d = as_scalar(u.t() * X * v); // Calculate singular value
 
