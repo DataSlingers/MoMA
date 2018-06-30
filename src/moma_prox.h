@@ -10,113 +10,96 @@
 #define THRES_P(x,l) (MAX(x-l,0.0)) // shrink a positive value by `l`
 
 inline arma::vec soft_thres(const arma::vec &x, double l){
-    return arma::sign(x) % arma::max(abs(x) - l, zeros(arma::size(x)));
+    return arma::sign(x) % arma::max(abs(x) - l, arma::zeros(arma::size(x)));
 }
 
+// soft-thresholding a non-negative vector
+// all negative values will be set 0
+inline arma::vec soft_thres_p(const arma::vec &x, double l){
+    return arma::max(x - l, arma::zeros<arma::vec>(x.n_elem));
+}
+
+// An abstract class, member functions are implemeted in derived classes
 class Prox{
 public:
     virtual arma::vec operator()(const arma::vec &x, double l) = 0;
     virtual ~Prox() = default;
 };
 
+class NullProx: public Prox{
+public:
+    NullProx();
+    virtual arma::vec operator()(const arma::vec &x, double l);
+    virtual ~NullProx();
+};
+
 class Lasso: public Prox{
 public:
-    Lasso(){
-        MoMALogger::debug("Initializing Lasso proximal operator object");
-    }
-    arma::vec operator()(const arma::vec &x, double l){
-        return soft_thres(x,l);
-    }
+    Lasso();
+    arma::vec operator()(const arma::vec &x, double l);
+    ~Lasso();
+};
+
+class NonNegativeLasso: public Prox{
+public:
+    NonNegativeLasso();
+    arma::vec operator()(const arma::vec &x, double l);
+    ~NonNegativeLasso();
 };
 
 class SCAD: public Prox{
-private:
+protected:
     double gamma; // gamma_SCAD >= 2
 public:
-    SCAD(double g = 3.7){
-        MoMALogger::debug("Initializing SCAD proximal operator object");
-
-        if(g < 2){
-            MoMALogger::error("Non-convexity parameter (gamma) must be larger than or equal to 2 for SCAD");
-        }
-
-        gamma = g;
-    }
-
-    arma::vec operator()(const arma::vec &x, double l){
-        int n = x.n_elem;
-        arma::vec z(n);
-        arma::vec absx = arma::abs(x);
-        arma::vec sgn = arma::sign(x);
-        // arma::vec flag = (absx >2);
-        for (int i = 0; i < n; i++) // Probably need vectorization
-        {
-            // the implementation follows Variable Selection via Nonconcave Penalized Likelihood and its Oracle Properties
-            // Jianqing Fan and Runze Li, formula(2.8)
-            z(i) = absx(i) > gamma * l ? absx(i) : (absx(i) > 2 * l ? //(gamma-1)/(gamma-2) * THRES_P(absx(i),gamma*l/(gamma-1))
-                                                    ((gamma - 1) * absx(i) - gamma * l)/ (gamma - 2)
-                                                    : THRES_P(absx(i),l)
-                                                    );
-        }
-        return z % sgn;
-    }
+    SCAD(double g = 3.7);
+    ~SCAD();
+    arma::vec operator()(const arma::vec &x, double l);
+    arma::vec vec_prox(const arma::vec &x, double l);
 };
 
+class NonNegativeSCAD: public SCAD{
+public:
+    NonNegativeSCAD(double g = 3.7);
+    ~NonNegativeSCAD();
+    arma::vec operator()(const arma::vec &x, double l);
+};
 
 class MCP: public Prox{
-private:
+protected:
     double gamma; // gamma_MCP >= 1
 public:
-    MCP(double g = 3){
-        MoMALogger::debug("Initializing MCP proximal operator object");
-
-        if(g < 1){
-            MoMALogger::error("Non-convexity parameter (gamma) must be larger than or equal to 1 for MCP");
-        }
-        gamma = g;
-    }
-
-    arma::vec operator()(const arma::vec &x, double l){
-        int n = x.n_elem;
-        arma::vec z(n);
-        arma::vec absx = arma::abs(x);
-        arma::vec sgn = arma::sign(x);
-
-        //// Try vectorization
-        // arma::vec thr = sgn % arma::max(absx - l, zeros(size(x)));
-        // arma::vec flag = ones<vec>(n) * gamma*l;
-        // arma::vec large = x>flag;
-        // arma::vec small = ones(gamma*l)-large;
-        for (int i = 0; i < n; i++) // Probably need vectorization
-        {
-            // implementation follows lecture notes of Patrick Breheny
-            // http://myweb.uiowa.edu/pbreheny/7600/s16/notes/2-29.pdf
-            // slide 19
-            z(i) = absx(i) > gamma * l ? absx(i)
-                                    : (gamma / (gamma - 1)) * THRES_P(absx(i),l);
-        }
-        return z % sgn;
-    }
+    MCP(double g = 3);
+    ~MCP();
+    arma::vec operator()(const arma::vec &x, double l);
+    arma::vec vec_prox(const arma::vec &x, double l);
 };
 
-template<class T>
-class NonNegativeProx : public T{
+class NonNegativeMCP: public MCP{
 public:
-    NonNegativeProx<T>(): T() {
-        MoMALogger::debug("Initializing non-negative prox");
-    };
-
-    NonNegativeProx<T>(double g): T(g) {
-        MoMALogger::debug("Initializing non-negative prox");
-    };
-
-    arma::vec operator()(const arma::vec &x, double l){
-        return arma::max(T::operator()(x, l), arma::zeros(x.n_elem));
-    }
+    NonNegativeMCP(double g = 3);
+    ~NonNegativeMCP();
+    arma::vec operator()(const arma::vec &x, double l);
 };
 
-typedef NonNegativeProx<Lasso> NonNegativeLasso;
-typedef NonNegativeProx<SCAD>  NonNegativeSCAD;
-typedef NonNegativeProx<MCP>   NonNegativeMCP;
+class GrpLasso: public Prox{
+protected:
+    arma::vec group;
+    int n_grp; // number of gourps
+    arma::umat D;  // Probably not using sparse matrix would be faster, TODO
+                    // a boolean matrix, D \in R^{g \times p}, g is the number of groups, p the number of parameters.
+                    // D_ji = 1 means \beta_i in group j.
+                    // should be integer, probably use arma::sp_umat; it will cause error though, when it multipies a vec
+public:
+    GrpLasso(const arma::vec &grp);
+    ~GrpLasso();
+    arma::vec operator()(const arma::vec &x, double l);
+    arma::vec vec_prox(const arma::vec &x, double l);
+};
 
+class NonNegativeGrpLasso: public GrpLasso{
+public:
+    NonNegativeGrpLasso(const arma::vec &grp);
+    ~NonNegativeGrpLasso();
+    arma::vec operator()(const arma::vec &x, double l);
+};
 #endif
