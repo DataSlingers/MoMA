@@ -108,16 +108,20 @@ test_that("ISTA and FISTA should yield similar results",{
     O_u = t(Xu) %*% Xu
 
     # run algorithms
-    svd.result <- svd(t(solve(O_u)) %*% X %*% solve(O_v))
-    ista <- sfpca(X,
-                   O_u,O_v,1,1,
-                   lambda_u=0,lambda_v=0,"LASSO","LASSO",
-                   gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="ISTA")
-    fista <- sfpca(X,
-                   O_u,O_v,1,1,
-                   lambda_u=0,lambda_v=0,"LASSO","LASSO",
-                   gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
-
-    # tests
-    expect_equal(ista$v[,1],fista$v[,1])
+    for(sp in c(0,1,2,3,4)){
+        for(sptype in c("LASSO","SCAD","MCP","")){
+            sm <- 0
+            svd.result <- svd(t(solve(O_u)) %*% X %*% solve(O_v))
+            ista <- sfpca(X,
+                          O_u,O_v,sp,sp,
+                          lambda_u=sm,lambda_v=sm,"LASSO",sptype,
+                          gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="ISTA")
+            fista <- sfpca(X,
+                           O_u,O_v,sp,sp,
+                           lambda_u=sm,lambda_v=sm,"LASSO",sptype,
+                           gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
+            expect_lte(sum((ista$v[,1]-fista$v[,1])^2),1e-9)
+        }
+    }
 })
+
