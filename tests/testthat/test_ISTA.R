@@ -23,21 +23,27 @@ test_that("Equivalent to SVD when Omega = I and no sparsity",{
     set.seed(32)
     n <- 10 # set n != p to test bugs
     p <- 6
-    O_v <- diag(p)
-    O_u <- diag(n)
-    set.seed(32)
-    X = matrix(runif(n*p),n)
+    a_u.range <- seq(0,3,0.3)
+    a_v.range <- seq(0,3,0.4)
+    for(a_u in a_u.range){
+        for(a_v in a_v.range){
+            a_v <- 1
+            O_v <- diag(p)
+            O_u <- diag(n)
+            set.seed(32)
+            X = matrix(runif(n*p),n)
 
-    sfpca <- sfpca(X,
-                   O_u,O_v,1/n,1/p,
-                   lambda_u=0,lambda_v=0,"LASSO","LASSO",
-                   gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5)
-    svd.result <- svd(X)
-    expect_equal(norm(svd.result$v[,1]-sfpca$v),0)
-    expect_equal(norm(svd.result$u[,1]-sfpca$u),0)
-    expect_equal(svd.result$d[1],sfpca$d);
+            sfpca <- sfpca(X,
+                           O_u,O_v,a_u,a_v,
+                           lambda_u=0,lambda_v=0,"LASSO","LASSO",
+                           gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5)
+            svd.result <- svd(X)
+            expect_equal(norm(svd.result$v[,1] - sqrt(1 + a_v) * sfpca$v),0)
+            expect_equal(norm(svd.result$u[,1] - sqrt(1 + a_u) * sfpca$u),0)
+            expect_equal(svd.result$d[1],sqrt((1 + a_v) * (1 + a_u)) * sfpca$d);
+        }
+    }
 })
-
 
 test_that("Closed form solution when no sparsity imposed",{
     n <- 30 # set n != p to test bugs
@@ -51,31 +57,42 @@ test_that("Closed form solution when no sparsity imposed",{
     O_v = t(Xv) %*% Xv
     O_u = t(Xu) %*% Xu
 
-    # Cholesky decomposition, note S=I+alpah*Omega, alpha set to 1 here
-    Lv = chol(O_v+diag(p))
-    Lu = chol(O_u+diag(n))
+    # set some random alpha's
+    # WARNING: running time increases quickly as alpha increases
+    a_u.range <- c(1,2,3,4)
+    a_v.range <- c(5)
+    for(a_u in a_u.range){
+        for(a_v in a_v.range){
+            # Cholesky decomposition, note S = I + alpah * Omega
+            Lv = chol(a_v * O_v + diag(p))
+            Lu = chol(a_u * O_u + diag(n))
 
-    svd.result <- svd(t(solve(Lu)) %*% X %*% solve(Lv))
-    svd.result.v = svd.result$v[,1] / sqrt(sum(svd.result$v[,1]^2))
-    svd.result.u = svd.result$u[,1] / sqrt(sum(svd.result$u[,1]^2))
-    ista <- sfpca(X,
-                   O_u,O_v,1,1,
-                   EPS=1e-9,MAX_ITER = 1e+5,solve="ISTA")
-    fista <- sfpca(X,
-                   O_u,O_v,1,1,
-                   EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
+            svd.result <- svd(t(solve(Lu)) %*% X %*% solve(Lv))
+            svd.result.v = svd.result$v[,1]
+            svd.result.u = svd.result$u[,1]
+            ista <- sfpca(X,
+                          O_u,O_v,a_u,a_v,
+                          EPS=1e-9,MAX_ITER=1e+5,solve="ISTA")
+            fista <- sfpca(X,
+                           O_u,O_v,a_u,a_v,
+                           EPS=1e-9,MAX_ITER=1e+5,solve="FISTA")
 
-    # know that sfpca always return norm 1 vector
-    ista.v = Lv %*% ista$v / norm(Lv %*% ista$v,"E")
-    ista.u = Lu %*% ista$u / norm(Lu %*% ista$u,"E")
-    fista.v = Lv %*% fista$v / norm(Lv %*% fista$v,"E")
-    fista.u = Lu %*% fista$u / norm(Lu %*% fista$u,"E")
+            # The sfpca solutions and the svd solutions are related by an `L` matrix
+            ista.v = Lv %*% ista$v
+            ista.u = Lu %*% ista$u
+            fista.v = Lv %*% fista$v
+            fista.u = Lu %*% fista$u
 
-    # different up to sign
-    expect_lte(norm(svd.result$v[,1] - ista.v),1e-5)
-    expect_lte(norm(svd.result$u[,1] - ista.u),1e-5)
-    expect_lte(norm(svd.result$v[,1] - fista.v),1e-5)
-    expect_lte(norm(svd.result$u[,1] - fista.u),1e-6)
+            # same.direction = 1 if same direction else -1
+            same.direction = ((svd.result$v[,1][1] * ista.v[1]) > 0) * 2 -1
+
+            # tests
+            expect_lte(norm(svd.result$v[,1] - same.direction * ista.v),1e-4)
+            expect_lte(norm(svd.result$u[,1] - same.direction * ista.u),1e-5)
+            expect_lte(norm(svd.result$v[,1] - same.direction * fista.v),1e-5)
+            expect_lte(norm(svd.result$u[,1] - same.direction * fista.u),1e-5)
+        }
+    }
 })
 
 test_that("ISTA and FISTA should yield similar results",{
