@@ -47,9 +47,12 @@ void FusionGroups::print(){
     for(int i = 0; i < g.size(); i++){
         if(is_valid(i)){
             g[i].print();
+            if(g[i].map_to_heap != NOT_IN_HEAP && g[i].map_to_heap >= heap.heap.size()){
+                MoMALogger::error("Exceeds heap limit") << g[i].map_to_heap << "while heap size is " << heap.heap.size();
+            }
         }
         else{
-            MoMALogger::error("") << "=====";
+            MoMALogger::debug("") << "=====";
             g[i].print();
         }
     }
@@ -154,14 +157,34 @@ void FusionGroups::merge(){
     if(pre_group != NO_PRE){
         double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,g[pre_group].slope,g[dst].slope,g[pre_group].beta,g[dst].beta);
         heap.heap_change_lambda_by_id(g[pre_group].map_to_heap, lambda_pre, this);
+        // if(!heap.is_minheap()){
+        //     Rcpp::Rcout << "Error after update pre group\n";
+        // }else{
+        //     heap.heap_print();
+        // }
     }
     if(next_group != NO_NEXT){
         double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,g[next_group].slope,g[dst].slope,g[next_group].beta,g[dst].beta);
         //((g[next_group].beta - g[dst].beta) - (g[next_group].slope*g[next_group].lambda - g[dst].slope*g[dst].lambda)) / (-g[next_group].slope + g[dst].slope);
         heap.heap_change_lambda_by_id(g[dst].map_to_heap, lambda_next, this);
+        // if(!heap.is_minheap()){
+        //     Rcpp::Rcout << "Error after update this group\n";
+        // }else{
+        //     heap.heap_print();
+        // }
         heap.heap_delete(g[src].map_to_heap, this);
+        // if(!heap.is_minheap()){
+        //     Rcpp::Rcout << "Error after delete next group\n";
+        // }else{
+        //     heap.heap_print();
+        // }
     }else{
         heap.heap_delete(g[dst].map_to_heap, this);
+        // if(!heap.is_minheap()){
+        //     Rcpp::Rcout << "Error after delete next group\n";
+        // }else{
+        //     heap.heap_print();
+        // }
     }
 }
 

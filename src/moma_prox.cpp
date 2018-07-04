@@ -278,7 +278,16 @@ OrderedFusion::~OrderedFusion(){
 arma::vec OrderedFusion::operator()(const arma::vec &x, double l){
     FusionGroups fg(x);
     while(!fg.all_merged() && fg.next_lambda() < l){
+        // Rcpp::Rcout << "Before mergeing =====\n";
+        // fg.heap.heap_print();
         fg.merge();
+        // Rcpp::Rcout << "After mergeing =====\n";
+        // fg.heap.heap_print();
+        // if(!fg.heap.is_minheap()){
+        //     MoMALogger::warning("Not a min heap!");
+        // }
+        // fg.print();
+        // Rcpp::Rcout << "=========================\n";
     }
     return fg.find_beta_at(l);
 }
