@@ -29,7 +29,6 @@ int min_child(std::vector<HeapNode> &h, int i) {
 * TODO: extra copy can be avoided in siftdown
 */
 void swap(std::vector<HeapNode> &h,int i, int j){
-    Rcpp::Rcout << h[i].lambda << "and" << h[j].lambda << "swapped\n";
     HeapNode tmp = h[i];
     h[i] = h[j];
     h[j] = tmp;
@@ -94,7 +93,7 @@ void heap_delete(std::vector<HeapNode> &heap, int id){
             return;
         }
     }
-    //MoMALogger::error("No such id in current heap: ")<<id;
+    MoMALogger::error("No such id in current heap: ")<<id;
 }
 
 /*
@@ -104,12 +103,12 @@ bool is_minheap(std::vector<HeapNode> &heap){
     int i = 0;
     while(2 * i + 1 < heap.size()){
         if(gt(heap[i],heap[2 * i + 1])){
-            Rcpp::Rcout << heap[i].lambda << "and"<< heap[2*i+1].lambda;
+            MoMALogger::error("") << "Not a min-heap" << heap[i].lambda << "and"<< heap[2*i+1].lambda;
             return 0;
         }
         if(2 * i + 2 < heap.size()){
             if(gt(heap[i],heap[2 * i + 2])){
-                Rcpp::Rcout << heap[i].lambda << "and"<< heap[2*i+2].lambda;
+                MoMALogger::error("") << "Not a min-heap" << heap[i].lambda << "and"<< heap[2*i+2].lambda;
                 return 0;
             }
         }
@@ -136,10 +135,10 @@ HeapNode heap_peek_min(std::vector<HeapNode> &heap){
 * Print the heap
 */
 void heap_print(const std::vector<HeapNode> &q){
-    Rcpp::Rcout << "Heap lambda is\n";
-    for (auto i : q) Rcpp::Rcout << i.lambda << "\t";
-    Rcpp::Rcout << "\n";
-    Rcpp::Rcout << "Heap id is\n";
-    for (auto i : q) Rcpp::Rcout << i.id << "\t";
-    Rcpp::Rcout << "\n";
+    MoMALogger::debug("") << "Heap lambda is\n";
+    for (auto i : q) MoMALogger::debug("") << i.lambda << "\t";
+    MoMALogger::debug("") << "\n";
+    MoMALogger::debug("") << "Heap id is\n";
+    for (auto i : q) MoMALogger::debug("") << i.id << "\t";
+    MoMALogger::debug("") << "\n";
 }

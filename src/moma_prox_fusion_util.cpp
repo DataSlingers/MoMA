@@ -37,19 +37,17 @@ FusionGroups::FusionGroups(const arma::vec &x){
             h =  (g[i].beta - g[i+1].beta) / (g[i+1].slope - g[i].slope);
         else 
             h = INFTY;
-        MoMALogger::info("see h")<<double(h) << "=" <<  (g[i].beta - g[i+1].beta) << "//" <<  (g[i+1].slope - g[i].slope);
         pq[i] = HeapNode(i,h);
     }
     std::make_heap(pq.begin(),pq.end(),gt);
-    heap_print(pq);
     return;
 }
 
 void FusionGroups::print(){
-    Rcpp::Rcout<<"Grouping now is\n";
+    MoMALogger::debug("")<<"Grouping now is\n";
     for(auto i:g)
         i.print();
-    Rcpp::Rcout<<"\n";
+    MoMALogger::debug("")<<"\n";
 }
 
 bool FusionGroups::is_valid(int this_node){

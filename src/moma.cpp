@@ -278,7 +278,7 @@ Rcpp::List sfpca(
 
 void MoMA::fit(){
         MoMALogger::info("Model info=========")
-            <<"n:"<<n
+            <<"n:" <<n
             <<"p:" << p;
         MoMALogger::info("Start fitting.");
 

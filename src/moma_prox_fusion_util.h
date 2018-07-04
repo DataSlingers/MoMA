@@ -18,8 +18,8 @@ public:
         Rcpp::Rcout<<"head: " << head 
         << "tail: " << tail 
         << "parent: " << parent
-        << "lambda:\t" << lambda
-        << "beta:\t" << beta
+        << "lambda:" << lambda
+        << "\tbeta:" << beta
         << "slope: " << slope
         << "\n";
     }
