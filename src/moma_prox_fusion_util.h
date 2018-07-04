@@ -62,7 +62,7 @@ public:
     const int NO_PRE = -2;
     /* Used when the group includes beta_p */
     const int NO_NEXT = -3;
-    const int NOT_IN_HEAP = -4;
+    static const int NOT_IN_HEAP = -4;
     // A vector stroing all the beta values
     std::vector<Group> g;
     Heap heap;
