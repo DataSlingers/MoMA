@@ -36,12 +36,12 @@ public:
     void heap_delete(int id, FusionGroups *fg);
 
     int heap_change_lambda_by_id(int id, double new_lambda, FusionGroups *fg);
+    bool is_minheap();
 private:
     void swap(int i, int j, FusionGroups *fg);
     void siftup(int i, FusionGroups *fg);
     void siftdown(int current_node, FusionGroups *fg);
 
     int min_child(int i);
-    bool is_minheap();
 };
 #endif

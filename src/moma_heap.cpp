@@ -79,9 +79,15 @@ void Heap::heap_delete(int i, FusionGroups *fg){
     if(i < 0 || i >= heap.size())
         MoMALogger::error("Try to delete: no such id in current heap: ") << i;
     Heap::swap(i, heap.size()-1, fg);
+    double old_lambda = heap[heap.size() - 1].lambda;
     (*fg).g[heap[heap.size()-1].id].map_to_heap = -4;
     heap.pop_back();
-    siftdown(i, fg);
+    if(old_lambda < heap[i].lambda){
+        siftdown(i, fg);
+    }
+    else{
+        siftup(i, fg);
+    }
     return;
 }
 
