@@ -21,18 +21,19 @@ public:
     Group(int h=-1,int t=-1,int p=-1,double lambda=-1,double beta = -1,double slope = 0):head(h),tail(t),parent(p),lambda(lambda),beta(beta),slope(slope){};
     void print(){
         MoMALogger::debug("")
-            <<"head: " << head 
-            << "tail: " << tail 
-            << "parent: " << parent
-            << "lambda:" << lambda
-            << "\tbeta:" << beta
-            << "slope: " << slope;
+            << "[" << head 
+            << "," << tail 
+            << "] map_to_heap: " << map_to_heap
+            << "(lambda:" << lambda
+            << ",beta:" << beta
+            << ",slope: " << slope
+            << ")";
     }
 };
 
 class FusionGroups{
 public:
-
+    
     // Constructor
     FusionGroups(const arma::vec &x);
     // Merge the next two nodes. 

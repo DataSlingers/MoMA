@@ -46,10 +46,17 @@ FusionGroups::FusionGroups(const arma::vec &x):heap(x.n_elem -1){
 }
 
 void FusionGroups::print(){
-    MoMALogger::debug("")<<"Grouping now is\n";
-    for(auto i:g)
-        i.print();
-    MoMALogger::debug("")<<"\n";
+    MoMALogger::debug("") << "Grouping now is";
+    for(int i = 0; i < g.size(); i++){
+        if(is_valid(i)){
+            g[i].print();
+        }
+        else{
+            MoMALogger::error("") << "=====";
+            g[i].print();
+        }
+    }
+    MoMALogger::debug("");
 }
 
 bool FusionGroups::is_valid(int this_node){
@@ -107,6 +114,7 @@ double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,doubl
 }
 
 void FusionGroups::merge(){
+
     HeapNode node = heap.heap_peek_min();
     // Node `dst` will absorb the info of `src` node, `src` will be then marked invalid
     int dst = node.id;
@@ -141,7 +149,7 @@ void FusionGroups::merge(){
     g[dst].tail = last_node;
     g[src].parent = dst;
     g[last_node].parent = dst;
-
+    
     // update heap
     if(pre_group != NO_PRE){
         double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,g[pre_group].slope,g[dst].slope,g[pre_group].beta,g[dst].beta);

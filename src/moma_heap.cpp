@@ -12,9 +12,8 @@ Heap::Heap(int n){
 void Heap::heapify(){
     std::make_heap(heap.begin(),heap.end(),gt);
 }
-/*
-* Find the smaller child of an element in a heap. Used in siftdown
-*/
+
+// Find the smaller child of an element in a heap. Used in siftdown
 int Heap::min_child(int i) {
     int cur_size = heap.size();
 	int child = i * 2 + 1;
@@ -86,9 +85,7 @@ void Heap::heap_delete(int i, FusionGroups *fg){
     return;
 }
 
-/*
-* Check if an array is a min heap
-*/
+// Check if an array is a min heap
 bool Heap::is_minheap(){
     int i = 0;
     while(2 * i + 1 < heap.size()){
@@ -110,9 +107,8 @@ bool Heap::is_minheap(){
 bool Heap::is_empty(){
     return heap.size() == 0;
 }
-/*
-* Get the currently minimun value without deleting the node
-*/
+
+// Get the currently minimun value without deleting the node
 HeapNode Heap::heap_peek_min(){
     if(heap.size() == 0){
         MoMALogger::error("Empty heap!");
@@ -121,14 +117,18 @@ HeapNode Heap::heap_peek_min(){
     return n;
 }
 
-/*
-* Print the heap
-*/
+// Print the heap
 void Heap::heap_print(){
-    MoMALogger::debug("") << "Heap lambda is\n";
-    for (auto i : heap) MoMALogger::debug("") << i.lambda << "\t";
-    MoMALogger::debug("") << "\n";
-    MoMALogger::debug("") << "Heap id is\n";
-    for (auto i : heap) MoMALogger::debug("") << i.id << "\t";
-    MoMALogger::debug("") << "\n";
+    MoMALogger::debug("") << "(lambda, id)\n";
+    int cnt = 0;
+    int thre = 1;
+    for (auto i : heap){
+        Rcpp::Rcout << i.lambda << ", " << i.id << "\t";
+        cnt ++;
+        if(cnt == thre){
+            Rcpp::Rcout << "\n";
+            thre *= 2;
+            cnt = 0;
+        }
+    }
 }
