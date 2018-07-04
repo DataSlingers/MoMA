@@ -77,3 +77,10 @@ arma::vec test_prox_nngrplasso(const arma::vec &x, const arma::vec &g, double l)
     NonNegativeGrpLasso a(g);
     return a(x,l);
 };
+
+// [[Rcpp::export]]
+arma::vec test_prox_orderedfusion(const arma::vec &x,double l)
+{
+    OrderedFusion a;
+    return a(x,l);
+};
