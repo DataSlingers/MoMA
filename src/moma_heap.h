@@ -3,8 +3,7 @@
 #include "moma_base.h"
 #include "moma_logging.h"
 
-// The non-existing child is located at infinity
-#define NO_CHILD 2 << 19
+
 
 class HeapNode{
 public:
@@ -43,5 +42,10 @@ private:
     void siftdown(int current_node, FusedGroups *fg);
 
     int min_child(int i);
+
+    // A constant, where the non-existing 
+    // child is assumed to be located.
+    // Used only in function `min_child`
+    const int NO_CHILD = -11;
 };
 #endif
