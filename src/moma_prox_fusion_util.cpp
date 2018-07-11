@@ -113,7 +113,7 @@ double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,doubl
     if(std::abs(k1 - k2) < 1e-10){
         // Note abs(k1 - k2) < 1e-10
         // does not work on Linux
-        return INFTY;
+        return MOMA_INFTY;
     }
     return ((y1 - y2) - (k1 * x1 - k2 * x2)) / (-k1 + k2);
 }

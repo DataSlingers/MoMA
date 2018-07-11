@@ -57,12 +57,19 @@ public:
     double line_value_at(double x,double y,double k,double x_);
     double lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2);
 
-    // Some macro
-    /* Used when the group includes beta_1 */
+    // Some constants
+    // Used when the group includes beta_1
     const int NO_PRE = -2;
-    /* Used when the group includes beta_p */
+    // Used when the group includes beta_p
     const int NO_NEXT = -3;
     static const int NOT_IN_HEAP = -4;
+    // This constant is used in the function 
+    // lines_meet_at, where we might bump 
+    // into situation that the two lines are 
+    // parallel. In order to deal with this, 
+    // we return MOMA_INFTY.
+    static constexpr double MOMA_INFTY = std::numeric_limits<double>::infinity();
+
     // A vector stroing all the beta values
     std::vector<Group> g;
     Heap heap;

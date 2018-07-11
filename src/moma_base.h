@@ -16,6 +16,4 @@
 // For difficult smoothing matrices, we may encounter artificially small eigenvalues:
 // we add a small "nugget" here to regularize the computations
 #define MOMA_EIGENVALUE_REGULARIZATION 0.01
-// When two lines are parallel, they meet at infinity */
-#define INFTY std::numeric_limits<double>::infinity()
 #endif
