@@ -33,7 +33,7 @@ public:
     bool is_empty();
     void heapify();
     std::vector<HeapNode> heap_storage;
-    void heap_delete(int id, FusionGroups *fg);
+    void remove(int id, FusionGroups *fg);
 
     int heap_change_lambda_by_id(int id, double new_lambda, FusionGroups *fg);
     bool is_minheap();

@@ -36,7 +36,7 @@ int Heap::min_child(int i) {
 // TODO: extra copy can be avoided in siftdown
 void Heap::swap(int i, int j, FusionGroups *fg){
     // // DEBUG INFO
-    // MoMALogger::debug("") << "Swapping " << heap_storage[i].lambda << "and " << heap_storage[j].lambda;
+    MoMALogger::debug("Swapping ") << heap_storage[i].lambda << "and " << heap_storage[j].lambda;
     (*fg).g[heap_storage[i].id].map_to_heap = j;
     (*fg).g[heap_storage[j].id].map_to_heap = i;
     HeapNode tmp = heap_storage[i];
@@ -87,7 +87,7 @@ int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
 
 //  To delete an element, move it to the tail, pop it out, and then sift down 
 //  the node that replaces it
-void Heap::heap_delete(int i, FusionGroups *fg){
+void Heap::remove(int i, FusionGroups *fg){
     if(i < 0 || i >= heap_storage.size()){
         MoMALogger::error("Try to delete: no such id in current heap: ") << i;
     }
@@ -109,12 +109,12 @@ bool Heap::is_minheap(){
     int i = 0;
     while(2 * i + 1 < heap_storage.size()){
         if(heap_storage[i] > heap_storage[2 * i + 1]){
-            MoMALogger::warning("") << "Not a min-heap" << heap_storage[i].lambda << "and"<< heap_storage[2*i+1].lambda;
+            MoMALogger::warning("Not a min-heap") << heap_storage[i].lambda << "and"<< heap_storage[2*i+1].lambda;
             return 0;
         }
         if(2 * i + 2 < heap_storage.size()){
             if(heap_storage[i] > heap_storage[2 * i + 2]){
-                MoMALogger::warning("") << "Not a min-heap" << heap_storage[i].lambda << "and"<< heap_storage[2*i+2].lambda;
+                MoMALogger::warning("Not a min-heap") << heap_storage[i].lambda << "and"<< heap_storage[2*i+2].lambda;
                 return 0;
             }
         }
@@ -129,7 +129,7 @@ bool Heap::is_empty(){
 
 // Get the currently minimun value without deleting the node
 HeapNode Heap::heap_peek_min(){
-    if(heap_storage.size() == 0){
+    if(is_empty()){
         MoMALogger::error("You are peaking at an empty heap!");
     }
     HeapNode n = heap_storage.front();

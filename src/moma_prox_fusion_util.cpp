@@ -166,9 +166,9 @@ void FusionGroups::merge(){
     if(next_group != NO_NEXT){
         double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,g[next_group].slope,g[dst].slope,g[next_group].beta,g[dst].beta);
         heap.heap_change_lambda_by_id(g[dst].map_to_heap, lambda_next, this);
-        heap.heap_delete(g[src].map_to_heap, this);
+        heap.remove(g[src].map_to_heap, this);
     }else{
-        heap.heap_delete(g[dst].map_to_heap, this);
+        heap.remove(g[dst].map_to_heap, this);
     }
 }
 
