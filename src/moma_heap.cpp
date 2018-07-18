@@ -56,7 +56,6 @@ void Heap::siftup(int i, FusedGroups *fg){
 
 // In a min-heap, if the key (lambda in our case) increases, sift it down
 void Heap::siftdown(int current_node, FusedGroups *fg){
-    int cur_size = heap_storage.size();
 	int child = min_child(current_node);
 	while (child != NO_CHILD && (heap_storage[current_node] > heap_storage[child])){
 		Heap::swap(child, current_node, fg);
