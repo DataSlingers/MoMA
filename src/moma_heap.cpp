@@ -10,21 +10,21 @@ bool gt(const HeapNode &left, const HeapNode &right){
 }
 
 Heap::Heap(int n){
-    heap.resize(n);   
+    heap_storage.resize(n);   
 };
 
 void Heap::heapify(){
-    std::make_heap(heap.begin(),heap.end(),gt);
+    std::make_heap(heap_storage.begin(),heap_storage.end(),gt);
 }
 
 // Find the smaller child of an element in a heap. Used in siftdown
 int Heap::min_child(int i) {
-    int cur_size = heap.size();
+    int cur_size = heap_storage.size();
 	int child = i * 2 + 1;
 	if (child >= cur_size) {
 		// no children
 		return NO_CHILD;
-	} else if (child+1 >= cur_size || !(heap[child] > heap[child+1])){
+	} else if (child+1 >= cur_size || !(heap_storage[child] > heap_storage[child+1])){
 		// only child or first child is biggest child
 		return child;
 	} else {
@@ -35,18 +35,19 @@ int Heap::min_child(int i) {
 
 // TODO: extra copy can be avoided in siftdown
 void Heap::swap(int i, int j, FusionGroups *fg){
-    // MoMALogger::debug("") << "Swapping " << heap[i].lambda << "and " << heap[j].lambda;
-    (*fg).g[heap[i].id].map_to_heap = j;
-    (*fg).g[heap[j].id].map_to_heap = i;
-    HeapNode tmp = heap[i];
-    heap[i] = heap[j];
-    heap[j] = tmp;
+    // // DEBUG INFO
+    // MoMALogger::debug("") << "Swapping " << heap_storage[i].lambda << "and " << heap_storage[j].lambda;
+    (*fg).g[heap_storage[i].id].map_to_heap = j;
+    (*fg).g[heap_storage[j].id].map_to_heap = i;
+    HeapNode tmp = heap_storage[i];
+    heap_storage[i] = heap_storage[j];
+    heap_storage[j] = tmp;
 }
 
 // In a min-heap, if the key (lambda in our case) decreases, sift it up
 void Heap::siftup(int i, FusionGroups *fg){
     int parent = (i - 1) / 2;
-    while (i != 0 && (heap[parent] > heap[i])) {
+    while (i != 0 && (heap_storage[parent] > heap_storage[i])) {
         Heap::swap(parent, i, fg);
         i = parent;
         parent = (i - 1) / 2;
@@ -55,9 +56,9 @@ void Heap::siftup(int i, FusionGroups *fg){
 
 // In a min-heap, if the key (lambda in our case) increases, sift it down
 void Heap::siftdown(int current_node, FusionGroups *fg){
-    int cur_size = heap.size();
+    int cur_size = heap_storage.size();
 	int child = min_child(current_node);
-	while (child < cur_size && (heap[current_node] > heap[child])){
+	while (child < cur_size && (heap_storage[current_node] > heap_storage[child])){
 		Heap::swap(child, current_node, fg);
         current_node = child;
 		child = min_child(child);
@@ -66,16 +67,18 @@ void Heap::siftdown(int current_node, FusionGroups *fg){
 
 //Change the key of any nodes; TODO: not use trasversal
 int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
-    if(i < 0 || i >= heap.size())
+    if(i < 0 || i >= heap_storage.size())
         MoMALogger::error("Try to change lambda: no such id in current heap: ") << i;
-    double old_lambda = heap[i].lambda;
-    heap[i].lambda = new_lambda;
+    double old_lambda = heap_storage[i].lambda;
+    heap_storage[i].lambda = new_lambda;
     if(old_lambda < new_lambda){
-        // MoMALogger::debug("") << old_lambda << "->" << new_lambda << " siftdown";
+        // // DEBUG INFO
+        // MoMALogger::debug("(") << old_lambda << "," << heap[i].id << ")" << "->" << new_lambda << " siftdown";
         siftdown(i, fg);
     }
     else{
-        // MoMALogger::debug("") << old_lambda << "->" << new_lambda << " siftup";
+        // //  DEBUG INFO
+        // MoMALogger::debug("") << old_lambda << "," << heap[i].id << ")" << "->" << new_lambda << " siftup";
         siftup(i, fg);
     }
     return i;
@@ -84,15 +87,16 @@ int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
 //  To delete an element, move it to the tail, pop it out, and then sift down 
 //  the node that replaces it
 void Heap::heap_delete(int i, FusionGroups *fg){
+    // // DEBUG INFO
     // MoMALogger::debug("Delete (") << heap[i].lambda << "," << heap[i].id << ")";
 
-    if(i < 0 || i >= heap.size())
+    if(i < 0 || i >= heap_storage.size())
         MoMALogger::error("Try to delete: no such id in current heap: ") << i;
-    double old_lambda = heap[i].lambda;
-    Heap::swap(i, heap.size()-1, fg);
-    (*fg).g[heap[heap.size()-1].id].map_to_heap = FusionGroups::NOT_IN_HEAP;
-    heap.pop_back();
-    if(old_lambda < heap[i].lambda){
+    double old_lambda = heap_storage[i].lambda;
+    Heap::swap(i, heap_storage.size()-1, fg);
+    (*fg).g[heap_storage[heap_storage.size()-1].id].map_to_heap = FusionGroups::NOT_IN_HEAP;
+    heap_storage.pop_back();
+    if(old_lambda < heap_storage[i].lambda){
         siftdown(i, fg);
     }
     else{
@@ -104,14 +108,14 @@ void Heap::heap_delete(int i, FusionGroups *fg){
 // Check if an array is a min heap
 bool Heap::is_minheap(){
     int i = 0;
-    while(2 * i + 1 < heap.size()){
-        if(heap[i] > heap[2 * i + 1]){
-            MoMALogger::warning("") << "Not a min-heap" << heap[i].lambda << "and"<< heap[2*i+1].lambda;
+    while(2 * i + 1 < heap_storage.size()){
+        if(heap_storage[i] > heap_storage[2 * i + 1]){
+            MoMALogger::warning("") << "Not a min-heap" << heap_storage[i].lambda << "and"<< heap_storage[2*i+1].lambda;
             return 0;
         }
-        if(2 * i + 2 < heap.size()){
-            if(heap[i] > heap[2 * i + 2]){
-                MoMALogger::warning("") << "Not a min-heap" << heap[i].lambda << "and"<< heap[2*i+2].lambda;
+        if(2 * i + 2 < heap_storage.size()){
+            if(heap_storage[i] > heap_storage[2 * i + 2]){
+                MoMALogger::warning("") << "Not a min-heap" << heap_storage[i].lambda << "and"<< heap_storage[2*i+2].lambda;
                 return 0;
             }
         }
@@ -121,15 +125,15 @@ bool Heap::is_minheap(){
 }
 
 bool Heap::is_empty(){
-    return heap.size() == 0;
+    return heap_storage.size() == 0;
 }
 
 // Get the currently minimun value without deleting the node
 HeapNode Heap::heap_peek_min(){
-    if(heap.size() == 0){
+    if(heap_storage.size() == 0){
         MoMALogger::error("You are peaking at an empty heap!");
     }
-    HeapNode n = heap.front();
+    HeapNode n = heap_storage.front();
     return n;
 }
 
@@ -138,7 +142,7 @@ void Heap::heap_print(){
     MoMALogger::debug("") << "(lambda, id)\n";
     int cnt = 0;
     int thre = 1;
-    for (auto i : heap){
+    for (auto i : heap_storage){
         Rcpp::Rcout << i.lambda << ", " << i.id + 1 << "\t";
         cnt ++;
         if(cnt == thre){

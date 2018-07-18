@@ -278,6 +278,7 @@ OrderedFusion::~OrderedFusion(){
 arma::vec OrderedFusion::operator()(const arma::vec &x, double l){
     FusionGroups fg(x);
     while(!fg.all_merged() && fg.next_lambda() < l){
+        // // DEBUG INFO
         // Rcpp::Rcout << "Before mergeing =====\n";
         // fg.heap.heap_print();
         fg.merge();

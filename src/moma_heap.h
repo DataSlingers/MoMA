@@ -4,7 +4,7 @@
 #include "moma_logging.h"
 
 // The non-existing child is located at infinity
-#define NO_CHILED 2 << 19
+#define NO_CHILD 2 << 19
 
 class HeapNode{
 public:
@@ -32,7 +32,7 @@ public:
     HeapNode heap_peek_min();
     bool is_empty();
     void heapify();
-    std::vector<HeapNode> heap;
+    std::vector<HeapNode> heap_storage;
     void heap_delete(int id, FusionGroups *fg);
 
     int heap_change_lambda_by_id(int id, double new_lambda, FusionGroups *fg);

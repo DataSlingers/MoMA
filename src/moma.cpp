@@ -216,9 +216,9 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
         else
             res = new GrpLasso(group);
     }
-    else if(s.compare("FUSION") == 0){
+    else if(s.compare("ORDEREDFUSED") == 0){
         if(nonneg)
-            MoMALogger::error("Non-negative fusion lasso is not implemented!");
+            MoMALogger::error("Non-negative ordered fused lasso is not implemented!");
         else
             res = new OrderedFusion();
     }
