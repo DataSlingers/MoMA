@@ -30,10 +30,7 @@ FusionGroups::FusionGroups(const arma::vec &x):heap(x.n_elem -1){
     for(int i = 0; i < heap.heap.size(); i++){
         // next merge point of group i and i+1
         double h = 0;
-        if(abs(g[i+1].slope - g[i].slope) > 1e-10)  // not parallel
-            h =  (g[i].beta - g[i+1].beta) / (g[i+1].slope - g[i].slope);
-        else 
-            h = INFTY;
+        h = lines_meet_at(0,0,g[i+1].slope,g[i].slope,g[i+1].beta,g[i].beta);
         heap.heap[i] = HeapNode(i,h);
     }
     heap.heapify();
@@ -108,7 +105,10 @@ arma::vec FusionGroups::find_beta_at(double target_lam){
 }
 
 double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2){
-    if(k1 == k2)
+    if(abs(k1 -k2) < 1e-10)
+        // This part should not be replaced by 
+        // k1 == k2
+        // due to numerical stability
         return INFTY;
     return ((y1 - y2) - (k1 * x1 - k2 * x2)) / (-k1 + k2);
 }
