@@ -1,7 +1,7 @@
 
 // a non-existing child of the node of a heap is far away
 #include "moma_prox_fusion_util.h"
-
+#include "moma_heap.h"
 int sgn(double val){
     return (double(0) < val) - (val < double(0));
 }
@@ -37,6 +37,11 @@ FusionGroups::FusionGroups(const arma::vec &x):heap(x.n_elem -1){
         heap.heap[i] = HeapNode(i,h);
     }
     heap.heapify();
+    for(int i = 0; i < heap.heap.size(); i++){
+        int index_in_g = heap.heap[i].id;
+        g[index_in_g].map_to_heap = i;
+    }
+    g[n - 1].map_to_heap = NOT_IN_HEAP;
     return;
 }
 
@@ -140,15 +145,15 @@ void FusionGroups::merge(){
     // update heap
     if(pre_group != NO_PRE){
         double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,g[pre_group].slope,g[dst].slope,g[pre_group].beta,g[dst].beta);
-        heap.heap_change_lambda_by_id(pre_group,lambda_pre);
+        heap.heap_change_lambda_by_id(g[pre_group].map_to_heap, lambda_pre, this);
     }
     if(next_group != NO_NEXT){
         double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,g[next_group].slope,g[dst].slope,g[next_group].beta,g[dst].beta);
         //((g[next_group].beta - g[dst].beta) - (g[next_group].slope*g[next_group].lambda - g[dst].slope*g[dst].lambda)) / (-g[next_group].slope + g[dst].slope);
-        heap.heap_change_lambda_by_id(dst,lambda_next);
-        heap.heap_delete(src);
+        heap.heap_change_lambda_by_id(g[dst].map_to_heap, lambda_next, this);
+        heap.heap_delete(g[src].map_to_heap, this);
     }else{
-        heap.heap_delete(dst);
+        heap.heap_delete(g[dst].map_to_heap, this);
     }
 }
 

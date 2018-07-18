@@ -4,6 +4,7 @@
 #include "moma_heap.h"
 class FusionGroups;
 class Group{
+public:
     // range of the group, note they are continuous
     int head;
     int tail;
@@ -15,9 +16,8 @@ class Group{
     double lambda;
     double beta;
     double slope;
+    int map_to_heap;
     friend class FusionGroups;
-    friend class Heap;
-public:
     Group(int h=-1,int t=-1,int p=-1,double lambda=-1,double beta = -1,double slope = 0):head(h),tail(t),parent(p),lambda(lambda),beta(beta),slope(slope){};
     void print(){
         MoMALogger::debug("")
@@ -45,7 +45,6 @@ public:
     // Evaluate beta by extending the lines
     arma::vec find_beta_at(double target_lam);
 
-private:
     // Manipulation on a group
     void print();
     bool is_valid(int this_node);
@@ -62,7 +61,7 @@ private:
     const int NO_PRE = -2;
     /* Used when the group includes beta_p */
     const int NO_NEXT = -3;
-
+    const int NOT_IN_HEAP = -4;
     // A vector stroing all the beta values
     std::vector<Group> g;
     Heap heap;

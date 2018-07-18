@@ -17,31 +17,31 @@ public:
     int id;     // value: id-th beta
     double lambda;  // key: for id-th group and its next groupto merge at lambda
     void print(){
-        MoMALogger::debug("")<<"lambda: " << lambda << "id: " << id;
+        MoMALogger::debug("") << "lambda: " << lambda << "id: " << id;
     }
 };
 
 // comparision between heap nodes
-bool gt(const HeapNode &left, const HeapNode &right){
-    return left.lambda > right.lambda;
-}
+bool gt(const HeapNode &left, const HeapNode &right);
 
+class FusionGroups;
 class Heap{
 public:
     Heap(int n = 0);
     void heap_print();
-    void heap_delete(int id);
-    int heap_change_lambda_by_id(int id, double new_lambda);
     HeapNode heap_peek_min();
     bool is_empty();
     void heapify();
     std::vector<HeapNode> heap;
+    void heap_delete(int id, FusionGroups *fg);
+
+    int heap_change_lambda_by_id(int id, double new_lambda, FusionGroups *fg);
 private:
-    void swap(int i, int j);
+    void swap(int i, int j, FusionGroups *fg);
+    void siftup(int i, FusionGroups *fg);
+    void siftdown(int current_node, FusionGroups *fg);
+
     int min_child(int i);
-    void swap(int j);
-    void siftup(int i);
-    void siftdown(int current_node);
     bool is_minheap();
 };
 #endif

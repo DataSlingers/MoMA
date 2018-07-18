@@ -22,11 +22,3 @@ test_that("When lambda = 0, non-negative prox operators zero-out negative values
         expect_lte(norm(test_prox_orderedfusion(x,lambdas[l])-matrix(goal[,l],nrow=10)),1e-5)
     }
 })
-
-# for(i in 1:10){
-#     x <- 10 * runif(10)
-#     flsaTopDown(x)
-#     for(l in seq(0,10,0.3)){
-#         expect_equal(test_prox_orderedfusion(x,l),t(flsaGetSolution(flsa(x),lambda2=l)))
-#     }
-# }
