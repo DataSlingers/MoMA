@@ -1,8 +1,12 @@
 #include "moma_heap.h"
 #include "moma_prox_fusion_util.h"
 
-bool gt(const HeapNode &left, const HeapNode &right){
+bool operator > (const HeapNode &left, const HeapNode &right){
     return left.lambda > right.lambda;
+}
+
+bool gt(const HeapNode &left, const HeapNode &right){
+    return left > right;
 }
 
 Heap::Heap(int n){
@@ -19,8 +23,8 @@ int Heap::min_child(int i) {
 	int child = i * 2 + 1;
 	if (child >= cur_size) {
 		// no children
-		return NO_CHILED;
-	} else if (child+1 >= cur_size || !gt(heap[child],heap[child+1])){
+		return NO_CHILD;
+	} else if (child+1 >= cur_size || !(heap[child] > heap[child+1])){
 		// only child or first child is biggest child
 		return child;
 	} else {
@@ -42,7 +46,7 @@ void Heap::swap(int i, int j, FusionGroups *fg){
 // In a min-heap, if the key (lambda in our case) decreases, sift it up
 void Heap::siftup(int i, FusionGroups *fg){
     int parent = (i - 1) / 2;
-    while (i != 0 && gt(heap[parent],heap[i])) {
+    while (i != 0 && (heap[parent] > heap[i])) {
         Heap::swap(parent, i, fg);
         i = parent;
         parent = (i - 1) / 2;
@@ -53,7 +57,7 @@ void Heap::siftup(int i, FusionGroups *fg){
 void Heap::siftdown(int current_node, FusionGroups *fg){
     int cur_size = heap.size();
 	int child = min_child(current_node);
-	while (child < cur_size && gt(heap[current_node],heap[child])){
+	while (child < cur_size && (heap[current_node] > heap[child])){
 		Heap::swap(child, current_node, fg);
         current_node = child;
 		child = min_child(child);
@@ -101,12 +105,12 @@ void Heap::heap_delete(int i, FusionGroups *fg){
 bool Heap::is_minheap(){
     int i = 0;
     while(2 * i + 1 < heap.size()){
-        if(gt(heap[i],heap[2 * i + 1])){
+        if(heap[i] > heap[2 * i + 1]){
             MoMALogger::warning("") << "Not a min-heap" << heap[i].lambda << "and"<< heap[2*i+1].lambda;
             return 0;
         }
         if(2 * i + 2 < heap.size()){
-            if(gt(heap[i],heap[2 * i + 2])){
+            if(heap[i] > heap[2 * i + 2]){
                 MoMALogger::warning("") << "Not a min-heap" << heap[i].lambda << "and"<< heap[2*i+2].lambda;
                 return 0;
             }
