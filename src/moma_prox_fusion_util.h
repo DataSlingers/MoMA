@@ -2,38 +2,50 @@
 #define MOMA_PROX_FUSION_UTIL 1
 #include "moma_base.h"
 #include "moma_heap.h"
-
 class FusionGroups;
 class Group{
+    // range of the group, note they are continuous
     int head;
     int tail;
+    // When two groups (say A and B) merge,
+    // `parent` of the last node of group B will point to A
+    // Note all nodes are initialized with `parent` pointing to itself
     int parent;
+    // The following infomation is valid only when `parent` points to itself
     double lambda;
     double beta;
     double slope;
     friend class FusionGroups;
+    friend class Heap;
 public:
-    Group(int t=-1,int b=-1,int p=-1,double lambda=-1,double beta = -1,double slope = 0):head(t),tail(b),parent(p),lambda(lambda),beta(beta),slope(slope){};
+    Group(int h=-1,int t=-1,int p=-1,double lambda=-1,double beta = -1,double slope = 0):head(h),tail(t),parent(p),lambda(lambda),beta(beta),slope(slope){};
     void print(){
-        Rcpp::Rcout<<"head: " << head 
-        << "tail: " << tail 
-        << "parent: " << parent
-        << "lambda:" << lambda
-        << "\tbeta:" << beta
-        << "slope: " << slope
-        << "\n";
+        MoMALogger::debug("")
+            <<"head: " << head 
+            << "tail: " << tail 
+            << "parent: " << parent
+            << "lambda:" << lambda
+            << "\tbeta:" << beta
+            << "slope: " << slope;
     }
 };
 
 class FusionGroups{
 public:
-    // The only heap manipulations needed
-    friend int heap_change_lambda(std::vector<HeapNode> &, int id,double);
-    friend void heap_delete(std::vector<HeapNode> &, int id);
 
     // Constructor
     FusionGroups(const arma::vec &x);
+    // Merge the next two nodes. 
+    // Note if multiple pairs of nodes is to be merged at the same lambda, only one pair will be merged
+    void merge();
+    // Return the next lambda at which merge happens
+    double next_lambda();
+    // Check if all beta's are merged
+    bool all_merged();
+    // Evaluate beta by extending the lines
+    arma::vec find_beta_at(double target_lam);
 
+private:
     // Manipulation on a group
     void print();
     bool is_valid(int this_node);
@@ -41,24 +53,18 @@ public:
     int next_group(int this_group);
     int group_size(int this_group);
 
-    // Print beta
-    arma::vec find_beta_at(double target_lam);
-
     // Calculation concerning lines
-    double lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2);
     double line_value_at(double x,double y,double k,double x_);
+    double lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2);
 
-    // Merge node dst with the group next to it
-    void merge();
-    double next_lambda();
-    bool all_merged();
     // Some macro
+    /* Used when the group includes beta_1 */
     const int NO_PRE = -2;
+    /* Used when the group includes beta_p */
     const int NO_NEXT = -3;
-    const int INFTY = 2 << 17;
 
     // A vector stroing all the beta values
     std::vector<Group> g;
-    std::vector<HeapNode> pq;
+    Heap heap;
 };
 #endif

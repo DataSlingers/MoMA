@@ -2,21 +2,19 @@
 // a non-existing child of the node of a heap is far away
 #include "moma_prox_fusion_util.h"
 
-
-int sgn(double val) {
+int sgn(double val){
     return (double(0) < val) - (val < double(0));
 }
 
-FusionGroups::FusionGroups(const arma::vec &x){
+// Constructor
+FusionGroups::FusionGroups(const arma::vec &x):heap(x.n_elem -1){
     int n = x.n_elem;
     if(n <= 1){
-        MoMALogger::error("TODO deal with scalar");
+        MoMALogger::error("TODO: deal with scalar");
     }
     g.resize(n);
-    pq.resize(n-1);
-
-    // Group g
-    // Easy initalize
+    
+    // Initialize `head`, `tail`, `parent`, `lambda` and `beta`
     for(int i = 0; i < g.size(); i++){
         g[i] = Group(i,i,i,0,x(i));
     }
@@ -27,19 +25,18 @@ FusionGroups::FusionGroups(const arma::vec &x){
         g[i].slope = s;
     }
     g[n-1].slope = - (sgn(x(n-1) - x(n-2)));
-    // lambda
 
     // Heap lambda;
-    for(int i = 0; i < pq.size(); i++){
+    for(int i = 0; i < heap.heap.size(); i++){
         // next merge point of group i and i+1
         double h = 0;
         if(abs(g[i+1].slope - g[i].slope) > 1e-10)  // not parallel
             h =  (g[i].beta - g[i+1].beta) / (g[i+1].slope - g[i].slope);
         else 
             h = INFTY;
-        pq[i] = HeapNode(i,h);
+        heap.heap[i] = HeapNode(i,h);
     }
-    std::make_heap(pq.begin(),pq.end(),gt);
+    heap.heapify();
     return;
 }
 
@@ -105,7 +102,8 @@ double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,doubl
 }
 
 void FusionGroups::merge(){
-    HeapNode node = heap_peek_min(this->pq);
+    HeapNode node = heap.heap_peek_min();
+    // Node `dst` will absorb the info of `src` node, `src` will be then marked invalid
     int dst = node.id;
     double new_lambda = node.lambda;
     int src = this->next_group(dst);
@@ -138,27 +136,27 @@ void FusionGroups::merge(){
     g[dst].tail = last_node;
     g[src].parent = dst;
     g[last_node].parent = dst;
-    
 
     // update heap
     if(pre_group != NO_PRE){
         double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,g[pre_group].slope,g[dst].slope,g[pre_group].beta,g[dst].beta);
-        heap_change_lambda(this->pq,pre_group,lambda_pre);
+        heap.heap_change_lambda_by_id(pre_group,lambda_pre);
     }
     if(next_group != NO_NEXT){
         double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,g[next_group].slope,g[dst].slope,g[next_group].beta,g[dst].beta);
         //((g[next_group].beta - g[dst].beta) - (g[next_group].slope*g[next_group].lambda - g[dst].slope*g[dst].lambda)) / (-g[next_group].slope + g[dst].slope);
-        heap_change_lambda(this->pq,dst,lambda_next);
-        heap_delete(this->pq,src);
+        heap.heap_change_lambda_by_id(dst,lambda_next);
+        heap.heap_delete(src);
     }else{
-        heap_delete(this->pq,dst);
+        heap.heap_delete(dst);
     }
 }
 
 double FusionGroups::next_lambda(){
-    HeapNode n = heap_peek_min(this->pq);
+    HeapNode n = heap.heap_peek_min();
     return n.lambda;
 };
+
 bool FusionGroups::all_merged(){
-    return is_empty(this->pq);
+    return heap.is_empty();
 };

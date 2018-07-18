@@ -1,22 +1,21 @@
 #include "moma_heap.h"
+Heap::Heap(int n){
+    heap.resize(n);   
+};
 
-/*
-* Create a full order at nodes of the form <lambda,id>
-*/
-bool gt(const HeapNode &left, const HeapNode &right){
-    return left.lambda > right.lambda;
+void Heap::heapify(){
+    std::make_heap(heap.begin(),heap.end(),gt);
 }
-
 /*
 * Find the smaller child of an element in a heap. Used in siftdown
 */
-int min_child(std::vector<HeapNode> &h, int i) {
-    int cur_size = h.size();
+int Heap::min_child(int i) {
+    int cur_size = heap.size();
 	int child = i * 2 + 1;
 	if (child >= cur_size) {
 		// no children
 		return NO_CHILED;
-	} else if (child+1 >= cur_size || !gt(h[child],h[child+1])){
+	} else if (child+1 >= cur_size || !gt(heap[child],heap[child+1])){
 		// only child or first child is biggest child
 		return child;
 	} else {
@@ -28,51 +27,48 @@ int min_child(std::vector<HeapNode> &h, int i) {
 /*
 * TODO: extra copy can be avoided in siftdown
 */
-void swap(std::vector<HeapNode> &h,int i, int j){
-    HeapNode tmp = h[i];
-    h[i] = h[j];
-    h[j] = tmp;
+void Heap::swap(int i, int j){
+    HeapNode tmp = heap[i];
+    heap[i] = heap[j];
+    heap[j] = tmp;
 }
 
 /*
 * In a min-heap, if the key (lambda in our case) decreases, sift it up
 */
-void siftup(std::vector<HeapNode> &heap, int i) {
-    HeapNode tmp = heap[i];
+void Heap::siftup(int i) {
     int parent = (i - 1) / 2;
     while (i != 0 && !gt(heap[i],heap[parent])) {
-        heap[i] = heap[parent];
-        i = parent;
+        swap(parent, i);
         parent = (i - 1) / 2;
     }
-    heap[i] = tmp;
 }
 
 /*
 * In a min-heap, if the key (lambda in our case) increases, sift it down
 */
-void siftdown(std::vector<HeapNode> &h, int current_node) {
-    int cur_size = h.size();
-	int child = min_child(h, current_node);
-	while (child < cur_size && gt(h[current_node], h[child])){
-		swap(h, child, current_node);
+void Heap::siftdown(int current_node) {
+    int cur_size = heap.size();
+	int child = min_child(current_node);
+	while (child < cur_size && gt(heap[current_node], heap[child])){
+		swap(child, current_node);
         current_node = child;
-		child = min_child(h, child);
+		child = min_child(child);
 	}
 }
 
 /*
 * Change the key of any nodes; TODO: not use trasversal
 */
-int heap_change_lambda(std::vector<HeapNode> &heap, int id, double new_lambda){
+int Heap::heap_change_lambda_by_id(int id, double new_lambda){
     for(int i = 0; i < heap.size(); i++){
         if(heap[i].id == id){
             double old_lambda = heap[i].lambda;
             heap[i].lambda = new_lambda;
             if(old_lambda < new_lambda)
-                siftdown(heap,i);
+                siftdown(i);
             else
-                siftup(heap,i);
+                siftup(i);
             return i;
         }
     }
@@ -84,12 +80,12 @@ int heap_change_lambda(std::vector<HeapNode> &heap, int id, double new_lambda){
 * To delete an element, move it to the tail, pop it out, and then sift down 
 * the node that replaces it
 */
-void heap_delete(std::vector<HeapNode> &heap, int id){
+void Heap::heap_delete(int id){
     for(int i = 0; i < heap.size(); i++){
         if(heap[i].id == id){
-            swap(heap,i,heap.size()-1);
+            swap(i,heap.size()-1);
             heap.pop_back();
-            siftdown(heap,i);
+            siftdown(i);
             return;
         }
     }
@@ -99,7 +95,7 @@ void heap_delete(std::vector<HeapNode> &heap, int id){
 /*
 * Check if an array is a min heap
 */
-bool is_minheap(std::vector<HeapNode> &heap){
+bool Heap::is_minheap(){
     int i = 0;
     while(2 * i + 1 < heap.size()){
         if(gt(heap[i],heap[2 * i + 1])){
@@ -117,13 +113,13 @@ bool is_minheap(std::vector<HeapNode> &heap){
     return 1;
 }
 
-bool is_empty(std::vector<HeapNode> &heap){
+bool Heap::is_empty(){
     return heap.size() == 0;
 }
 /*
 * Get the currently minimun value without deleting the node
 */
-HeapNode heap_peek_min(std::vector<HeapNode> &heap){
+HeapNode Heap::heap_peek_min(){
     if(heap.size() == 0){
         MoMALogger::error("Empty heap!");
     }
@@ -134,11 +130,11 @@ HeapNode heap_peek_min(std::vector<HeapNode> &heap){
 /*
 * Print the heap
 */
-void heap_print(const std::vector<HeapNode> &q){
+void Heap::heap_print(){
     MoMALogger::debug("") << "Heap lambda is\n";
-    for (auto i : q) MoMALogger::debug("") << i.lambda << "\t";
+    for (auto i : heap) MoMALogger::debug("") << i.lambda << "\t";
     MoMALogger::debug("") << "\n";
     MoMALogger::debug("") << "Heap id is\n";
-    for (auto i : q) MoMALogger::debug("") << i.id << "\t";
+    for (auto i : heap) MoMALogger::debug("") << i.id << "\t";
     MoMALogger::debug("") << "\n";
 }
