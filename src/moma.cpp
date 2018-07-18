@@ -217,7 +217,10 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
             res = new GrpLasso(group);
     }
     else if(s.compare("FUSION") == 0){
-           MoMALogger::error("Fusion is not provided yet");
+        if(nonneg)
+            MoMALogger::error("Non-negative fusion lasso is not implemented!");
+        else
+            res = new OrderedFusion();
     }
     else
         MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default");
