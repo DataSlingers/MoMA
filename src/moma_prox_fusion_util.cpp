@@ -164,12 +164,16 @@ void FusedGroups::merge(){
     
     // update heap
     if(pre_group != NO_PRE){
-        double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,g[pre_group].slope,g[dst].slope,g[pre_group].beta,g[dst].beta);
-        heap.heap_change_lambda_by_id(g[pre_group].map_to_heap, lambda_pre, this);
+        double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,
+                                        g[pre_group].slope,g[dst].slope,
+                                        g[pre_group].beta,g[dst].beta);
+        heap.change_lambda_by_id(g[pre_group].map_to_heap, lambda_pre, this);
     }
     if(next_group != NO_NEXT){
-        double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,g[next_group].slope,g[dst].slope,g[next_group].beta,g[dst].beta);
-        heap.heap_change_lambda_by_id(g[dst].map_to_heap, lambda_next, this);
+        double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,
+                                        g[next_group].slope,g[dst].slope,
+                                        g[next_group].beta,g[dst].beta);
+        heap.change_lambda_by_id(g[dst].map_to_heap, lambda_next, this);
         heap.remove(g[src].map_to_heap, this);
     }else{
         heap.remove(g[dst].map_to_heap, this);
