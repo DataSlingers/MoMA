@@ -111,7 +111,7 @@ bool Heap::is_empty(){
 // Get the currently minimun value without deleting the node
 HeapNode Heap::heap_peek_min(){
     if(heap.size() == 0){
-        MoMALogger::error("Empty heap!");
+        MoMALogger::error("You are peaking at an empty heap!");
     }
     HeapNode n = heap.front();
     return n;

@@ -109,7 +109,7 @@ test_that("ISTA and FISTA should yield similar results",{
 
     # run algorithms
     for(sp in c(0,1,2,3,4)){
-        for(sptype in c("LASSO","SCAD","MCP","")){
+        for(sptype in c("LASSO","SCAD","MCP")){
             sm <- 0
             svd.result <- svd(t(solve(O_u)) %*% X %*% solve(O_v))
             ista <- sfpca(X,
