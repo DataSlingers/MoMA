@@ -65,10 +65,11 @@ void Heap::siftdown(int current_node, FusionGroups *fg){
 	}
 }
 
-//Change the key of any nodes; TODO: not use trasversal
+//Change the key of any nodes;
 int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
-    if(i < 0 || i >= heap_storage.size())
+    if(i < 0 || i >= heap_storage.size()){
         MoMALogger::error("Try to change lambda: no such id in current heap: ") << i;
+    }
     double old_lambda = heap_storage[i].lambda;
     heap_storage[i].lambda = new_lambda;
     if(old_lambda < new_lambda){
@@ -87,11 +88,9 @@ int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
 //  To delete an element, move it to the tail, pop it out, and then sift down 
 //  the node that replaces it
 void Heap::heap_delete(int i, FusionGroups *fg){
-    // // DEBUG INFO
-    // MoMALogger::debug("Delete (") << heap[i].lambda << "," << heap[i].id << ")";
-
-    if(i < 0 || i >= heap_storage.size())
+    if(i < 0 || i >= heap_storage.size()){
         MoMALogger::error("Try to delete: no such id in current heap: ") << i;
+    }
     double old_lambda = heap_storage[i].lambda;
     Heap::swap(i, heap_storage.size()-1, fg);
     (*fg).g[heap_storage[heap_storage.size()-1].id].map_to_heap = FusionGroups::NOT_IN_HEAP;

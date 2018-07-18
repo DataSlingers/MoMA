@@ -193,37 +193,48 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
     // IMPORTANT: this must be freed somewhere
     Prox* res = new NullProx();
     if (s.compare("LASSO") == 0){
-        if(nonneg)
+        if(nonneg){
             res = new NonNegativeLasso();
-        else
+        }
+        else{
             res = new Lasso();
+        }
     }
     else if (s.compare("SCAD") == 0){
-        if(nonneg)
+        if(nonneg){
             res = new NonNegativeSCAD(gamma);
-        else
+        }
+        else{
             res = new SCAD(gamma);
+        }
     }
     else if (s.compare("MCP") == 0){
-        if(nonneg)
+        if(nonneg){
             res = new NonNegativeMCP(gamma);
-        else
+        }
+        else{
             res = new MCP(gamma);
+        }
     }
     else if(s.compare("GRPLASSO") == 0){
-        if(nonneg)
+        if(nonneg){
             res = new NonNegativeGrpLasso(group);
-        else
+        }
+        else{
             res = new GrpLasso(group);
+        }
     }
     else if(s.compare("ORDEREDFUSED") == 0){
-        if(nonneg)
+        if(nonneg){
             MoMALogger::error("Non-negative ordered fused lasso is not implemented!");
-        else
+        }
+        else{
             res = new OrderedFusion();
+        }
     }
-    else
+    else{
         MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default");
+    }
     return res;
 }
 
@@ -456,6 +467,7 @@ void MoMA::fit(){
         }
         MoMALogger::debug("==After the outer loop!==") 
                    << "out_tol:" << out_tol << "\t iter" << iter;
-        if(iter == MAX_ITER)
+        if(iter == MAX_ITER){
             MoMALogger::warning("No convergence!");
+        }
 }

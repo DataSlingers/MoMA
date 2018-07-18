@@ -67,8 +67,9 @@ int FusionGroups::pre_group(int this_group){
     if(!is_valid(this_group)){
         MoMALogger::error("Only valid groups can be accessed");
     }
-    if(this_group == 0)
+    if(this_group == 0){
         return NO_PRE;
+    }
     return g[this_group-1].parent;
 }
 
@@ -79,8 +80,9 @@ int FusionGroups::next_group(int this_group){
     if(g[this_group].tail == g.size()-1){
         return NO_NEXT;
     }
-    else
+    else{
         return g[this_group].tail + 1;
+    }
 }
 
 int FusionGroups::group_size(int this_group){
@@ -108,10 +110,11 @@ arma::vec FusionGroups::find_beta_at(double target_lam){
 }
 
 double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2){
-    if(std::abs(k1 - k2) < 1e-10)
+    if(std::abs(k1 - k2) < 1e-10){
         // Note abs(k1 - k2) < 1e-10
         // does not work on Linux
         return INFTY;
+    }
     return ((y1 - y2) - (k1 * x1 - k2 * x2)) / (-k1 + k2);
 }
 
@@ -126,8 +129,9 @@ void FusionGroups::merge(){
     if(!is_valid(dst) || src == NO_NEXT){
         MoMALogger::error("Only valid groups can be merged: merge point is not valid");
     }
-    if(dst >= src)
+    if(dst >= src){
         MoMALogger::error("dst_grp should be in front of src_grp");
+    }
 
     // update beta
     g[dst].beta = g[dst].beta + g[dst].slope * (new_lambda - g[dst].lambda);
@@ -140,10 +144,12 @@ void FusionGroups::merge(){
     int next_group = this->next_group(src);
     int sgn1 = 0;
     int sgn2 = 0;
-    if(next_group != NO_NEXT) 
+    if(next_group != NO_NEXT){
         sgn2 = sgn(g[dst].beta - g[next_group].beta);
-    if(pre_group != NO_PRE) 
+    }
+    if(pre_group != NO_PRE){
         sgn1 = sgn(g[dst].beta - g[pre_group].beta);
+    }
     g[dst].slope = -1 / double(this->group_size(dst) + this->group_size(src)) * (sgn1 + sgn2);
     
     // set up pointers
@@ -156,38 +162,13 @@ void FusionGroups::merge(){
     if(pre_group != NO_PRE){
         double lambda_pre = lines_meet_at(g[pre_group].lambda,g[dst].lambda,g[pre_group].slope,g[dst].slope,g[pre_group].beta,g[dst].beta);
         heap.heap_change_lambda_by_id(g[pre_group].map_to_heap, lambda_pre, this);
-        // // DEBUG INFO
-        // if(!heap.is_minheap()){
-        //     Rcpp::Rcout << "Error after update pre group\n";
-        // }else{
-        //     heap.heap_print();
-        // }
     }
     if(next_group != NO_NEXT){
         double lambda_next = lines_meet_at(g[next_group].lambda,g[dst].lambda,g[next_group].slope,g[dst].slope,g[next_group].beta,g[dst].beta);
-        //((g[next_group].beta - g[dst].beta) - (g[next_group].slope*g[next_group].lambda - g[dst].slope*g[dst].lambda)) / (-g[next_group].slope + g[dst].slope);
         heap.heap_change_lambda_by_id(g[dst].map_to_heap, lambda_next, this);
-        // // DEBUG INFO
-        // if(!heap.is_minheap()){
-        //     Rcpp::Rcout << "Error after update this group\n";
-        // }else{
-        //     heap.heap_print();
-        // }
         heap.heap_delete(g[src].map_to_heap, this);
-        // // DEBUG INFO
-        // if(!heap.is_minheap()){
-        //     Rcpp::Rcout << "Error after delete next group\n";
-        // }else{
-        //     heap.heap_print();
-        // }
     }else{
         heap.heap_delete(g[dst].map_to_heap, this);
-        // // DEBUG INFO
-        // if(!heap.is_minheap()){
-        //     Rcpp::Rcout << "Error after delete next group\n";
-        // }else{
-        //     heap.heap_print();
-        // }
     }
 }
 
