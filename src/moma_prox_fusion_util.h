@@ -2,7 +2,7 @@
 #define MOMA_PROX_FUSION_UTIL 1
 #include "moma_base.h"
 #include "moma_heap.h"
-class FusionGroups;
+class FusedGroups;
 class Group{
 public:
     // range of the group, note they are continuous
@@ -17,7 +17,7 @@ public:
     double beta;
     double slope;
     int map_to_heap;
-    friend class FusionGroups;
+    friend class FusedGroups;
     Group(int h=-1,
         int t=-1,
         int p=-1,
@@ -41,11 +41,11 @@ public:
     }
 };
 
-class FusionGroups{
+class FusedGroups{
 public:
     
     // Constructor
-    FusionGroups(const arma::vec &x);
+    FusedGroups(const arma::vec &x);
     // Merge the next two nodes. 
     // Note if multiple pairs of nodes is to be merged at the same lambda, only one pair will be merged
     void merge();

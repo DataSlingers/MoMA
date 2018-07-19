@@ -34,7 +34,7 @@ int Heap::min_child(int i) {
 }
 
 // TODO: extra copy can be avoided in siftdown
-void Heap::swap(int i, int j, FusionGroups *fg){
+void Heap::swap(int i, int j, FusedGroups *fg){
     // // DEBUG INFO
     MoMALogger::debug("Swapping ") << heap_storage[i].lambda << "and " << heap_storage[j].lambda;
     (*fg).g[heap_storage[i].id].map_to_heap = j;
@@ -45,7 +45,7 @@ void Heap::swap(int i, int j, FusionGroups *fg){
 }
 
 // In a min-heap, if the key (lambda in our case) decreases, sift it up
-void Heap::siftup(int i, FusionGroups *fg){
+void Heap::siftup(int i, FusedGroups *fg){
     int parent = (i - 1) / 2;
     while (i != 0 && (heap_storage[parent] > heap_storage[i])) {
         Heap::swap(parent, i, fg);
@@ -55,7 +55,7 @@ void Heap::siftup(int i, FusionGroups *fg){
 }
 
 // In a min-heap, if the key (lambda in our case) increases, sift it down
-void Heap::siftdown(int current_node, FusionGroups *fg){
+void Heap::siftdown(int current_node, FusedGroups *fg){
     int cur_size = heap_storage.size();
 	int child = min_child(current_node);
 	while (child < cur_size && (heap_storage[current_node] > heap_storage[child])){
@@ -66,7 +66,7 @@ void Heap::siftdown(int current_node, FusionGroups *fg){
 }
 
 //Change the key of any nodes;
-int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
+int Heap::change_lambda_by_id(int i, double new_lambda, FusedGroups *fg){
     if(i < 0 || i >= heap_storage.size()){
         MoMALogger::error("Try to change lambda: no such id in current heap: ") << i;
     }
@@ -87,13 +87,13 @@ int Heap::heap_change_lambda_by_id(int i, double new_lambda, FusionGroups *fg){
 
 //  To delete an element, move it to the tail, pop it out, and then sift down 
 //  the node that replaces it
-void Heap::remove(int i, FusionGroups *fg){
+void Heap::remove(int i, FusedGroups *fg){
     if(i < 0 || i >= heap_storage.size()){
         MoMALogger::error("Try to delete: no such id in current heap: ") << i;
     }
     double old_lambda = heap_storage[i].lambda;
     Heap::swap(i, heap_storage.size()-1, fg);
-    (*fg).g[heap_storage[heap_storage.size()-1].id].map_to_heap = FusionGroups::NOT_IN_HEAP;
+    (*fg).g[heap_storage[heap_storage.size()-1].id].map_to_heap = FusedGroups::NOT_IN_HEAP;
     heap_storage.pop_back();
     if(old_lambda < heap_storage[i].lambda){
         siftdown(i, fg);

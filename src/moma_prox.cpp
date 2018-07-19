@@ -274,14 +274,14 @@ arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x_, double l){
     return x % scale;
 }
 
-OrderedFusion::OrderedFusion(){
-    MoMALogger::debug("Initializing ordered fusion lasso proximal operator object");
+OrderedFusedLasso::OrderedFusedLasso(){
+    MoMALogger::debug("Initializing a ordered fusion lasso proximal operator object");
 }
-OrderedFusion::~OrderedFusion(){
-    MoMALogger::debug("Releasing ordered fusion lasso proximal operator object");
+OrderedFusedLasso::~OrderedFusedLasso(){
+    MoMALogger::debug("Releasing a ordered fusion lasso proximal operator object");
 }
-arma::vec OrderedFusion::operator()(const arma::vec &x, double l){
-    FusionGroups fg(x);
+arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
+    FusedGroups fg(x);
     while(!fg.all_merged() && fg.next_lambda() < l){
         fg.merge();
 

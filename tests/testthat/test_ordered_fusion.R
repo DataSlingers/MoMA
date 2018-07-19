@@ -1,4 +1,4 @@
-context("Fused lasso tests")
+context("Ordered Fused lasso tests")
 
 test_that("A numeric example: Ordered fused lasso should return correct values under different lambdas", {
     set.seed(34)

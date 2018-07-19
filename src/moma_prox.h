@@ -103,10 +103,10 @@ public:
     arma::vec operator()(const arma::vec &x, double l);
 };
 
-class OrderedFusion: public Prox{
+class OrderedFusedLasso: public Prox{
 public:
-    OrderedFusion();
-    ~OrderedFusion();
+    OrderedFusedLasso();
+    ~OrderedFusedLasso();
     arma::vec operator()(const arma::vec &x, double l);       
 };
 

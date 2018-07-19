@@ -7,7 +7,7 @@ int sgn(double val){
 }
 
 // Constructor
-FusionGroups::FusionGroups(const arma::vec &x):heap(x.n_elem -1){
+FusedGroups::FusedGroups(const arma::vec &x):heap(x.n_elem -1){
     int n = x.n_elem;
     if(n <= 1){
         MoMALogger::error("TODO: deal with scalar");
@@ -42,7 +42,7 @@ FusionGroups::FusionGroups(const arma::vec &x):heap(x.n_elem -1){
     return;
 }
 
-void FusionGroups::print(){
+void FusedGroups::print(){
     MoMALogger::debug("") << "Grouping now is";
     for(int i = 0; i < g.size(); i++){
         if(is_valid(i)){
@@ -59,11 +59,11 @@ void FusionGroups::print(){
     MoMALogger::debug("");
 }
 
-bool FusionGroups::is_valid(int this_node){
+bool FusedGroups::is_valid(int this_node){
     return g[this_node].parent == this_node;
 }
 
-int FusionGroups::pre_group(int this_group){
+int FusedGroups::pre_group(int this_group){
     if(!is_valid(this_group)){
         MoMALogger::error("Only valid groups can be accessed");
     }
@@ -73,7 +73,7 @@ int FusionGroups::pre_group(int this_group){
     return g[this_group-1].parent;
 }
 
-int FusionGroups::next_group(int this_group){
+int FusedGroups::next_group(int this_group){
     if(!is_valid(this_group)){
         MoMALogger::error("Only valid groups be accessed");
     }
@@ -85,18 +85,18 @@ int FusionGroups::next_group(int this_group){
     }
 }
 
-int FusionGroups::group_size(int this_group){
+int FusedGroups::group_size(int this_group){
     if(!is_valid(this_group)){
         MoMALogger::error("Only valid groups be accessed");
     }
     return g[this_group].tail - g[this_group].head + 1;
 }
 
-double FusionGroups::line_value_at(double x,double y,double k,double x_){
+double FusedGroups::line_value_at(double x,double y,double k,double x_){
     return y + k * (x_ - x);
 }
 
-arma::vec FusionGroups::find_beta_at(double target_lam){
+arma::vec FusedGroups::find_beta_at(double target_lam){
     int n = (this->g).size();
     arma::vec x = arma::zeros<arma::vec>(n);
     for(int i = 0; i != NO_NEXT;){
@@ -109,7 +109,7 @@ arma::vec FusionGroups::find_beta_at(double target_lam){
     return x;
 }
 
-double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2){
+double FusedGroups::lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2){
     if(std::abs(k1 - k2) < 1e-10){
         // Note abs(k1 - k2) < 1e-10
         // does not work on Linux
@@ -118,7 +118,7 @@ double FusionGroups::lines_meet_at(double x1,double x2,double k1,double k2,doubl
     return ((y1 - y2) - (k1 * x1 - k2 * x2)) / (-k1 + k2);
 }
 
-void FusionGroups::merge(){
+void FusedGroups::merge(){
 
     HeapNode node = heap.heap_peek_min();
     // Node `dst` will absorb the info of `src` node, `src` will be then marked invalid
@@ -172,11 +172,11 @@ void FusionGroups::merge(){
     }
 }
 
-double FusionGroups::next_lambda(){
+double FusedGroups::next_lambda(){
     HeapNode n = heap.heap_peek_min();
     return n.lambda;
 };
 
-bool FusionGroups::all_merged(){
+bool FusedGroups::all_merged(){
     return heap.is_empty();
 };
