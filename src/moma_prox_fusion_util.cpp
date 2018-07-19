@@ -92,8 +92,11 @@ int FusedGroups::group_size(int this_group){
     return g[this_group].tail - g[this_group].head + 1;
 }
 
-double FusedGroups::line_value_at(double x,double y,double k,double x_){
-    return y + k * (x_ - x);
+// line_value_at evaluates the y-value of a line, 
+// who has slope is k and goes through point (x,y), 
+// at x_.
+double FusedGroups::line_value_at(double x,double y,double slope,double x_){
+    return y + slope * (x_ - x);
 }
 
 arma::vec FusedGroups::find_beta_at(double target_lam){
@@ -109,13 +112,14 @@ arma::vec FusedGroups::find_beta_at(double target_lam){
     return x;
 }
 
-double FusedGroups::lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2){
-    if(std::abs(k1 - k2) < 1e-10){
-        // Note abs(k1 - k2) < 1e-10
-        // does not work on Linux
+// Find the x value of the intersection of two lines.
+double FusedGroups::lines_meet_at(double x1,double x2,double slope1,double slope2,double y1,double y2){
+    if(std::abs(slope1 - slope2) < 1e-10){
+        // Note abs(slope1 - slope2) < 1e-10
+        // does not work on Linux.
         return MOMA_INFTY;
     }
-    return ((y1 - y2) - (k1 * x1 - k2 * x2)) / (-k1 + k2);
+    return ((y1 - y2) - (slope1 * x1 - slope2 * x2)) / (-slope1 + slope2);
 }
 
 void FusedGroups::merge(){

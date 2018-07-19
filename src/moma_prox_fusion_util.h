@@ -64,7 +64,7 @@ public:
     int group_size(int this_group);
 
     // Calculation concerning lines
-    double line_value_at(double x,double y,double k,double x_);
+    double line_value_at(double x,double y,double slope,double x_);
     double lines_meet_at(double x1,double x2,double k1,double k2,double y1,double y2);
 
     // Some constants
