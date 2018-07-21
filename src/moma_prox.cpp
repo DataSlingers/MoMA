@@ -51,8 +51,9 @@ NonNegativeLasso::~NonNegativeLasso(){
 */
 SCAD::SCAD(double g){
     MoMALogger::debug("Initializing SCAD proximal operator object");
-    if(g < 2)
+    if(g < 2){
         MoMALogger::error("Gamma for SCAD should be larger than 2!");
+    };
     gamma = g;
 }
 
@@ -135,8 +136,9 @@ arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
 */
 MCP::MCP(double g){
     MoMALogger::debug("Initializing MCP proximal operator object");
-    if(g<1) 
+    if(g<1){
         MoMALogger::error("Gamma for MCP should be larger than 1!");
+    }
     gamma=g;
 }
 
@@ -168,8 +170,9 @@ arma::vec MCP::vec_prox(const arma::vec &x, double l){
     arma::umat D(x.n_elem,2,arma::fill::zeros);
     for(int i = 0; i < n; i++){
         arma::uword flag = 0;
-        if(absx(i) <= gl)
-            flag = 1;   
+        if(absx(i) <= gl){
+            flag = 1;
+        }
         D(i,flag) = 1;
     }
     z = (gamma / (gamma - 1)) * (D.col(1) % soft_thres_p(absx,l)) + D.col(0) % absx;
@@ -221,8 +224,9 @@ GrpLasso::~GrpLasso(){
 
 arma::vec GrpLasso::operator()(const arma::vec &x, double l){
     // TODO: benchmark with simple looping!
-    if(x.n_elem != group.n_elem)
+    if(x.n_elem != group.n_elem){
         MoMALogger::debug("Wrong dimension: x dim is") << x.n_elem << "but we take" << group.n_elem;
+    }
     arma::vec grp_norm = arma::zeros<arma::vec>(n_grp);
     for(int i = 0; i < x.n_elem; i++){
         grp_norm(group(i)) += x(i)*x(i);
@@ -254,8 +258,9 @@ NonNegativeGrpLasso::~NonNegativeGrpLasso(){
 arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x_, double l){
     // Reference: Proximal Methods for Hierarchical Sparse Coding, Lemma 11
     arma::vec x = soft_thres_p(x_,0);  // zero out negative entries
-    if(x.n_elem != group.n_elem)
-    MoMALogger::debug("Wrong dimension: x dim is") << x.n_elem << "but we take" << group.n_elem;
+    if(x.n_elem != group.n_elem){
+        MoMALogger::debug("Wrong dimension: x dim is") << x.n_elem << "but we take" << group.n_elem;
+    }
     arma::vec grp_norm = arma::zeros<arma::vec>(n_grp);
     for(int i = 0; i < x.n_elem; i++){
         grp_norm(group(i)) += x(i)*x(i);
@@ -267,4 +272,19 @@ arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x_, double l){
         scale(i) = grp_scale(group(i));
     }
     return x % scale;
+}
+
+OrderedFusedLasso::OrderedFusedLasso(){
+    MoMALogger::debug("Initializing a ordered fusion lasso proximal operator object");
+}
+OrderedFusedLasso::~OrderedFusedLasso(){
+    MoMALogger::debug("Releasing a ordered fusion lasso proximal operator object");
+}
+arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
+    FusedGroups fg(x);
+    while(!fg.all_merged() && fg.next_lambda() < l){
+        fg.merge();
+
+    }
+    return fg.find_beta_at(l);
 }
