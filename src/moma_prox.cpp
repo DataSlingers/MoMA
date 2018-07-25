@@ -292,11 +292,11 @@ arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
 /*
 * Fusion lasso
 */
-Fusion::Fusion(const arma::mat &input_w,bool input_ADMM,bool input_acc){
+Fusion::Fusion(const arma::mat &input_w,bool input_ADMM,bool input_acc,double input_prox_eps){
     // w should be symmetric, and have zero diagonal elements.
     // We only store the upper half of the matrix w_ij, j >= i+1.
     // This wastes some space since the lower triangular part of weight is empty.
-
+    prox_eps = input_prox_eps;
     ADMM = input_ADMM;
     acc = input_acc;
     int n_col = input_w.n_cols;
@@ -429,7 +429,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
                 // tri_momentum(u,old_u,old_alpha / alpha,n);
                 old_alpha = alpha;
             }
-        }while(arma::norm(old_b - b,2) / arma::norm(old_b,2) > 1e-10 && cnt < MAX_IT);
+        }while(arma::norm(old_b - b,2) / arma::norm(old_b,2) > prox_eps && cnt < MAX_IT);
 
         // Check convergence
         if(cnt == MAX_IT){
@@ -510,7 +510,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
                 tri_momentum(lambda,old_lambda,old_alpha / alpha,n);
                 old_alpha = alpha;
             }
-        }while(arma::norm(u-old_u,2) / arma::norm(old_u,2) > 1e-10 && cnt < MAX_IT);
+        }while(arma::norm(u-old_u,2) / arma::norm(old_u,2) > prox_eps && cnt < MAX_IT);
 
         // Check convergence
         if(cnt == MAX_IT){

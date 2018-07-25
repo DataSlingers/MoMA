@@ -86,8 +86,8 @@ arma::vec test_prox_orderedfusion(const arma::vec &x,double l)
 };
 
 // [[Rcpp::export]]
-arma::vec test_prox_fusion(const arma::vec &x,double l,const arma::mat w,bool ADMM,bool acc)
+arma::vec test_prox_fusion(const arma::vec &x,double l,const arma::mat w,bool ADMM,bool acc,double prox_eps=1e-10)
 {
-    Fusion a(w,ADMM,acc);
+    Fusion a(w,ADMM,acc,prox_eps);
     return a(x,l);
 };

@@ -64,7 +64,8 @@ public:
 
     void check_valid();
     Solver string_to_SolverT(std::string &s); // String to solver type {ISTA,FISTA}
-    Prox* string_to_Proxptr(std::string &s,double gamma,const arma::vec &group,const arma::mat &w, bool ADMM, bool acc, bool nonneg);
+    Prox* string_to_Proxptr(std::string &s,double gamma,const arma::vec &group,const arma::mat &w, 
+                            bool ADMM, bool acc, double prox_eps, bool nonneg);
  
 
     // Parse user input into a MoMA object which defines the problem and algorithm
@@ -104,6 +105,8 @@ public:
         bool ADMM_v,
         bool acc_u,
         bool acc_v,
+        double prox_eps_u,
+        double prox_eps_v,
         /*
          * Algorithm parameters:
          */
@@ -116,7 +119,6 @@ public:
 
         n = X.n_rows;
         p = X.n_cols;
-
         // Step 0: Set optimizer parameters
         MAX_ITER = i_MAX_ITER;
         EPS = i_EPS;
@@ -156,8 +158,8 @@ public:
         u = U.col(0);
 
         // Step 3: Construct proximal operators
-        prox_u = string_to_Proxptr(P_u,gamma,group_u,w_u,ADMM_u,acc_u,nonneg_u);
-        prox_v = string_to_Proxptr(P_v,gamma,group_v,w_v,ADMM_v,acc_v,nonneg_v);
+        prox_u = string_to_Proxptr(P_u,gamma,group_u,w_u,ADMM_u,acc_u,prox_eps_u,nonneg_u);
+        prox_v = string_to_Proxptr(P_v,gamma,group_v,w_v,ADMM_v,acc_v,prox_eps_v,nonneg_v);
     };
 
     void fit(); // Implemented below
@@ -200,7 +202,7 @@ Solver MoMA::string_to_SolverT(std::string &s){
 
 Prox* MoMA::string_to_Proxptr(std::string &s,double gamma,
                             const arma::vec &group,
-                            const arma::mat &w, bool ADMM,bool acc,
+                            const arma::mat &w, bool ADMM,bool acc, double prox_eps,
                             bool nonneg){
     // IMPORTANT: this must be freed somewhere
     Prox* res = new NullProx();
@@ -249,7 +251,7 @@ Prox* MoMA::string_to_Proxptr(std::string &s,double gamma,
             MoMALogger::error("Non-negative unordered fusion lasso is not implemented!");
         }
         else{
-            res = new Fusion(w,ADMM,acc);
+            res = new Fusion(w,ADMM,acc,prox_eps);
         }
     }
     else{
@@ -276,6 +278,8 @@ Rcpp::List cpp_sfpca(
     bool ADMM_v,
     bool acc_u,
     bool acc_v,
+    double prox_eps_u,
+    double prox_eps_v,
     bool nonneg_u,
     bool nonneg_v,
     arma::vec group_u,
@@ -283,6 +287,7 @@ Rcpp::List cpp_sfpca(
     double EPS,
     long MAX_ITER,
     std::string solver){
+    
 
     MoMA model(X,
               /* sparsity */
@@ -309,6 +314,8 @@ Rcpp::List cpp_sfpca(
               ADMM_v,
               acc_u,
               acc_v,
+              prox_eps_u,
+              prox_eps_v,
               /* algorithm parameters */
               EPS,
               MAX_ITER,
