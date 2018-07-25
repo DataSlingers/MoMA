@@ -84,3 +84,10 @@ arma::vec test_prox_orderedfusion(const arma::vec &x,double l)
     OrderedFusedLasso a;
     return a(x,l);
 };
+
+// [[Rcpp::export]]
+arma::vec test_prox_fusion(const arma::vec &x,double l,const arma::mat w,bool ADMM,bool acc)
+{
+    Fusion a(w,ADMM,acc);
+    return a(x,l);
+};

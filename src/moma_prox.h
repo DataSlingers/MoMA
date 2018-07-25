@@ -110,4 +110,14 @@ public:
     arma::vec operator()(const arma::vec &x, double l);       
 };
 
+class Fusion: public Prox{
+private:
+    arma::mat weight;
+    bool ADMM;
+    bool acc;
+public:
+    Fusion(const arma::mat &input_w = arma::zeros<arma::mat>(0,0),bool input_ADMM = 1,bool input_acc = 1);
+    ~Fusion();
+    arma::vec operator()(const arma::vec &x, double l);
+};
 #endif
