@@ -63,8 +63,8 @@ public:
     }
 
     void check_valid();
-    Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
-    Prox* string_to_Proxptr(const std::string &s,double gamma,const arma::vec &group,bool nonneg);
+    Solver string_to_SolverT(std::string &s); // String to solver type {ISTA,FISTA}
+    Prox* string_to_Proxptr(std::string &s,double gamma,const arma::vec &group,const arma::mat &w, bool ADMM, bool acc, bool nonneg);
  
 
     // Parse user input into a MoMA object which defines the problem and algorithm
@@ -95,6 +95,15 @@ public:
         arma::mat Omega_v,
         double i_alpha_u,    // Smoothing levels
         double i_alpha_v,
+        /*
+         * unordered fusion
+         */
+        const arma::mat &w_u,
+        const arma::mat &w_v,
+        bool ADMM_u,
+        bool ADMM_v,
+        bool acc_u,
+        bool acc_v,
         /*
          * Algorithm parameters:
          */
@@ -147,8 +156,8 @@ public:
         u = U.col(0);
 
         // Step 3: Construct proximal operators
-        prox_u = string_to_Proxptr(P_u,gamma,group_u,nonneg_u);
-        prox_v = string_to_Proxptr(P_v,gamma,group_v,nonneg_v);
+        prox_u = string_to_Proxptr(P_u,gamma,group_u,w_u,ADMM_u,acc_u,nonneg_u);
+        prox_v = string_to_Proxptr(P_v,gamma,group_v,w_v,ADMM_v,acc_v,nonneg_v);
     };
 
     void fit(); // Implemented below
@@ -176,7 +185,7 @@ void MoMA::check_valid(){
     MoMALogger::info("Checking input validity");
 }
 
-Solver MoMA::string_to_SolverT(const std::string &s){
+Solver MoMA::string_to_SolverT(std::string &s){
     Solver res = Solver::ISTA;
     // TODO: capitalize s to be more robust to user-error
     if (s.compare("ISTA") == 0)
@@ -189,7 +198,10 @@ Solver MoMA::string_to_SolverT(const std::string &s){
     return res;
 }
 
-Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec &group,bool nonneg){
+Prox* MoMA::string_to_Proxptr(std::string &s,double gamma,
+                            const arma::vec &group,
+                            const arma::mat &w, bool ADMM,bool acc,
+                            bool nonneg){
     // IMPORTANT: this must be freed somewhere
     Prox* res = new NullProx();
     if (s.compare("LASSO") == 0){
@@ -232,31 +244,45 @@ Prox* MoMA::string_to_Proxptr(const std::string &s,double gamma,const arma::vec 
             res = new OrderedFusedLasso();
         }
     }
+    else if(s.compare("UNORDEREDFUSION") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative unordered fusion lasso is not implemented!");
+        }
+        else{
+            res = new Fusion(w,ADMM,acc);
+        }
+    }
     else{
-        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default");
+        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default: ") << s;
     }
     return res;
 }
 
 // [[Rcpp::export]]
-Rcpp::List sfpca(
-    const arma::mat& X,
-    arma::mat Omega_u, // Default values for these matrices should be set in R
-    arma::mat Omega_v,
-    double alpha_u = 0,
-    double alpha_v = 0,
-    std::string P_u = "LASSO",
-    std::string P_v = "LASSO",
-    double lambda_u = 0,
-    double lambda_v = 0,
-    double gamma = 3.7,
-    bool nonneg_u = 0,
-    bool nonneg_v = 0,
-    arma::vec group_u = Rcpp::IntegerVector::create(0),
-    arma::vec group_v = Rcpp::IntegerVector::create(0),
-    double EPS = 1e-6,
-    long MAX_ITER = 1e+3,
-    std::string solver = "ISTA"){
+Rcpp::List cpp_sfpca(
+    const arma::mat &X,
+    const arma::mat &w_v,
+    const arma::mat &w_u,
+    const arma::mat &Omega_u, // Default values for these matrices should be set in R
+    const arma::mat &Omega_v,
+    double alpha_u,
+    double alpha_v,
+    double lambda_u,
+    double lambda_v,
+    std::string P_u,
+    std::string P_v,
+    double gamma,
+    bool ADMM_u,
+    bool ADMM_v,
+    bool acc_u,
+    bool acc_v,
+    bool nonneg_u,
+    bool nonneg_v,
+    arma::vec group_u,
+    arma::vec group_v,
+    double EPS,
+    long MAX_ITER,
+    std::string solver){
 
     MoMA model(X,
               /* sparsity */
@@ -276,6 +302,13 @@ Rcpp::List sfpca(
               Omega_v,
               alpha_u,
               alpha_v,
+              /* unordered fusion*/
+              w_u,
+              w_v,
+              ADMM_u,
+              ADMM_v,
+              acc_u,
+              acc_v,
               /* algorithm parameters */
               EPS,
               MAX_ITER,
