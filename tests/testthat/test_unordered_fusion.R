@@ -24,7 +24,6 @@ test_that("Find means of everything when lambda is Large enough and the graph is
                        res.ADMM)){
                 expect_equal(j,mean(y))
             }
-            print(i)
         }
     }
 })
@@ -71,8 +70,6 @@ test_that("Ordered fused lasso when w_ij = 1 all j = i+1", {
     for(p in c(3,20,100)){
         w <- matrix(rep(0,p*p),p,byrow = T); for(i in 1:(p-1)) w[i,i+1] = 1
         for(i in 1:rep){
-
-            print(i)
             y <- 10 * runif(p)
             err.AMA.unacc = norm(test_prox_orderedfusion(y,1)-test_prox_fusion(y,1,w,ADMM=FALSE,acc=TRUE))
             err.AMA.acc = norm(test_prox_orderedfusion(y,1)-test_prox_fusion(y,1,w,ADMM=FALSE,acc=TRUE))

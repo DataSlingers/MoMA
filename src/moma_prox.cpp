@@ -302,7 +302,7 @@ Fusion::Fusion(const arma::mat &input_w,bool input_ADMM,bool input_acc,double in
     int n_col = input_w.n_cols;
     int n_row = input_w.n_rows;
     if(n_col != n_row){
-        MoMALogger::error("Weight matrix should have the same dimensions") << n_col << " and " << n_row;
+        MoMALogger::error("Weight matrix should be square: ") << n_col << " and " << n_row;
     }
     weight.set_size(n_col,n_col);
     for(int i = 0; i < n_col; i++){
@@ -367,7 +367,6 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Reference: Algorithm 5 in 
         // ADMM Algorithmic Regularization Paths for Sparse Statistical Machine Learning,
         // Yue Hu, Eric C. Chi and Genevera I. Allen
-        // TODO: step size;i momentum
 
         // Using Genevera's paper notations
         const arma::vec &y = x;

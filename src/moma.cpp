@@ -63,11 +63,12 @@ public:
     }
 
     void check_valid();
-    Solver string_to_SolverT(std::string &s); // String to solver type {ISTA,FISTA}
-    Prox* string_to_Proxptr(std::string &s,double gamma,const arma::vec &group,const arma::mat &w, 
-                            bool ADMM, bool acc, double prox_eps, bool nonneg);
+    Solver string_to_SolverT(const std::string &s); // String to solver type {ISTA,FISTA}
+    Prox* string_to_Proxptr(const std::string &s, double gamma, 
+                            const arma::vec &group,
+                            const arma::mat &w, bool ADMM, bool acc, double prox_eps, 
+                            bool nonneg);
  
-
     // Parse user input into a MoMA object which defines the problem and algorithm
     // used to solve it.
     //
@@ -158,8 +159,14 @@ public:
         u = U.col(0);
 
         // Step 3: Construct proximal operators
-        prox_u = string_to_Proxptr(P_u,gamma,group_u,w_u,ADMM_u,acc_u,prox_eps_u,nonneg_u);
-        prox_v = string_to_Proxptr(P_v,gamma,group_v,w_v,ADMM_v,acc_v,prox_eps_v,nonneg_v);
+        prox_u = string_to_Proxptr(P_u,gamma,
+                                   group_u,
+                                   w_u,ADMM_u,acc_u,prox_eps_u,
+                                   nonneg_u);
+        prox_v = string_to_Proxptr(P_v,gamma,
+                                   group_v,
+                                   w_v,ADMM_v,acc_v,prox_eps_v,
+                                   nonneg_v);
     };
 
     void fit(); // Implemented below
@@ -187,7 +194,7 @@ void MoMA::check_valid(){
     MoMALogger::info("Checking input validity");
 }
 
-Solver MoMA::string_to_SolverT(std::string &s){
+Solver MoMA::string_to_SolverT(const std::string &s){
     Solver res = Solver::ISTA;
     // TODO: capitalize s to be more robust to user-error
     if (s.compare("ISTA") == 0)
@@ -200,10 +207,10 @@ Solver MoMA::string_to_SolverT(std::string &s){
     return res;
 }
 
-Prox* MoMA::string_to_Proxptr(std::string &s,double gamma,
-                            const arma::vec &group,
-                            const arma::mat &w, bool ADMM,bool acc, double prox_eps,
-                            bool nonneg){
+Prox* MoMA::string_to_Proxptr(const std::string &s, double gamma,
+                              const arma::vec &group,
+                              const arma::mat &w, bool ADMM, bool acc, double prox_eps,
+                              bool nonneg){
     // IMPORTANT: this must be freed somewhere
     Prox* res = new NullProx();
     if (s.compare("LASSO") == 0){
