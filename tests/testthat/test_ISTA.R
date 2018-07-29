@@ -34,7 +34,7 @@ test_that("Equivalent to SVD when Omega = I and no sparsity",{
             X = matrix(runif(n*p),n)
 
             sfpca <- sfpca(X,
-                           alpha_u=a_u,alpha_v=a_v,
+                           alpha_u=a_u,alpha_v=a_v,Omega_u=diag(n),Omega_v=diag(p),
                            lambda_u=0,lambda_v=0,P_u="LASSO",P_v="LASSO",
                            EPS=1e-9,MAX_ITER = 1e+5)
             svd.result <- svd(X)

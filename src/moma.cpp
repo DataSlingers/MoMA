@@ -213,6 +213,9 @@ Prox* MoMA::string_to_Proxptr(const std::string &s, double gamma,
                               bool nonneg){
     // IMPORTANT: this must be freed somewhere
     Prox* res = new NullProx();
+    if(s.compare("NONE") == 0){
+        return res;
+    }
     if (s.compare("LASSO") == 0){
         if(nonneg){
             res = new NonNegativeLasso();
