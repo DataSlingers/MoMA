@@ -450,6 +450,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
 
         // Find the degrees of nodes
         arma::vec deg(n);
+        deg.zeros();
         for(int i = 0; i < n; i++){
             for(int j = i + 1; j < n; j++){
                 if(w(i,j) > 0){
@@ -463,7 +464,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         for(int i = 0; i < n; i++){
             for(int j = i + 1; j < n; j++){
                 if(w(i,j) > 0){
-                    max_edge_deg = std::max(deg(i)+deg(j),(double)max_edge_deg);
+                    max_edge_deg = std::max(double(deg(i)+deg(j)),(double)max_edge_deg);
                 }
             }
         }
@@ -474,7 +475,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Initialze
         u.zeros();
         lambda.zeros();
-        double old_alpha = 1;
+        // double old_alpha = 1;
         arma::mat old_lambda(n,n);
         old_lambda.zeros();
         arma::vec old_u;
@@ -505,9 +506,9 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
                 u(i) = x(i) + part1 - part2;
             }
             if(acc){// Momemtum step
-                double alpha = (1 + std::sqrt(old_alpha)) / 2;
-                tri_momentum(lambda,old_lambda,old_alpha / alpha,n);
-                old_alpha = alpha;
+                // double alpha = (1 + std::sqrt(old_alpha)) / 2;
+                tri_momentum(lambda,old_lambda,double(cnt-1)/double(cnt+1),n);
+                // old_alpha = alpha;
             }
         }while(arma::norm(u-old_u,2) / arma::norm(old_u,2) > prox_eps && cnt < MAX_IT);
 

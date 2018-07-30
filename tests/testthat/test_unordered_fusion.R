@@ -93,18 +93,28 @@ test_that("Ordered fused lasso when w_ij = 1 all j = i+1", {
 # Special case 3:
 # For evry lambda: when all i,j w_ij = 1
 # the solution path contains no split.
+mat_to_vec <- function(my.w,p){
+    cnt = 1
+    cvx.w <- vector(mode="numeric",length=p*(p-1)/2)
+    for(jj in 1:(p-1)) for(ii in (jj+1):p){
+        cvx.w[cnt] <-my.w[jj,ii]
+        cnt = cnt + 1
+    }
+    return(cvx.w)
+}
+
 test_that("Unweighted and fully connected graph, i.e., w_ij = 1 for all i, j", {
     if(requireNamespace("cvxclustr")){
         set.seed(33)
         rep <- 20
-        lambda <- 1
-        for(p in c(100)){
+
+        for(p in c(30,100)){
 
             # A weight matrix where w_ij = 1, all i, j
             w <- matrix(rep(1,p*p),p,byrow = T);
             for(i in 1:(p-1)){
                 for(j in (i+1):p){
-                    w[i,j] <- 1
+                    w[i,j] <- runif(1) + 1
                 }
             }
 
@@ -115,12 +125,13 @@ test_that("Unweighted and fully connected graph, i.e., w_ij = 1 for all i, j", {
                 # The cvxclustr package stores weights as a vector.
                 # For Gaussian kernel, wij = exp(-phi ||X[,i]-X[,j]||^2)
                 # So phi = 0 makes a fully connected and unweighted graph
-                w.cvx <- cvxclustr::kernel_weights(y,phi=0)
-                cvx.result <- cvxclustr::cvxclust(y,w.cvx,lambda,method = "admm",tol=1e-10)$U[[1]]
+                for(lambda in seq(0,1,0.13)){
+                    cvx.result <- cvxclustr::cvxclust(y,mat_to_vec(w,p),lambda,method = "admm",tol=1e-10)$U[[1]]
 
-                admm <-     t(matrix(test_prox_fusion(y,lambda,w,ADMM=TRUE,acc=FALSE)))
-                ama <-      t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=FALSE)))
-                ama.acc <-  t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=TRUE)))
+                    admm <-     t(matrix(test_prox_fusion(y,lambda,w,ADMM=TRUE,acc=FALSE)))
+                    ama <-      t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=FALSE)))
+                    ama.acc <-  t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=TRUE)))
+                }
 
                 err.AMA.unacc = norm(cvx.result-ama)
                 err.AMA.acc = norm(cvx.result-ama.acc)
@@ -130,6 +141,7 @@ test_that("Unweighted and fully connected graph, i.e., w_ij = 1 for all i, j", {
                              err.ADMM)){
                     expect_lte(err,1e-6)
                 }
+                print(i)
             }
         }
     }
