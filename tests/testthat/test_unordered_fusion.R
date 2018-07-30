@@ -7,7 +7,7 @@ test_that("Find means of everything when lambda is large enough and the graph is
     set.seed(43)
     rep <- 10
     large.lambda <- 10000
-    for(p in c(5,100)){
+    for(p in c(5,30,40,100)){
         y <- runif(p)
 
         # A fully connected graph with random weights
@@ -39,7 +39,7 @@ test_that("Find means of connected components when lambda is large enough", {
 
         # A weight matrix of 3 connected components
         w <- matrix(rep(0,p*p),p,byrow = T)
-        num.comp.nodes <- p/3
+        num.comp.nodes <- p/3 # the number of nodes in each component
         for(i in seq(1,p,num.comp.nodes)){
             w[i,(i+1):(i+num.comp.nodes-1)] <- 1+runif(num.comp.nodes-1)
         }
@@ -93,6 +93,9 @@ test_that("Ordered fused lasso when w_ij = 1 all j = i+1", {
 # Special case 3:
 # For evry lambda: when all i,j w_ij = 1
 # the solution path contains no split.
+
+# Find the weight vector required by the
+# `cvxclustr` package
 mat_to_vec <- function(my.w,p){
     cnt = 1
     cvx.w <- vector(mode="numeric",length=p*(p-1)/2)
@@ -128,14 +131,14 @@ test_that("Unweighted and fully connected graph, i.e., w_ij = 1 for all i, j", {
                 for(lambda in seq(0,1,0.13)){
                     cvx.result <- cvxclustr::cvxclust(y,mat_to_vec(w,p),lambda,method = "admm",tol=1e-10)$U[[1]]
 
-                    admm <-     t(matrix(test_prox_fusion(y,lambda,w,ADMM=TRUE,acc=FALSE)))
-                    ama <-      t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=FALSE)))
-                    ama.acc <-  t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=TRUE)))
+                    admm    <- t(matrix(test_prox_fusion(y,lambda,w,ADMM=TRUE,acc=FALSE)))
+                    ama     <- t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=FALSE)))
+                    ama.acc <- t(matrix(test_prox_fusion(y,lambda,w,ADMM=FALSE,acc=TRUE)))
                 }
 
-                err.AMA.unacc = norm(cvx.result-ama)
-                err.AMA.acc = norm(cvx.result-ama.acc)
-                err.ADMM = norm(cvx.result-admm)
+                err.AMA.unacc   <- norm(cvx.result-ama)
+                err.AMA.acc     <- norm(cvx.result-ama.acc)
+                err.ADMM        <- norm(cvx.result-admm)
                 for(err in c(err.AMA.unacc,
                              err.AMA.acc,
                              err.ADMM)){

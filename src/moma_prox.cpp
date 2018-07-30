@@ -335,11 +335,10 @@ int tri_sums(const arma::mat &w, arma::vec &col_sums, arma::vec &row_sums, int n
 // This function sets lambda += (lambda - old_lambda) * step,
 // and then set old_lambda = lambda.
 int tri_momentum(arma::mat &lambda, arma::mat &old_lambda, double step, int n){
-    arma::mat res(n,n);
     for(int i = 0; i < n; i++){
         for(int j = i + 1; j < n; j++){
-            double diff = lambda(i,j) - old_lambda(i,j);
-            lambda(i,j) += step * diff;
+            // double diff = lambda(i,j) - old_lambda(i,j);
+            lambda(i,j) += step * (lambda(i,j) - old_lambda(i,j));
             old_lambda(i,j) = lambda(i,j);
         }
     }
@@ -348,17 +347,10 @@ int tri_momentum(arma::mat &lambda, arma::mat &old_lambda, double step, int n){
 
 arma::vec Fusion::operator()(const arma::vec &x, double l){
     const int MAX_IT = 10000;
-    arma::mat w = arma::trimatu(weight,1);
+    arma::mat &w = weight;
     int n = x.n_elem;
     if(n == 2){
         MoMALogger::error("Please use ordered fused lasso instead");
-    }
-    // AMA does not converge for current choice of nu.
-    // Use ordianry ADMM instead.
-    if(n < 20){
-        ADMM = 1;
-        acc = 0;    // TODO: when we provide acc ADMM
-        MoMALogger::info("Use acc = 0, ADMM = 1 because AMA might not converge to optima.");
     }
 
     // beta subproblem: O(n)
@@ -376,14 +368,14 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         arma::mat u(n,n);
         arma::vec b(n);
         arma::vec old_b;
-        arma::mat old_z(n,n);
-        arma::mat old_u(n,n);
+        // arma::mat old_z(n,n);
+        // arma::mat old_u(n,n);
         double old_alpha = 1;
 
         z.zeros();
-        old_z.zeros();
+        // old_z.zeros();
         u.zeros();
-        old_u.zeros();
+        // old_u.zeros();
         b.zeros();
         old_b.zeros();
 
@@ -419,14 +411,14 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
             }
             if(acc){
                 MoMALogger::error("Not provided yet");
-                double alpha = (1 + std::sqrt(old_alpha)) / 2;
-                z += (old_alpha / alpha) * (z - old_z);
-                old_z = z;
-                u += (old_alpha / alpha) * (u - old_u);
-                old_u = u;
-                // tri_momentum(z,old_z,old_alpha / alpha,n);
-                // tri_momentum(u,old_u,old_alpha / alpha,n);
-                old_alpha = alpha;
+                // double alpha = (1 + std::sqrt(old_alpha)) / 2;
+                // z += (old_alpha / alpha) * (z - old_z);
+                // old_z = z;
+                // u += (old_alpha / alpha) * (u - old_u);
+                // old_u = u;
+                // // tri_momentum(z,old_z,old_alpha / alpha,n);
+                // // tri_momentum(u,old_u,old_alpha / alpha,n);
+                // old_alpha = alpha;
             }
         }while(arma::norm(old_b - b,2) / arma::norm(old_b,2) > prox_eps && cnt < MAX_IT);
 
@@ -475,7 +467,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Initialze
         u.zeros();
         lambda.zeros();
-        // double old_alpha = 1;
+        double old_alpha = 1;
         arma::mat old_lambda(n,n);
         old_lambda.zeros();
         arma::vec old_u;
@@ -506,9 +498,9 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
                 u(i) = x(i) + part1 - part2;
             }
             if(acc){// Momemtum step
-                // double alpha = (1 + std::sqrt(old_alpha)) / 2;
-                tri_momentum(lambda,old_lambda,double(cnt-1)/double(cnt+1),n);
-                // old_alpha = alpha;
+                double alpha = (1 + std::sqrt(old_alpha)) / 2;
+                tri_momentum(lambda,old_lambda,(old_alpha-1.0)/alpha,n);
+                old_alpha = alpha;
             }
         }while(arma::norm(u-old_u,2) / arma::norm(old_u,2) > prox_eps && cnt < MAX_IT);
 
