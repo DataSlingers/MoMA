@@ -304,6 +304,8 @@ Fusion::Fusion(const arma::mat &input_w,bool input_ADMM,bool input_acc,double in
     if(n_col != n_row){
         MoMALogger::error("Weight matrix should be square: ") << n_col << " and " << n_row;
     }
+    start_point.set_size(n_col);
+    start_point.zeros();
     weight.set_size(n_col,n_col);
     for(int i = 0; i < n_col; i++){
         for(int j = i + 1; j < n_col; j++){
@@ -366,18 +368,15 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         double y_bar = arma::mean(y);
         arma::mat z(n,n);
         arma::mat u(n,n);
-        arma::vec b(n);
+        arma::vec &b = start_point;
         arma::vec old_b;
         // arma::mat old_z(n,n);
         // arma::mat old_u(n,n);
-        double old_alpha = 1;
 
         z.zeros();
         // old_z.zeros();
         u.zeros();
         // old_u.zeros();
-        b.zeros();
-        old_b.zeros();
 
         int cnt = 0;
         do{
@@ -426,7 +425,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         if(cnt == MAX_IT){
             MoMALogger::warning("No convergence in unordered fusion lasso prox (ADMM).");
         }else{
-            MoMALogger::debug("ADMM converges.");
+            MoMALogger::debug("ADMM converges after iter: ") << cnt;
         }
         // TODO: shrink stepsize, as is done in the paper
         return b;
@@ -461,11 +460,10 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
             }
         }
         double nu = 1.0 / (std::min(n,max_edge_deg));
-        arma::vec u(n);
+        arma::vec &u = start_point;
         arma::mat lambda(n,n);
-
         // Initialze
-        u.zeros();
+
         lambda.zeros();
         double old_alpha = 1;
         arma::mat old_lambda(n,n);
@@ -508,7 +506,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         if(cnt == MAX_IT){
             MoMALogger::warning("No convergence in unordered fusion lasso prox (AMA).");
         }else{
-            MoMALogger::debug("AMA converges.");
+            MoMALogger::debug("AMA converges after iter: ") << cnt;
         }
         return u;
     }

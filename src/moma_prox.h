@@ -116,6 +116,7 @@ private:
     bool ADMM;
     bool acc;
     double prox_eps;
+    arma::vec start_point;
 public:
     Fusion(const arma::mat &input_w = arma::zeros<arma::mat>(0,0),bool input_ADMM = 1,bool input_acc = 1,double input_prox_eps=1e-10);
     ~Fusion();
