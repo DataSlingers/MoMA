@@ -3,20 +3,22 @@ test_that("Equivalent to SVD when no penalty imposed", {
     set.seed(32)
     n <- 10 # set n != p to test bugs
     p <- 6
-    O_v <- diag(p)
-    O_u <- diag(n)
+
     set.seed(32)
     X = matrix(runif(n*p),n)
 
-
-    sfpca <- sfpca(X,
-                   O_u,O_v, 0,0,
-                   lambda_u=0,lambda_v=0,"LASSO","LASSO",
-                   gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5)
-    svd.result <- svd(X)
-    expect_equal(norm(svd.result$v[,1]-sfpca$v),0)
-    expect_equal(norm(svd.result$u[,1]-sfpca$u),0)
-    expect_equal(svd.result$d[1],sfpca$d);
+    for(P_u in list("lasso","scad","mcp")){
+        for(P_v in list("lasso","scad","mcp")){
+            sfpca <- sfpca(X,
+                           alpha_u=0,alpha_v=0,
+                           lambda_u=0,lambda_v=0,P_u=P_u,P_v=P_v,
+                           EPS=1e-9,MAX_ITER = 1e+5)
+            svd.result <- svd(X)
+            expect_equal(norm(svd.result$v[,1]-sfpca$v),0)
+            expect_equal(norm(svd.result$u[,1]-sfpca$u),0)
+            expect_equal(svd.result$d[1],sfpca$d);
+        }
+    }
 })
 
 test_that("Equivalent to SVD when Omega = I and no sparsity",{
@@ -28,15 +30,13 @@ test_that("Equivalent to SVD when Omega = I and no sparsity",{
     for(a_u in a_u.range){
         for(a_v in a_v.range){
             a_v <- 1
-            O_v <- diag(p)
-            O_u <- diag(n)
             set.seed(32)
             X = matrix(runif(n*p),n)
 
             sfpca <- sfpca(X,
-                           O_u,O_v,a_u,a_v,
-                           lambda_u=0,lambda_v=0,"LASSO","LASSO",
-                           gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5)
+                           alpha_u=a_u,alpha_v=a_v,Omega_u=diag(n),Omega_v=diag(p),
+                           lambda_u=0,lambda_v=0,P_u="LASSO",P_v="LASSO",
+                           EPS=1e-9,MAX_ITER = 1e+5)
             svd.result <- svd(X)
             expect_equal(norm(svd.result$v[,1] - sqrt(1 + a_v) * sfpca$v),0)
             expect_equal(norm(svd.result$u[,1] - sqrt(1 + a_u) * sfpca$u),0)
@@ -71,10 +71,10 @@ test_that("Closed form solution when no sparsity imposed",{
             svd.result.v = svd.result$v[,1]
             svd.result.u = svd.result$u[,1]
             ista <- sfpca(X,
-                          O_u,O_v,a_u,a_v,
+                          Omega_u=O_u,Omega_v=O_v,alpha_u=a_u,alpha_v=a_v,
                           EPS=1e-9,MAX_ITER=1e+5,solve="ISTA")
             fista <- sfpca(X,
-                           O_u,O_v,a_u,a_v,
+                           Omega_u=O_u,Omega_v=O_v,alpha_u=a_u,alpha_v=a_v,
                            EPS=1e-9,MAX_ITER=1e+5,solve="FISTA")
 
             # The sfpca solutions and the svd solutions are related by an `L` matrix
@@ -113,13 +113,13 @@ test_that("ISTA and FISTA should yield similar results",{
             sm <- 0
             svd.result <- svd(t(solve(O_u)) %*% X %*% solve(O_v))
             ista <- sfpca(X,
-                          O_u,O_v,sp,sp,
-                          lambda_u=sm,lambda_v=sm,"LASSO",sptype,
-                          gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="ISTA")
+                          Omega_u=O_u,Omega_v=O_v,alpha_u=sp,alpha_v=sp,
+                          lambda_u=sm,lambda_v=sm,P_u="LASSO",P_v=sptype,
+                          EPS=1e-9,MAX_ITER = 1e+5,solve="ISTA")
             fista <- sfpca(X,
-                           O_u,O_v,sp,sp,
-                           lambda_u=sm,lambda_v=sm,"LASSO",sptype,
-                           gamma=3.7,EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
+                           Omega_u=O_u,Omega_v=O_v,alpha_u=sp,alpha_v=sp,
+                           lambda_u=sm,lambda_v=sm,P_u="LASSO",P_v=sptype,
+                           EPS=1e-9,MAX_ITER = 1e+5,solve="FISTA")
             expect_lte(sum((ista$v[,1]-fista$v[,1])^2),1e-9)
         }
     }
