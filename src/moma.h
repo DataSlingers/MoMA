@@ -8,7 +8,6 @@
 #include "moma_logging.h"
 
 // Prox operators
-#include "moma_prox.h"
 
 // Prototypes
 // moma_logging.cpp
