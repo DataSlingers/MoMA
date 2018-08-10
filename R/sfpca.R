@@ -31,7 +31,8 @@ sfpca <- function(X,
                   # algorithm parameters
                   EPS = 1e-10,
                   MAX_ITER = 1000,
-                  solver = "ista"){
+                  solver = "ista",
+                  k = 1){
     if (!is.null(X) && !is.matrix(X)){
         stop("X must be a matrix.")
     }
@@ -71,5 +72,6 @@ sfpca <- function(X,
                      prox_eps_u = prox_eps_u, prox_eps_v = prox_eps_v,
                      nonneg_u = nonneg_u,nonneg_v = nonneg_v,
                      group_u = group_u,group_v = group_v,
-                     EPS = EPS,MAX_ITER = MAX_ITER,solver = solver))
+                     EPS = EPS,MAX_ITER = MAX_ITER,solver = solver,
+                     k = k))
 }
