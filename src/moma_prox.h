@@ -29,8 +29,8 @@ public:
 class NullProx: public Prox{
 public:
     NullProx();
-    virtual arma::vec operator()(const arma::vec &x, double l);
-    virtual ~NullProx();
+    arma::vec operator()(const arma::vec &x, double l);
+    ~NullProx();
 };
 
 class Lasso: public Prox{
@@ -118,4 +118,27 @@ public:
     ~Fusion();
     arma::vec operator()(const arma::vec &x, double l);
 };
+
+// A handle class that deals with matching proximal operators
+// and constructing and releasing the pointer
+class ProxOp{
+private:
+    Prox* p;
+public:
+    ProxOp(){
+        p = nullptr;
+    }
+    
+    ProxOp(
+        const std::string &s, double gamma,
+        const arma::vec &group,
+        const arma::mat &w, bool ADMM, bool acc, double prox_eps,
+        bool nonneg);
+
+    ~ProxOp(){
+        delete p;
+    }
+    arma::vec operator()(const arma::vec &x, double l);
+};
+
 #endif
