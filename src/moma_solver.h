@@ -1,0 +1,142 @@
+// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
+
+#ifndef MOMA_SOLVER
+#define MOMA_SOLVER 1
+
+#include "moma_base.h"
+#include "moma_logging.h"
+#include "moma_prox.h"
+
+inline double mat_norm(const arma::vec &u, const arma::mat &S_u, bool I = 0){
+    // TODO: Special-case the alpha = 0 or Omega = I => S = I case
+    return I? arma::norm(u) : arma::as_scalar(arma::sqrt(u.t() * S_u * u));
+}
+
+// Penalized regression solver
+// min_u || y - u || + lambda * P(u) s.t. || u ||_S <= 1
+// S = I + alpha * Omega
+class _PR_solver{
+
+protected:
+    double lambda;
+    double alpha;
+    double L;
+    const arma::mat &Omega;
+     // S = I + alpha * Omega for u, v smoothing
+    arma::mat S;
+    bool I; // indicator of alpha == 0.0
+
+
+    // Step size for proximal gradient algorithm
+    //   - since this is a linear model internally, we can used a fixed
+    //     step size without backtracking
+    double grad_step_size;
+    double prox_step_size;
+    // A proximal operator for sparsity inducing penalties
+    //
+    // Note that currently the threshold level is not defined in the Prox object
+    ProxOp p;
+    // A gradient operator
+    arma::vec g(
+        const arma::vec &v, const arma::vec &y,
+        double step_size, const arma::mat &S, bool I);
+    arma::vec normalize(const arma::vec &u);
+
+
+    // user-specified precision and max iterations
+    double EPS;
+    int MAX_ITER;
+    // working precision and max iterations
+    double tol;
+    int iter;
+
+public:
+    explicit _PR_solver(
+        // smoothness
+        double i_alpha, const arma::mat &i_Omega,
+        // sparsity
+        double i_lambda, const std::string &sparsity_string, double gamma,
+        const arma::vec &group, const arma::mat &w, bool ADMM,
+        bool acc, double prox_eps, bool nonneg,
+        // algorithm settings
+        double i_EPS, int i_MAX_ITER);
+
+    // Used when solving for a bunch of lambda's and alpha's
+    int reset(double new_lambda, double new_alpha);
+    virtual ~_PR_solver() = default;
+    virtual arma::vec solve(arma::vec y, const arma::vec &start_point) = 0;
+};
+
+class ista: public _PR_solver{
+public:
+    ista(
+        double i_alpha, const arma::mat &i_Omega, double i_lambda,
+        const std::string &sparsity_string, double gamma, const arma::vec &group,
+        const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
+        double i_EPS, int i_MAX_ITER)
+        : _PR_solver(
+                i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
+                group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER)
+    {
+        MoMALogger::debug("Initializing a ista solver.");
+    };
+    arma::vec solve(arma::vec y,const arma::vec &start_point);
+};
+
+class fista: public _PR_solver{
+public:
+    fista(
+        double i_alpha, const arma::mat &i_Omega, double i_lambda,
+        const std::string &sparsity_string, double gamma, const arma::vec &group,
+        const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
+        double i_EPS, int i_MAX_ITER)
+        :_PR_solver(
+                i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
+                group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER)
+    {
+        MoMALogger::debug("Initializing a fista solver.");
+    };
+    arma::vec solve(arma::vec y,const arma::vec &start_point);
+};
+
+class onestepista: public _PR_solver{
+public:
+    onestepista(
+                double i_alpha, const arma::mat &i_Omega, double i_lambda,
+                const std::string &sparsity_string, double gamma, const arma::vec &group,
+                const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
+                double i_EPS, int i_MAX_ITER)
+        :_PR_solver(
+                i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
+                group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER)
+    {
+        MoMALogger::debug("Initializing an one step ista solver.");
+    };
+    arma::vec solve(arma::vec y,const arma::vec &start_point);
+};
+
+// A handle class
+class PR_solver{
+private:
+    _PR_solver *prs;
+public:
+    PR_solver(
+        // a string saying which algorithm to use
+        const std::string &algorithm_string,
+        // same as class _PR_solver
+        double i_alpha, const arma::mat &i_Omega,
+        double i_lambda, const std::string &sparsity_string, double gamma,
+        const arma::vec &group, const arma::mat &w, bool ADMM, 
+        bool acc, double prox_eps, bool nonneg,
+        double i_EPS, int i_MAX_ITER);
+
+    // wrap operations in _PR_solver class
+    arma::vec solve(arma::vec y, const arma::vec &start_point);
+    int reset(double new_lambda, double new_alpha);
+
+    ~PR_solver(){
+        delete prs;
+    }
+};
+
+#endif
