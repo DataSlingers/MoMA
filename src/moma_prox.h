@@ -85,10 +85,6 @@ class GrpLasso: public Prox{
 protected:
     arma::vec group;
     int n_grp; // number of gourps
-    arma::umat D;  // Probably not using sparse matrix would be faster, TODO
-                    // a boolean matrix, D \in R^{g \times p}, g is the number of groups, p the number of parameters.
-                    // D_ji = 1 means \beta_i in group j.
-                    // should be integer, probably use arma::sp_umat; it will cause error though, when it multipies a vec
 public:
     GrpLasso(const arma::vec &grp);
     ~GrpLasso();

@@ -211,11 +211,6 @@ GrpLasso::GrpLasso(const arma::vec &grp):
         // takes in a factor `grp`, whose indices start with 1
     n_grp = grp.max();
     MoMALogger::debug("Initializing group lasso proximal operator object");
-    D = arma::zeros<arma::umat>(n_grp,grp.n_elem);  // density will be 1/p = 1/x.n_elem
-    for(int i = 0; i < grp.n_elem; i++){
-        arma::uword g = group(i); // the i-th parameter is in g-th group. Note factor in R starts from 1
-        D(g,i) = 1;
-    }
 }
 
 GrpLasso::~GrpLasso(){
@@ -240,10 +235,6 @@ arma::vec GrpLasso::operator()(const arma::vec &x, double l){
     return x % scale;
 }
 
-arma::vec GrpLasso::vec_prox(const arma::vec &x, double l){
-    arma::vec grp_norms = D.t() * arma::sqrt(D * arma::square(x)); // to_be_thres is of dimension p.
-    return (x / grp_norms) % soft_thres_p(grp_norms,l);
-};
 /*
 * Non-negative group lasso
 */
