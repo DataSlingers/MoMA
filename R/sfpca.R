@@ -31,12 +31,17 @@ sfpca <- function(X,
                   # algorithm parameters
                   EPS = 1e-10,
                   MAX_ITER = 1000,
-                  solver = "ista"){
+                  EPS_inner = 1e-10,
+                  MAX_ITER_inner = 1e+5,
+                  solver = "ista",
+                  k = 1){
     if (!is.null(X) && !is.matrix(X)){
         stop("X must be a matrix.")
     }
     n <- dim(X)[1]
     p <- dim(X)[2]
+
+
     P_u <- toupper(P_u)
     P_v <- toupper(P_v)
     solver <- toupper(solver)
@@ -71,5 +76,8 @@ sfpca <- function(X,
                      prox_eps_u = prox_eps_u, prox_eps_v = prox_eps_v,
                      nonneg_u = nonneg_u,nonneg_v = nonneg_v,
                      group_u = group_u,group_v = group_v,
-                     EPS = EPS,MAX_ITER = MAX_ITER,solver = solver))
+                     EPS = EPS,MAX_ITER = MAX_ITER,
+                     EPS_inner = EPS_inner,MAX_ITER_inner = MAX_ITER_inner,
+                     solver = solver,
+                     k = k))
 }

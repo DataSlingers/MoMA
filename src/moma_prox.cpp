@@ -8,7 +8,7 @@ NullProx::NullProx(){
 }
 
 arma::vec NullProx::operator()(const arma::vec &x, double l){
-    return x;   // to be tested, return a reference might cause extra copying.
+    return x;   // TODO: to be tested, return a reference might cause extra copying.
 };
 
 NullProx::~NullProx() {
@@ -211,11 +211,6 @@ GrpLasso::GrpLasso(const arma::vec &grp):
         // takes in a factor `grp`, whose indices start with 1
     n_grp = grp.max();
     MoMALogger::debug("Initializing group lasso proximal operator object");
-    D = arma::zeros<arma::umat>(n_grp,grp.n_elem);  // density will be 1/p = 1/x.n_elem
-    for(int i = 0; i < grp.n_elem; i++){
-        arma::uword g = group(i); // the i-th parameter is in g-th group. Note factor in R starts from 1
-        D(g,i) = 1;
-    }
 }
 
 GrpLasso::~GrpLasso(){
@@ -240,10 +235,6 @@ arma::vec GrpLasso::operator()(const arma::vec &x, double l){
     return x % scale;
 }
 
-arma::vec GrpLasso::vec_prox(const arma::vec &x, double l){
-    arma::vec grp_norms = D.t() * arma::sqrt(D * arma::square(x)); // to_be_thres is of dimension p.
-    return (x / grp_norms) % soft_thres_p(grp_norms,l);
-};
 /*
 * Non-negative group lasso
 */
@@ -274,12 +265,17 @@ arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x_, double l){
     return x % scale;
 }
 
+/*
+* Ordered fused lasso
+*/
 OrderedFusedLasso::OrderedFusedLasso(){
     MoMALogger::debug("Initializing a ordered fusion lasso proximal operator object");
 }
+
 OrderedFusedLasso::~OrderedFusedLasso(){
     MoMALogger::debug("Releasing a ordered fusion lasso proximal operator object");
 }
+
 arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
     FusedGroups fg(x);
     while(!fg.all_merged() && fg.next_lambda() < l){
@@ -510,4 +506,70 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         }
         return u;
     }
+}
+
+// A handle class
+ProxOp::ProxOp(const std::string &s, double gamma,
+                const arma::vec &group,
+                const arma::mat &w, bool ADMM, bool acc, double prox_eps,
+                bool nonneg){
+    
+    if(s.compare("NONE") == 0){
+        p = new NullProx();
+    }
+    else if (s.compare("LASSO") == 0){
+        if(nonneg){
+            p = new NonNegativeLasso();
+        }
+        else{
+            p = new Lasso();
+        }
+    }
+    else if (s.compare("SCAD") == 0){
+        if(nonneg){
+            p = new NonNegativeSCAD(gamma);
+        }
+        else{
+            p = new SCAD(gamma);
+        }
+    }
+    else if (s.compare("MCP") == 0){
+        if(nonneg){
+            p = new NonNegativeMCP(gamma);
+        }
+        else{
+            p = new MCP(gamma);
+        }
+    }
+    else if(s.compare("GRPLASSO") == 0){
+        if(nonneg){
+            p = new NonNegativeGrpLasso(group);
+        }
+        else{
+            p = new GrpLasso(group);
+        }
+    }
+    else if(s.compare("ORDEREDFUSED") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative ordered fused lasso is not implemented!");
+        }
+        else{
+            p = new OrderedFusedLasso();
+        }
+    }
+    else if(s.compare("UNORDEREDFUSION") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative unordered fusion lasso is not implemented!");
+        }
+        else{
+            p = new Fusion(w,ADMM,acc,prox_eps);
+        }
+    }
+    else{
+        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default: ") << s;
+    }
+}
+
+arma::vec ProxOp::operator()(const arma::vec &x, double l){
+    return (*p)(x,l);
 }

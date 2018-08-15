@@ -75,8 +75,7 @@ test_that("Non-negative prox operators match for non-negative input", {
 
 test_that("Group lasso proximal operators return correct results",{
     set.seed(32)
-    for(grp_prox in c(test_prox_grplasso,
-                      test_prox_grplassovec)){
+    for(grp_prox in c(test_prox_grplasso)){
         for(rep in 1:10){
             x <- runif(7)
             # When every element forms a group = lasso
@@ -88,8 +87,7 @@ test_that("Group lasso proximal operators return correct results",{
         }
     }
 
-    for(grp_prox in c(test_prox_grplasso,
-                      test_prox_grplassovec)){
+    for(grp_prox in c(test_prox_grplasso)){
         # When the all the elements are grouped
         for(rep in 1:10){
             x <- runif(10)

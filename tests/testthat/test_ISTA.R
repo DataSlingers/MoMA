@@ -14,9 +14,11 @@ test_that("Equivalent to SVD when no penalty imposed", {
                            lambda_u=0,lambda_v=0,P_u=P_u,P_v=P_v,
                            EPS=1e-9,MAX_ITER = 1e+5)
             svd.result <- svd(X)
+            svd.result$u[,1:4]
+            sfpca$u
             expect_equal(norm(svd.result$v[,1]-sfpca$v),0)
             expect_equal(norm(svd.result$u[,1]-sfpca$u),0)
-            expect_equal(svd.result$d[1],sfpca$d);
+            expect_equal(svd.result$d[1],sfpca$d[1]);
         }
     }
 })
@@ -40,7 +42,7 @@ test_that("Equivalent to SVD when Omega = I and no sparsity",{
             svd.result <- svd(X)
             expect_equal(norm(svd.result$v[,1] - sqrt(1 + a_v) * sfpca$v),0)
             expect_equal(norm(svd.result$u[,1] - sqrt(1 + a_u) * sfpca$u),0)
-            expect_equal(svd.result$d[1],sqrt((1 + a_v) * (1 + a_u)) * sfpca$d);
+            expect_equal(svd.result$d[1],sqrt((1 + a_v) * (1 + a_u)) * sfpca$d[1]);
         }
     }
 })
