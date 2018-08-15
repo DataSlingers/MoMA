@@ -39,7 +39,9 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     * Algorithm parameters:
     */
     double i_EPS,
-    arma::uword i_MAX_ITER,
+    long i_MAX_ITER,
+    double i_EPS_inner,
+    long i_MAX_ITER_inner,
     std::string i_solver):
 
     alpha_u(i_alpha_u),
@@ -49,8 +51,14 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     X(i_X),
     MAX_ITER(i_MAX_ITER),
     EPS(i_EPS),
-    solver_u(i_solver,alpha_u,Omega_u,lambda_u,P_u,gamma,group_u,w_u,ADMM_u,acc_u,prox_eps_u,nonneg_u,i_EPS,i_MAX_ITER),
-    solver_v(i_solver,alpha_v,Omega_v,lambda_v,P_v,gamma,group_v,w_v,ADMM_v,acc_v,prox_eps_v,nonneg_v,i_EPS,i_MAX_ITER)
+    solver_u(
+            i_solver,alpha_u,Omega_u,lambda_u,P_u,
+            gamma,group_u,w_u,ADMM_u,acc_u,prox_eps_u,
+            nonneg_u,i_EPS_inner,i_MAX_ITER_inner),
+    solver_v(
+            i_solver,alpha_v,Omega_v,lambda_v,P_v,
+            gamma,group_v,w_v,ADMM_v,acc_v,prox_eps_v,
+            nonneg_v,i_EPS_inner,i_MAX_ITER_inner)
      // const reference must be passed to initializer list
 {
     MoMALogger::info("Setting up model");
@@ -76,7 +84,7 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
 int MoMA::deflate(double d){
     MoMALogger::warning("Deflating.");
     if(d <= 0.0){
-        MoMALogger::warning("Defalte by non-positive number.");
+        MoMALogger::error("Cannot deflate by non-positive factor.");
     }
     X = X - d * u * v.t();
     // Re-initialize u and v after deflation

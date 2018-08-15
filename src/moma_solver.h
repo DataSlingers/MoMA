@@ -67,9 +67,9 @@ public:
     virtual arma::vec solve(arma::vec y, const arma::vec &start_point) = 0;
 };
 
-class ista: public _PR_solver{
+class ISTA: public _PR_solver{
 public:
-    ista(
+    ISTA(
         double i_alpha, const arma::mat &i_Omega, double i_lambda,
         const std::string &sparsity_string, double gamma, const arma::vec &group,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
@@ -78,14 +78,14 @@ public:
                 i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
                 group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER)
     {
-        MoMALogger::debug("Initializing a ista solver.");
+        MoMALogger::debug("Initializing a ISTA solver.");
     };
     arma::vec solve(arma::vec y,const arma::vec &start_point);
 };
 
-class fista: public _PR_solver{
+class FISTA: public _PR_solver{
 public:
-    fista(
+    FISTA(
         double i_alpha, const arma::mat &i_Omega, double i_lambda,
         const std::string &sparsity_string, double gamma, const arma::vec &group,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
@@ -94,14 +94,14 @@ public:
                 i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
                 group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER)
     {
-        MoMALogger::debug("Initializing a fista solver.");
+        MoMALogger::debug("Initializing a FISTA solver.");
     };
     arma::vec solve(arma::vec y,const arma::vec &start_point);
 };
 
-class onestepista: public _PR_solver{
+class OneStepISTA: public _PR_solver{
 public:
-    onestepista(
+    OneStepISTA(
                 double i_alpha, const arma::mat &i_Omega, double i_lambda,
                 const std::string &sparsity_string, double gamma, const arma::vec &group,
                 const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
@@ -110,7 +110,7 @@ public:
                 i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
                 group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER)
     {
-        MoMALogger::debug("Initializing an one step ista solver.");
+        MoMALogger::debug("Initializing an one step ISTA solver.");
     };
     arma::vec solve(arma::vec y,const arma::vec &start_point);
 };

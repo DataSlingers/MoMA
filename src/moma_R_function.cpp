@@ -28,6 +28,8 @@ Rcpp::List cpp_sfpca(
     arma::vec group_v,
     double EPS,
     long MAX_ITER,
+    double EPS_inner,
+    long MAX_ITER_inner,
     std::string solver,
     int k = 1){
 
@@ -61,6 +63,8 @@ Rcpp::List cpp_sfpca(
               /* algorithm parameters */
               EPS,
               MAX_ITER,
+              EPS_inner,
+              MAX_ITER_inner,
               solver);
 
     // store results
@@ -73,7 +77,7 @@ Rcpp::List cpp_sfpca(
         problem.solve();
         U.col(i) = problem.u;
         V.col(i) = problem.v;
-        d(i) = arma::as_scalar(trans(problem.u) * problem.X * problem.v);
+        d(i) = arma::as_scalar(problem.u.t() * problem.X * problem.v);
         // deflate X
         if(i < k-1){
             problem.deflate(d(i));

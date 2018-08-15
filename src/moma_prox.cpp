@@ -8,7 +8,7 @@ NullProx::NullProx(){
 }
 
 arma::vec NullProx::operator()(const arma::vec &x, double l){
-    return x;   // WARNING: to be tested, return a reference might cause extra copying.
+    return x;   // TODO: to be tested, return a reference might cause extra copying.
 };
 
 NullProx::~NullProx() {

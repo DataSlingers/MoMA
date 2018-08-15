@@ -74,7 +74,7 @@ int _PR_solver::reset(double new_lambda, double new_alpha){
     return 0;
 }
 
-arma::vec ista::solve(arma::vec y, const arma::vec &start_point){
+arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
         MoMALogger::error("Wroing dimension in PRsolver::solve");
     }
@@ -99,7 +99,7 @@ arma::vec ista::solve(arma::vec y, const arma::vec &start_point){
     return u;
 }
 
-arma::vec fista::solve(arma::vec y, const arma::vec &start_point){
+arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
         MoMALogger::error("Wroing dimension in PRsolver::solve");
     }
@@ -128,7 +128,7 @@ arma::vec fista::solve(arma::vec y, const arma::vec &start_point){
     return u;
 }
 
-arma::vec onestepista::solve(arma::vec y, const arma::vec &start_point){
+arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
         MoMALogger::error("Wroing dimension in PRsolver::solve");
     }
@@ -164,25 +164,25 @@ PR_solver::PR_solver(
     double i_EPS,int i_MAX_ITER){
 
     if (algorithm_string.compare("ISTA") == 0){
-        prs = new ista(
+        prs = new ISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
                     i_EPS,i_MAX_ITER);
     }
     else if (algorithm_string.compare("FISTA") == 0){
-        prs =  new fista(
+        prs =  new FISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
                     i_EPS,i_MAX_ITER);
     }
     else if (algorithm_string.compare("FISTA") == 0){
-        prs =  new onestepista(
+        prs =  new OneStepISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
                     i_EPS,i_MAX_ITER);
     }
     else{
-        MoMALogger::error("Your choice of algorithm not provided") << algorithm_string;
+        MoMALogger::error("Your choice of algorithm not provided: ") << algorithm_string;
     }
 };
 

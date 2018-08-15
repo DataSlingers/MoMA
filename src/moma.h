@@ -87,7 +87,9 @@ public:
          * Algorithm parameters:
          */
         double i_EPS,
-        arma::uword i_MAX_ITER,
+        long i_MAX_ITER,
+        double i_EPS_inner,
+        long i_MAX_ITER_inner,
         std::string i_solver);
 
     // solve sfpca by iteratively solving
