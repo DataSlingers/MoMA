@@ -108,7 +108,7 @@ public:
 
 class Fusion: public Prox{
 private:
-    arma::mat weight;
+    arma::vec weight;
     bool ADMM;
     bool acc;
     double prox_eps;
