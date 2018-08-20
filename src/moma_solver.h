@@ -49,7 +49,8 @@ protected:
     // working precision and max iterations
     double tol;
     int iter;
-
+    int check_cnvrg();
+    
 public:
     explicit _PR_solver(
         // smoothness

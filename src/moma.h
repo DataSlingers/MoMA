@@ -98,6 +98,9 @@ public:
 
     // defalte u * v.t() out of X by the amount of d
     int deflate(double d);
+
+    // check convergence
+    int check_cnvrg();
 };
 
 #endif

@@ -16,6 +16,13 @@ arma::vec _PR_solver::normalize(const arma::vec &u){
     return res;
 }
 
+int _PR_solver::check_cnvrg(){
+    if(iter >= MAX_ITER){
+        MoMALogger::warning("No convergence in _PR_solver!");
+    }
+    return 0;
+}
+
 _PR_solver::_PR_solver(
         double i_alpha, const arma::mat &i_Omega, double i_lambda,
         const std::string &sparsity_string, double gamma,
@@ -92,10 +99,14 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
         u = p(u,prox_step_size);
 
         tol = arma::norm(u - old) / arma::norm(old);
-        MoMALogger::debug("No.") << iter << "--"<< "%change " << tol;
+        if(iter % 10 == 0){
+            MoMALogger::debug("No.") << iter << "--"<< tol;
+        }
     }
     u = normalize(u);
     
+    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
+    check_cnvrg();
     return u;
 }
 
@@ -121,10 +132,14 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
         u = u + (oldt - 1) / t * (u - old);
 
         tol = arma::norm(u - old) / arma::norm(old);
-        MoMALogger::debug("No.") << iter << "--"<< "%change " << tol;
+        if(iter % 10 == 0){
+            MoMALogger::debug("No.") << iter << "--"<< tol;
+        }
     }
     u = normalize(u);
     
+    check_cnvrg();
+    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
     return u;
 }
 
@@ -147,9 +162,13 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
         u = normalize(u);
 
         tol = arma::norm(u - old) / arma::norm(old);
-        MoMALogger::debug("No.") << iter << "--"<< "%change " << tol;
+        if(iter % 10 == 0){
+            MoMALogger::debug("No.") << iter << "--"<< tol;
+        }
     }
     
+    check_cnvrg();
+    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
     return u;
 }
 
@@ -175,7 +194,7 @@ PR_solver::PR_solver(
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
                     i_EPS,i_MAX_ITER);
     }
-    else if (algorithm_string.compare("FISTA") == 0){
+    else if (algorithm_string.compare("ONESTEPISTA") == 0){
         prs =  new OneStepISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,

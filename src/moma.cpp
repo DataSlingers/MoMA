@@ -111,7 +111,16 @@ void MoMA::solve(){
         v = solver_v.solve(X.t()*u, v);
 
         tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
-        MoMALogger::debug("Outer loop No.") << iter << "--"<< "%change " << tol;
+        MoMALogger::debug("Outer loop No.") << iter << "--" << tol;
     }
+    
     MoMALogger::info("--Finish iter: ") << iter << "---" ;
+    check_cnvrg();
 }
+
+int MoMA::check_cnvrg(){
+    if(iter >= MAX_ITER){
+        MoMALogger::warning("No convergence in MoMA!");
+    }
+    return 0;
+} 
