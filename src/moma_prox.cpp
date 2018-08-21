@@ -105,11 +105,11 @@ arma::vec SCAD::vec_prox(const arma::vec &x, double l){
 * Nonnegative SCAD
 */
 NonNegativeSCAD::NonNegativeSCAD(double g):SCAD(g){
-    MoMALogger::debug("Initializing non-negetive SCAD proximal operator object");
+    MoMALogger::debug("Initializing non-negative SCAD proximal operator object");
 }
 
 NonNegativeSCAD::~NonNegativeSCAD(){
-    MoMALogger::debug("Releasing non-negetive SCAD proximal operator object");
+    MoMALogger::debug("Releasing non-negative SCAD proximal operator object");
 }
 
 arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
@@ -364,6 +364,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Yue Hu, Eric C. Chi and Genevera I. Allen
 
         // Using Genevera's paper notations
+        MoMALogger::debug("Running ADMM.");
         const arma::vec &y = x;
         
         double y_bar = arma::mean(y);
@@ -443,6 +444,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Choosing nu is not trivial. See Proposition 4.1 in 
         // Splitting Methods for Convex Clustering, Chi and Range
 
+        MoMALogger::debug("Running AMA.");
         // Find the degrees of nodes
         arma::vec deg(n);
         deg.zeros();
@@ -582,7 +584,7 @@ ProxOp::ProxOp(const std::string &s, double gamma,
         }
     }
     else{
-        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default: ") << s;
+        MoMALogger::error("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default: ") << s;
     }
 }
 
