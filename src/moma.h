@@ -57,7 +57,8 @@ public:
         std::string P_u,
         double i_lambda_v,      // regularization level
         double i_lambda_u,
-        double gamma,           // Non-convexity parameter
+        double gamma_v,    
+        double gamma_u,         // Non-convexity parameter
         bool nonneg_u,          // Non-negativity indicator
         bool nonneg_v,
         /*
