@@ -1,6 +1,3 @@
-MOMA_EMPTYMAT <- matrix()
-MOMA_EMPTYVEC <- vector(mode="numeric")
-
 sfpca <- function(X,
                   # sparsity
                   P_v = "lasso",
@@ -46,25 +43,10 @@ sfpca <- function(X,
     P_u <- toupper(P_u)
     P_v <- toupper(P_v)
     solver <- toupper(solver)
-    # Smoothness arguments
-    if(alpha_u == 0){
-        # regardless of input Omega_u
-        Omega_u <- diag(n)
-    }
-    else if(is.null(Omega_u)){
-        # The user wants smooth penalty
-        # but does not specify Omega matrix
-        stop("here")
-        Omega_u <- second.diff.mat(n)
-    }
-    if(alpha_v == 0){
-        Omega_v <- diag(p)
-    }
-    else if(is.null(Omega_v)){
-        stop("here")
 
-        Omega_v <- second.diff.mat(p)
-    }
+
+    Omega_u <- if(is.null(Omega_u)) diag(dim(X)[1]) else Omega_u
+    Omega_v <- if(is.null(Omega_v)) diag(dim(X)[2]) else Omega_v
 
     return(cpp_sfpca(X = X,
                      w_v = w_v,w_u = w_u,
