@@ -5,12 +5,12 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     /*
     * sparsity - enforced through penalties
     */
-    std::string P_v,    // Sparsity penalty info
-    std::string P_u,
-    double i_lambda_v,  // regularization level
-    double i_lambda_u,
-    double gamma_v,
-    double gamma_u,       // Non-convexity parameter
+    std::string P_u,    // Sparsity penalty info
+    std::string P_v,
+    double i_lambda_u,  // regularization level
+    double i_lambda_v,
+    double gamma_u,
+    double gamma_v,       // Non-convexity parameter
     bool nonneg_u,      // Non-negativity indicator
     bool nonneg_v,
     /*

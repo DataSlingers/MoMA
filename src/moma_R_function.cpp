@@ -34,12 +34,14 @@ Rcpp::List cpp_sfpca(
     std::string solver,
     int k = 1){
 
+    // WARNING: arguments should be listed
+    // in the exact order of MoMA constructor
     MoMA problem(X,
               /* sparsity */
-              P_v,
               P_u,
-              lambda_v,
+              P_v,
               lambda_u,
+              lambda_v,
               gamma_u,
               gamma_v,
               /* non-negativity */
