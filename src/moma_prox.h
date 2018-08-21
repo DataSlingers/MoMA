@@ -133,7 +133,7 @@ public:
         const std::string &s, double gamma,
         const arma::vec &group,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-        bool nonneg);
+        bool nonneg, int dim);
 
     ~ProxOp(){
         delete p;

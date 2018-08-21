@@ -28,11 +28,12 @@ _PR_solver::_PR_solver(
         const std::string &sparsity_string, double gamma,
         const arma::vec &group, const arma::mat &w,
         bool ADMM, bool acc, double prox_eps, bool nonneg,
-        double i_EPS, int i_MAX_ITER):
+        double i_EPS, int i_MAX_ITER, int i_dim):
+        dim(i_dim),
         lambda(i_lambda),
         alpha(i_alpha),
-        Omega(i_Omega),
-        p(sparsity_string,gamma,group,w,ADMM,acc,prox_eps,nonneg),
+        Omega(i_Omega),         // reference to the matrix on the R side, no extra copy
+        p(sparsity_string,gamma,group,w,ADMM,acc,prox_eps,nonneg,i_dim),
         EPS(i_EPS),
         MAX_ITER(i_MAX_ITER){
 
@@ -180,25 +181,25 @@ PR_solver::PR_solver(
     const arma::vec &group,
     const arma::mat &w, bool ADMM, bool acc, double prox_eps,
     bool nonneg,
-    double i_EPS,int i_MAX_ITER){
+    double i_EPS, int i_MAX_ITER, int dim){
 
     if (algorithm_string.compare("ISTA") == 0){
         prs = new ISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
-                    i_EPS,i_MAX_ITER);
+                    i_EPS,i_MAX_ITER,dim);
     }
     else if (algorithm_string.compare("FISTA") == 0){
         prs =  new FISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
-                    i_EPS,i_MAX_ITER);
+                    i_EPS,i_MAX_ITER,dim);
     }
     else if (algorithm_string.compare("ONESTEPISTA") == 0){
         prs =  new OneStepISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
                     gamma,group,w,ADMM,acc,prox_eps,nonneg,
-                    i_EPS,i_MAX_ITER);
+                    i_EPS,i_MAX_ITER,dim);
     }
     else{
         MoMALogger::error("Your choice of algorithm not provided: ") << algorithm_string;

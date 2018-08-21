@@ -522,7 +522,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
 ProxOp::ProxOp(const std::string &s, double gamma,
                 const arma::vec &group,
                 const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-                bool nonneg){
+                bool nonneg, int dim){
     
     if(s.compare("NONE") == 0){
         p = new NullProx();
@@ -552,6 +552,9 @@ ProxOp::ProxOp(const std::string &s, double gamma,
         }
     }
     else if(s.compare("GRPLASSO") == 0){
+        if(group.n_elem != dim){
+            MoMALogger::error("Wrong dimension: dim(group) != dim(x).");
+        }
         if(nonneg){
             p = new NonNegativeGrpLasso(group);
         }
@@ -568,6 +571,9 @@ ProxOp::ProxOp(const std::string &s, double gamma,
         }
     }
     else if(s.compare("UNORDEREDFUSION") == 0){
+        if(w.n_rows != dim || w.n_cols != dim){
+            MoMALogger::error("Wrong dimension: dim(weight matrix) != dim(x).");
+        }
         if(nonneg){
             MoMALogger::error("Non-negative unordered fusion lasso is not implemented!");
         }
