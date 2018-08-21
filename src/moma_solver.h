@@ -7,11 +7,6 @@
 #include "moma_logging.h"
 #include "moma_prox.h"
 
-inline double mat_norm(const arma::vec &u, const arma::mat &S_u, bool I = 0){
-    // TODO: Special-case the alpha = 0 or Omega = I => S = I case
-    return I? arma::norm(u) : arma::as_scalar(arma::sqrt(u.t() * S_u * u));
-}
-
 // Penalized regression solver
 // min_u || y - u || + lambda * P(u) s.t. || u ||_S <= 1
 // S = I + alpha * Omega
@@ -51,7 +46,7 @@ protected:
     double tol;
     int iter;
     int check_cnvrg();
-    
+
 public:
     explicit _PR_solver(
         // smoothness

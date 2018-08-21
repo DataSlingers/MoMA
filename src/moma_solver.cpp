@@ -7,7 +7,7 @@
 // S = I + alpha * Omega
 arma::vec _PR_solver::normalize(const arma::vec &u){
     arma::vec res = u;
-    double mn = mat_norm(u,S,I);
+    double mn = I? arma::norm(u) : arma::as_scalar(arma::sqrt(u.t() * S * u));
     if(mn > 0){
         res /= mn;
     }else{
