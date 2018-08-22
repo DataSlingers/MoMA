@@ -4,7 +4,7 @@ MOMA_EMPTYVEC <- vector(mode="numeric")
 # This function checks
 check_omega <- function(Omega,alpha,n){
     if(alpha == 0){
-        # regardless of input Omeu
+        # regardless of user input
         Omega <- diag(n)
     }
     else if(is.null(Omega)){
@@ -75,7 +75,7 @@ moma_svd <- function(
     solver <- toupper(solver)
 
     # Sparsity arguments
-    if(class(usp) != "__moma_sp__" || class(vsp) != "__moma_sp__"){
+    if(!inherits(usp,"moma_sparsity") || !inherits(vsp,"moma_sparsity")){
         stop("Sparse penalty should be of class '__moma_sp_'.
              Try using, for example, `usp = lasso()`.")
     }

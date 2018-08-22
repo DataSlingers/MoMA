@@ -1,6 +1,6 @@
 empty <- function(){
     arglist <- list()
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
 
@@ -9,7 +9,7 @@ lasso <- function(nn = FALSE){
         stop("nn should be a boolean value.")
     }
     arglist <- list(nonneg = nn,P = "LASSO")
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
 
@@ -18,7 +18,7 @@ mcp <- function(gamma = 3, nn = FALSE){
         stop("nn should be a boolean value.")
     }
     arglist <- list(gamma = gamma, nonneg = nn, P = "MCP")
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
 
@@ -27,7 +27,7 @@ scad <- function(gamma = 3.7, nn = FALSE){
         stop("nn should be a boolean value.")
     }
     arglist <- list(gamma = gamma, nonneg = nn, P = "SCAD")
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
 
@@ -39,14 +39,14 @@ grplasso <- function(g, nn = FALSE){
         stop("Please provide a factor for group lasso")
     }
     arglist <- list(group = g, P = "GRPLASSO", nonneg = nn)
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
 
 fusedlasso <- function(){
     # fused lasso
     arglist <- list(P = "ORDEREDFUSED")
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
 
@@ -64,6 +64,6 @@ cluster <- function(w = NULL,ADMM = FALSE,
                 w = w, ADMM = ADMM,
                 acc = acc, prox_eps = eps,
                 P = "UNORDEREDFUSION")
-    class(arglist) <- "__moma_sp__"
+    class(arglist) <- "moma_sparsity"
     return(arglist)
 }
