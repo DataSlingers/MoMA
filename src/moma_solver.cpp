@@ -89,18 +89,18 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     tol = 1;
     iter = 0;
     arma::vec u = start_point;
-    arma::vec old;    // store working result
+    arma::vec oldu;    // store working result
 
     while (tol > EPS && iter < MAX_ITER)
     {
         iter++;
-        old = u;
+        oldu = u;
 
         u = g(u,y,grad_step_size,S,I);
         u = p(u,prox_step_size);
 
-        tol = arma::norm(u - old) / arma::norm(old);
-        if(iter % 10 == 0){
+        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        if(iter % 1000 == 0){
             MoMALogger::debug("No.") << iter << "--"<< tol;
         }
     }
@@ -118,22 +118,23 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
     tol = 1;
     iter = 0;
     arma::vec u = start_point;
-    arma::vec old;    // store working result
+    arma::vec newu = start_point;
+    arma::vec oldu;    // store working result
 
     double t = 1;   
     while (tol > EPS && iter < MAX_ITER)
     {
         iter++;
-        old = u;
+        oldu = u;
         double oldt = t;
         t = 0.5 * (1 + std::sqrt(1 + 4 * oldt*oldt));
 
-        u = g(u,y,grad_step_size,S,I);
+        u = g(newu,y,grad_step_size,S,I);
         u = p(u,prox_step_size);
-        u = u + (oldt - 1) / t * (u - old);
+        newu = u + (oldt - 1) / t * (u - oldu);
 
-        tol = arma::norm(u - old) / arma::norm(old);
-        if(iter % 10 == 0){
+        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        if(iter % 1000 == 0){
             MoMALogger::debug("No.") << iter << "--"<< tol;
         }
     }
@@ -151,19 +152,19 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
     tol = 1;
     iter = 0;
     arma::vec u = start_point;
-    arma::vec old;    // store working result
+    arma::vec oldu;    // store working result
 
     while (tol > EPS && iter < MAX_ITER)
     {
         iter++;
-        old = u;
+        oldu = u;
 
         u = g(u,y,grad_step_size,S,I);
         u = p(u,prox_step_size);
         u = normalize(u);
 
-        tol = arma::norm(u - old) / arma::norm(old);
-        if(iter % 10 == 0){
+        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        if(iter % 1000 == 0){
             MoMALogger::debug("No.") << iter << "--"<< tol;
         }
     }
