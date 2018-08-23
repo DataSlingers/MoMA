@@ -4,30 +4,34 @@ MOMA_EMPTYVEC <- vector(mode="numeric")
 # This function checks
 check_omega <- function(Omega,alpha,n){
     if(alpha == 0){
-        # regardless of user input
+        # discard the Omegaa matrix specified by users
         Omega <- diag(n)
     }
     else if(is.null(Omega)){
         # The user wants smooth penalty
         # but does not specify Omega matrix
-        Omega <- second.diff.mat(n)
+        Omega <- second_diff_mat(n)
     }else{
-        if(dim(Omega)[1] != dim(Omega)[2] || dim(Omega)[1] != n){
-            stop("Omega shoud be a compatible square matrix.")
+        if(dim(Omega)[1] != dim(Omega)[2]){
+            moma_error("Omega shoud be a square matrix: nrows = ",dim(Omega)[1],", ncols = ",dim(Omega)[2])
+        }
+        if(dim(Omega)[1] != n){
+            moma_error("Omega shoud be a compatible matrix. It should be of ",
+                       n,"x",n,
+                       ", but is actually ",dim(Omega)[1],"x",dim(Omega)[1])
         }
     }
     return(Omega)
 }
 
-second.diff.mat <- function(n){
-    a <- diff(diag(n))
-    return(t(a)%*%a)
+second_diff_mat <- function(n){
+    return(crossprod(diff(diag(n))))
 }
 
 moma_svd <- function(
                     X,
-                    usp=empty(),vsp=empty(),lamu=0,lamv=0,
-                    Omeu=NULL,Omev=NULL,alu=0,alv=0,
+                    u_sparsity=empty(),v_sparsity=empty(),lambda_u=0,lambda_v=0,
+                    Omega_u=NULL,Omega_v=NULL,alpha_u=0,alpha_v=0,
                     EPS = 1e-10, MAX_ITER = 1000,
                     EPS_inner = 1e-10,MAX_ITER_inner = 1e+5,
                     solver = "ista",
@@ -37,8 +41,8 @@ moma_svd <- function(
                         X = X,
                         P_v = "NONE",
                         P_u = "NONE",
-                        lambda_v = lamu,
-                        lambda_u = lamv,
+                        lambda_v = lambda_u,
+                        lambda_u = lambda_v,
                         gamma_u = 3,
                         gamma_v = 3,
                         # non-negativity
@@ -57,8 +61,8 @@ moma_svd <- function(
                         prox_eps_u = 1e-10,
                         prox_eps_v = 1e-10,
                         # smoothness
-                        alpha_u = alu,
-                        alpha_v = alv,
+                        alpha_u = alpha_u,
+                        alpha_v = alpha_v,
                         # algorithm parameters
                         EPS = EPS,
                         MAX_ITER = MAX_ITER,
@@ -67,7 +71,10 @@ moma_svd <- function(
                         solver = solver,
                         k = k)
     if (!is.matrix(X)){
-        stop("X must be a matrix.")
+        moma_error("X must be a matrix.")
+    }
+    if (sum(!is.finite(X)) >= 1){
+        moma_error("X must not have NaN, NA, or Inf.")
     }
     n <- dim(X)[1]
     p <- dim(X)[2]
@@ -75,26 +82,26 @@ moma_svd <- function(
     solver <- toupper(solver)
 
     # Sparsity arguments
-    if(!inherits(usp,"moma_sparsity") || !inherits(vsp,"moma_sparsity")){
-        stop("Sparse penalty should be of class '__moma_sp_'.
-             Try using, for example, `usp = lasso()`.")
+    if(!inherits(u_sparsity,"moma_sparsity") || !inherits(v_sparsity,"moma_sparsity")){
+        moma_error("Sparse penalty should be of class '__moma_sp_'.
+             Try using, for example, `u_sparsity = lasso()`.")
     }
 
-    usp <- if(lamu == 0) list() else usp
-    vsp <- if(lamv == 0) list() else vsp
+    u_sparsity <- if(lambda_u == 0) list() else u_sparsity
+    v_sparsity <- if(lambda_v == 0) list() else v_sparsity
 
-    names(usp) <- if(length(usp) != 0) paste0(names(usp),"_u")
-    names(vsp) <- if(length(vsp) != 0) paste0(names(vsp),"_v")
+    names(u_sparsity) <- if(length(u_sparsity) != 0) paste0(names(u_sparsity),"_u")
+    names(v_sparsity) <- if(length(v_sparsity) != 0) paste0(names(v_sparsity),"_v")
 
-    arglist <- modifyList(df.arg.list,c(usp,vsp))
+    arglist <- modifyList(df.arg.list,c(u_sparsity,v_sparsity))
 
 
     # Smoothness arguments
     arglist <- c(
                 arglist,
                 list(
-                    Omega_u = check_omega(Omeu,alu,n),
-                    Omega_v = check_omega(Omev,alv,p))
+                    Omega_u = check_omega(Omega_u,alpha_u,n),
+                    Omega_v = check_omega(Omega_v,alpha_v,p))
                 )
 
     return(do.call("sfpca",arglist))

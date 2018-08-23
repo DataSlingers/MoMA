@@ -34,7 +34,7 @@ sfpca <- function(X,
                   solver = "ista",
                   k = 1){
     if (!is.null(X) && !is.matrix(X)){
-        stop("X must be a matrix.")
+        moma_error("X must be a matrix.")
     }
     n <- dim(X)[1]
     p <- dim(X)[2]

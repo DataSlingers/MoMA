@@ -36,15 +36,15 @@ test_that("Prompt errors encountering inappropriate arguments", {
 
     # Wrong non-convexity arguments
     expect_error(moma_svd(matrix(runif(12),3,4),
-                          usp=scad(1),lamu = 3),
-                 "Gamma for SCAD should be larger than 2!",fixed=TRUE)
+                          u_sparsity=scad(1),lambda_u = 3),
+                 "Non-convexity of SCAD should be larger than 2. (Called from scad)",fixed=TRUE)
     expect_error(moma_svd(matrix(runif(12),3,4),
-                          usp=mcp(0.9),lamu = 3),
-                 "Gamma for MCP should be larger than 1!",fixed=TRUE)
+                          u_sparsity=mcp(0.9),lambda_u = 3),
+                 "Non-convexity of MCP should be larger than 1. (Called from mcp)",fixed=TRUE)
 
     # Wrong grouping dimension in group lasso
     expect_error(moma_svd(matrix(runif(12),3,4),
-                          usp=grplasso(factor(1)),lamu = 3),
+                          u_sparsity=grplasso(factor(1)),lambda_u = 3),
                  "Wrong dimension: dim(group) != dim(x).",fixed=TRUE)
     expect_error(grplasso(matrix(1)),
                  "Please provide a factor for group lasso",fixed=TRUE)
@@ -52,14 +52,17 @@ test_that("Prompt errors encountering inappropriate arguments", {
 
     # Wrong weight matrix dimension in cluster penalty
     expect_error(moma_svd(matrix(runif(12),3,4),
-                          usp=cluster(matrix(1)),lamu = 3),
+                          u_sparsity=cluster(matrix(1)),lambda_u = 3),
                  "Wrong dimension: dim(weight matrix) != dim(x).",fixed=TRUE)
 
 
     # Omega has wrong dimension
     expect_error(moma_svd(matrix(runif(12),3,4),
-                          Omeu = matrix(c(1,2),1,2),alu=2),
-                 "Omega shoud be a compatible square matrix.",fixed=TRUE)
+                          Omega_u = matrix(c(1,2),1,2),alpha_u=2),
+                 "Omega shoud be a square matrix: nrows = 1, ncols = 2 (Called from check_omega)",fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12),3,4),
+                          Omega_u = matrix(c(1),1),alpha_u=2),
+                 "Omega shoud be a compatible matrix. It should be of 3x3, but is actually 1x1 (Called from check_omega)",fixed=TRUE)
     moma_set_logger_level_cpp(LEVELS[old_logger_level])
 })
 
@@ -75,48 +78,48 @@ test_that("Correct prox match", {
 
     # lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=lasso(),lamu = 3),
+                           u_sparsity=lasso(),lambda_u = 3),
                   "Initializing Lasso proximal operator object")
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=lasso(TRUE),lamu = 3),
+                           u_sparsity=lasso(TRUE),lambda_u = 3),
                   "Initializing non-negative Lasso proximal operator object")
 
 
     # scad
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=scad(),lamu = 3),
+                           u_sparsity=scad(),lambda_u = 3),
                   "Initializing SCAD proximal operator object")
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=scad(nn=TRUE),lamu = 3),
+                           u_sparsity=scad(non_negative=TRUE),lambda_u = 3),
                   "Initializing non-negative SCAD proximal operator object")
 
 
     # mcp
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=mcp(),lamu = 3),
+                           u_sparsity=mcp(),lambda_u = 3),
                   "Initializing MCP proximal operator object")
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=mcp(nn=TRUE),lamu = 3),
+                           u_sparsity=mcp(non_negative=TRUE),lambda_u = 3),
                   "Initializing non-negative MCP proximal operator object")
 
 
     # group
     expect_output(moma_svd(matrix(runif(12),3,4),
-                          usp=grplasso(factor(seq(3))),lamu = 3),
+                          u_sparsity=grplasso(factor(seq(3))),lambda_u = 3),
                  "Initializing group lasso proximal operator object")
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=grplasso(factor(seq(3)),nn=TRUE),lamu = 3),
+                           u_sparsity=grplasso(factor(seq(3)),non_negative=TRUE),lambda_u = 3),
                   "Initializing non-negative group lasso proximal operator object")
 
 
     # fused lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=fusedlasso(),lamu = 3),
+                           u_sparsity=fusedlasso(),lambda_u = 3),
                   "Initializing a ordered fusion lasso proximal operator object")
 
     # cluster penalty
     expect_output(moma_svd(matrix(runif(12),3,4),
-                          usp=cluster(diag(3)),lamu = 3),
+                          u_sparsity=cluster(diag(3)),lambda_u = 3),
                  "Initializing a fusion lasso proximal operator object")
 
     moma_set_logger_level_cpp(LEVELS[old_logger_level])
@@ -136,12 +139,35 @@ test_that("Correct algorithm match", {
                   "Initializing an one-step ISTA solver")
 
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=cluster(diag(3),ADMM=TRUE),lamu = 3),
+                           u_sparsity=cluster(diag(3),ADMM=TRUE),lambda_u = 3),
                   "Running ADMM")
 
     expect_output(moma_svd(matrix(runif(12),3,4),
-                           usp=cluster(diag(3)),lamu = 3),
+                           u_sparsity=cluster(diag(3)),lambda_u = 3),
                   "Running AMA")
 
     moma_set_logger_level_cpp(LEVELS[old_logger_level])
 })
+
+test_that("Data matrix must be complete", {
+    old_logger_level <- MoMA::moma_logger_level()
+    moma_set_logger_level_cpp(0)
+
+    X <- matrix(runif(12),3,4)
+    X[2,1] <- NA
+    expect_error(moma_svd(X = X),
+                  "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+
+    X = matrix(runif(12),3,4)
+    X[3,2] <- Inf
+    expect_error(moma_svd(X = X),
+                  "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+
+    X = matrix(runif(12),3,4)
+    X[1,4] <- NaN
+    expect_error(moma_svd(X = X),
+                  "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+
+    moma_set_logger_level_cpp(LEVELS[old_logger_level])
+})
+
