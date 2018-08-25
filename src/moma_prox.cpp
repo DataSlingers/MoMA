@@ -286,6 +286,22 @@ arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
 }
 
 /*
+* Sparse fused lasso
+*/
+SparseFusedLasso::SparseFusedLasso(double i_lambda2):lambda2(i_lambda2){
+    MoMALogger::debug("Initializing a sparse fused lasso proximal operator object");
+}
+
+SparseFusedLasso::~SparseFusedLasso(){
+    MoMALogger::debug("Releasing a sparse fused lasso proximal operator object");
+}
+
+arma::vec SparseFusedLasso::operator()(const arma::vec &x, double l){
+    arma::vec tmp = fg(x,l);
+    return soft_thres(tmp,lambda2);
+}
+
+/*
 * Fusion lasso
 */
 
