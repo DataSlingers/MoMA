@@ -53,7 +53,9 @@ public:
         double i_alpha, const arma::mat &i_Omega,
         // sparsity
         double i_lambda, const std::string &sparsity_string, double gamma,
-        const arma::vec &group, const arma::mat &w, bool ADMM,
+        const arma::vec &group, 
+        double lambda2,
+        const arma::mat &w, bool ADMM,
         bool acc, double prox_eps, bool nonneg,
         // algorithm settings
         double i_EPS, int i_MAX_ITER, int i_dim);
@@ -69,11 +71,12 @@ public:
     ISTA(
         double i_alpha, const arma::mat &i_Omega, double i_lambda,
         const std::string &sparsity_string, double gamma, const arma::vec &group,
+        double lambda2,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
         double i_EPS, int i_MAX_ITER, int dim)
         : _PR_solver(
                 i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
-                group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER,dim)
+                group,lambda2,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER,dim)
     {
         MoMALogger::debug("Initializing a ISTA solver.");
     };
@@ -85,11 +88,12 @@ public:
     FISTA(
         double i_alpha, const arma::mat &i_Omega, double i_lambda,
         const std::string &sparsity_string, double gamma, const arma::vec &group,
+        double lambda2,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
         double i_EPS, int i_MAX_ITER, int dim)
         :_PR_solver(
                 i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
-                group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER,dim)
+                group,lambda2,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER,dim)
     {
         MoMALogger::debug("Initializing a FISTA solver.");
     };
@@ -101,11 +105,12 @@ public:
     OneStepISTA(
                 double i_alpha, const arma::mat &i_Omega, double i_lambda,
                 const std::string &sparsity_string, double gamma, const arma::vec &group,
+                double lambda2,
                 const arma::mat &w, bool ADMM, bool acc, double prox_eps, bool nonneg,
                 double i_EPS, int i_MAX_ITER, int dim)
         :_PR_solver(
                 i_alpha,i_Omega,i_lambda,sparsity_string,gamma,
-                group,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER,dim)
+                group,lambda2,w,ADMM,acc,prox_eps,nonneg,i_EPS,i_MAX_ITER,dim)
     {
         MoMALogger::debug("Initializing an one-step ISTA solver.");
     };
@@ -123,7 +128,9 @@ public:
         // same as class _PR_solver
         double i_alpha, const arma::mat &i_Omega,
         double i_lambda, const std::string &sparsity_string, double gamma,
-        const arma::vec &group, const arma::mat &w, bool ADMM, 
+        const arma::vec &group, 
+        double i_lambda2,
+        const arma::mat &w, bool ADMM, 
         bool acc, double prox_eps, bool nonneg,
         double i_EPS, int i_MAX_ITER, int dim);
 

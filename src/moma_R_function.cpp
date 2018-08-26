@@ -17,6 +17,8 @@ Rcpp::List cpp_sfpca(
     std::string P_v,
     double gamma_u,
     double gamma_v,
+    double lambda2_u,
+    double lambda2_v,
     bool ADMM_u,
     bool ADMM_v,
     bool acc_u,
@@ -55,6 +57,9 @@ Rcpp::List cpp_sfpca(
               Omega_v,
               alpha_u,
               alpha_v,
+              /* sparse fused lasso*/
+              lambda2_u,
+              lambda2_v,
               /* unordered fusion*/
               w_u,
               w_v,

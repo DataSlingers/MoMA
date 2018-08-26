@@ -74,6 +74,12 @@ public:
         double i_alpha_u,               // Smoothing levels
         double i_alpha_v,
         /*
+        *   sparse fused lasso
+        */
+        double lambda2_u,
+        double lambda2_v,               // level of penalty on
+                                        // the absolute values of the coefficients
+        /*
          * unordered fusion
          */
         const arma::mat &w_u,

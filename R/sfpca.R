@@ -1,7 +1,7 @@
 sfpca <- function(X,
                   # sparsity
-                  P_v = "lasso",
-                  P_u = "lasso",
+                  P_v = "none",
+                  P_u = "none",
                   lambda_v = 0,
                   lambda_u = 0,
                   gamma_v=3,
@@ -12,6 +12,9 @@ sfpca <- function(X,
                   # grouping
                   group_u = MOMA_EMPTYVEC,
                   group_v = MOMA_EMPTYVEC,
+                  # sparse fused lasso
+                  lambda2_u = 0,    # penalty on the abs value of parameters
+                  lambda2_v = 0,
                   # unordered fusion
                   w_u = MOMA_EMPTYMAT,
                   w_v = MOMA_EMPTYMAT,
@@ -54,6 +57,7 @@ sfpca <- function(X,
                      alpha_u = alpha_u,alpha_v = alpha_v,
                      lambda_u = lambda_u,lambda_v = lambda_v,
                      P_u = P_u,P_v = P_v,gamma_u = gamma_u,gamma_v = gamma_v,
+                     lambda2_u = lambda2_u, lambda2_v = lambda2_v,
                      ADMM_u = ADMM_u,ADMM_v = ADMM_v,
                      acc_u = acc_u,acc_v = acc_v,
                      prox_eps_u = prox_eps_u, prox_eps_v = prox_eps_v,

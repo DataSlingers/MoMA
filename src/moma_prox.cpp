@@ -539,6 +539,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
 // A handle class
 ProxOp::ProxOp(const std::string &s, double gamma,
                 const arma::vec &group,
+                double lambda2,
                 const arma::mat &w, bool ADMM, bool acc, double prox_eps,
                 bool nonneg, int dim){
     
@@ -586,6 +587,14 @@ ProxOp::ProxOp(const std::string &s, double gamma,
         }
         else{
             p = new OrderedFusedLasso();
+        }
+    }
+    else if(s.compare("SPARSEFUSEDLASSO") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative sparse fused lasso is not implemented!");
+        }
+        else{
+            p = new SparseFusedLasso(lambda2);
         }
     }
     else if(s.compare("UNORDEREDFUSION") == 0){

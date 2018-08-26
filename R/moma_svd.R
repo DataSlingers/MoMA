@@ -51,6 +51,8 @@ moma_svd <- function(
                         # grouping
                         group_u = MOMA_EMPTYVEC,
                         group_v = MOMA_EMPTYVEC,
+                        lambda2_u = 0,
+                        lambda2_v = 0,
                         # unordered fusion
                         w_u = MOMA_EMPTYMAT,
                         w_v = MOMA_EMPTYMAT,
@@ -80,6 +82,8 @@ moma_svd <- function(
     p <- dim(X)[2]
 
     solver <- toupper(solver)
+
+    # k = 1 if alpha_u/v or lambda_u/v is of vector form
 
     # Sparsity arguments
     if(!inherits(u_sparsity,"moma_sparsity") || !inherits(v_sparsity,"moma_sparsity")){

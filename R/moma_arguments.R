@@ -61,6 +61,12 @@ fusedlasso <- function(){
     return(arglist)
 }
 
+spfusedlasso <- function(lambda2){
+    arglist <- list(P = "SPARSEFUSEDLASSO",lambda2 = lambda2)
+    class(arglist) <- "moma_sparsity"
+    return(arglist)
+}
+
 cluster <- function(w = NULL,ADMM = FALSE,
                     acc = FALSE,
                     eps = 1e-10){

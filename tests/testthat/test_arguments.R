@@ -112,6 +112,10 @@ test_that("Correct prox match", {
                   "Initializing non-negative group lasso proximal operator object")
 
 
+    # sparse fused lasso
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=spfusedlasso(lambda2=3),lambda_u = 3),
+                  "Initializing a sparse fused lasso proximal operator object")
     # fused lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=fusedlasso(),lambda_u = 3),
