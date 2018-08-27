@@ -108,6 +108,10 @@ public:
 
     // check convergence
     int check_cnvrg();
+
+    // change penalty level
+    int reset(double newlambda_u,double newlambda_v,
+                double newalpha_u,double newalpha_v);
 };
 
 #endif

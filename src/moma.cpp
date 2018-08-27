@@ -131,3 +131,10 @@ int MoMA::check_cnvrg(){
     }
     return 0;
 } 
+
+int MoMA::reset(double newlambda_u,double newlambda_v,
+                double newalpha_u,double newalpha_v){
+
+    solver_u.reset(newlambda_u,newalpha_u);
+    solver_v.reset(newlambda_v,newalpha_v);
+}
