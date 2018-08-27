@@ -3,17 +3,20 @@ MOMA_EMPTYVEC <- vector(mode="numeric")
 
 # This function checks
 check_omega <- function(Omega,alpha,n){
-    if(alpha == 0){
-        # discard the Omegaa matrix specified by users
+    if(length(alpha) == 1 && alpha == 0){
+        # discard the Omega matrix specified by users
         Omega <- diag(n)
     }
     else if(is.null(Omega)){
         # The user wants smooth penalty
         # but does not specify Omega matrix
         Omega <- second_diff_mat(n)
-    }else{
+    }
+    else{
+        # Check validity of Omega if users speicify both alpha and Omega
         if(dim(Omega)[1] != dim(Omega)[2]){
-            moma_error("Omega shoud be a square matrix: nrows = ",dim(Omega)[1],", ncols = ",dim(Omega)[2])
+            moma_error("Omega shoud be a square matrix: nrows = ",dim(Omega)[1],
+                       ", ncols = ",dim(Omega)[2])
         }
         if(dim(Omega)[1] != n){
             moma_error("Omega shoud be a compatible matrix. It should be of ",
@@ -30,19 +33,25 @@ second_diff_mat <- function(n){
 
 moma_svd <- function(
                     X,
-                    u_sparsity=empty(),v_sparsity=empty(),lambda_u=0,lambda_v=0,
-                    Omega_u=NULL,Omega_v=NULL,alpha_u=0,alpha_v=0,
+                    u_sparsity=empty(),v_sparsity=empty(),lambda_u=0,lambda_v=0,    # lambda is a vector or scalar
+                    Omega_u=NULL,Omega_v=NULL,alpha_u=0,alpha_v=0,                  # so is alpha
                     EPS = 1e-10, MAX_ITER = 1000,
                     EPS_inner = 1e-10,MAX_ITER_inner = 1e+5,
                     solver = "ista",
                     k = 1){
 
+    # from scalar to vector
+    alpha_u <- as.vector(alpha_u)
+    alpha_v <- as.vector(alpha_v)
+    lambda_u <- as.vector(lambda_u)
+    lambda_v <- as.vector(lambda_v)
+
     df.arg.list <- list(
                         X = X,
                         P_v = "NONE",
                         P_u = "NONE",
-                        lambda_v = lambda_u,
-                        lambda_u = lambda_v,
+                        lambda_u = lambda_u,
+                        lambda_v = lambda_v,
                         gamma_u = 3,
                         gamma_v = 3,
                         # non-negativity
@@ -70,7 +79,7 @@ moma_svd <- function(
                         MAX_ITER = MAX_ITER,
                         EPS_inner = EPS_inner,
                         MAX_ITER_inner = MAX_ITER_inner,
-                        solver = solver,
+                        solver = toupper(solver),
                         k = k)
     if (!is.matrix(X)){
         moma_error("X must be a matrix.")
@@ -81,9 +90,14 @@ moma_svd <- function(
     n <- dim(X)[1]
     p <- dim(X)[2]
 
-    solver <- toupper(solver)
-
-    # k = 1 if alpha_u/v or lambda_u/v is of vector form
+    is_cv <- length(alpha_u) > 1 ||
+              length(alpha_v) > 1 ||
+              length(lambda_u) > 1 ||
+              length(lambda_v) > 1
+    # k must be 1 if alpha_u/v or lambda_u/v is of vector form
+    if(is_cv && k != 1){
+        moma_error("We don't support a range of parameters in finding a rank-k svd")
+    }
 
     # Sparsity arguments
     if(!inherits(u_sparsity,"moma_sparsity") || !inherits(v_sparsity,"moma_sparsity")){
@@ -91,12 +105,11 @@ moma_svd <- function(
              Try using, for example, `u_sparsity = lasso()`.")
     }
 
-    u_sparsity <- if(lambda_u == 0) list() else u_sparsity
-    v_sparsity <- if(lambda_v == 0) list() else v_sparsity
-
     names(u_sparsity) <- if(length(u_sparsity) != 0) paste0(names(u_sparsity),"_u")
+    # because paste0(NULL,"_u") =  "_u", check length(..) == 0 first
     names(v_sparsity) <- if(length(v_sparsity) != 0) paste0(names(v_sparsity),"_v")
 
+    # We need u_sparsity to be a list
     arglist <- modifyList(df.arg.list,c(u_sparsity,v_sparsity))
 
 

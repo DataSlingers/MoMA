@@ -9,10 +9,10 @@ Rcpp::List cpp_sfpca(
     const arma::mat &w_u,
     const arma::mat &Omega_u, // Default values for these matrices should be set in R
     const arma::mat &Omega_v,
-    double alpha_u,
-    double alpha_v,
-    double lambda_u,
-    double lambda_v,
+    const arma::vec &alpha_u,
+    const arma::vec &alpha_v,
+    const arma::vec &lambda_u,
+    const arma::vec &lambda_v,
     std::string P_u,
     std::string P_v,
     double gamma_u,
@@ -42,8 +42,8 @@ Rcpp::List cpp_sfpca(
               /* sparsity */
               P_u,
               P_v,
-              lambda_u,
-              lambda_v,
+              lambda_u(0),
+              lambda_v(0),
               gamma_u,
               gamma_v,
               /* non-negativity */
@@ -55,8 +55,8 @@ Rcpp::List cpp_sfpca(
               /* smoothness */
               Omega_u,
               Omega_v,
-              alpha_u,
-              alpha_v,
+              alpha_u(0),
+              alpha_v(0),
               /* sparse fused lasso*/
               lambda2_u,
               lambda2_v,
@@ -76,6 +76,15 @@ Rcpp::List cpp_sfpca(
               MAX_ITER_inner,
               solver);
 
+    int n_lu = lambda_u.n_elem;
+    int n_lv = lambda_v.n_elem;
+    int n_au = alpha_u.n_elem;
+    int n_av = alpha_v.n_elem;
+
+    int n_more_than_one = int(n_lv > 1) + int(n_lu > 1) + int(n_au > 1) + int(n_av > 1);
+    if(n_more_than_one > 0){
+        MoMALogger::error("We don't allow a range of parameters in finding a rank-k svd.");
+    }
     // store results
     arma::mat U(X.n_rows,k);
     arma::mat V(X.n_cols,k);
@@ -93,6 +102,10 @@ Rcpp::List cpp_sfpca(
         }
     }
     return Rcpp::List::create(
+                    Rcpp::Named("lambda_u") = lambda_u,
+                    Rcpp::Named("lambda_v") = lambda_v,
+                    Rcpp::Named("alpha_u") = alpha_u,
+                    Rcpp::Named("alpha_v") = alpha_v,
                     Rcpp::Named("u") = U,
                     Rcpp::Named("v") = V,
                     Rcpp::Named("d") = d);

@@ -2,7 +2,7 @@ sfpca <- function(X,
                   # sparsity
                   P_v = "none",
                   P_u = "none",
-                  lambda_v = 0,
+                  lambda_v = 0,  # a vector or scalar, same for lambda_u, alpha_u/v
                   lambda_u = 0,
                   gamma_v=3,
                   gamma_u=3,
@@ -47,6 +47,10 @@ sfpca <- function(X,
     P_v <- toupper(P_v)
     solver <- toupper(solver)
 
+    alpha_u <- as.vector(alpha_u)
+    alpha_v <- as.vector(alpha_v)
+    lambda_u <- as.vector(lambda_u)
+    lambda_v <- as.vector(lambda_v)
 
     Omega_u <- if(is.null(Omega_u)) diag(dim(X)[1]) else Omega_u
     Omega_v <- if(is.null(Omega_v)) diag(dim(X)[2]) else Omega_v
