@@ -68,8 +68,13 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
             nonneg_v,i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
      // const reference must be passed to initializer list
 {
-    MoMALogger::info("Setting up model");
-
+    MoMALogger::info("Initializing MoMA object:")
+    << " lambda_u " << lambda_u
+    << " lambda_v " << lambda_v
+    << " alpha_u " << alpha_u
+    << " alpha_v " << alpha_v
+    << " P_u " << P_u
+    << " P_v " << P_v;
     // Step 2: Initialize to leading singular vectors
     //
     //         MoMA is a regularized SVD, which is a non-convex (bi-convex)
@@ -137,4 +142,5 @@ int MoMA::reset(double newlambda_u,double newlambda_v,
 
     solver_u.reset(newlambda_u,newalpha_u);
     solver_v.reset(newlambda_v,newalpha_v);
+    return 0;
 }

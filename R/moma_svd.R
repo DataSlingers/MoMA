@@ -121,5 +121,12 @@ moma_svd <- function(
                     Omega_v = check_omega(Omega_v,alpha_v,p))
                 )
 
-    return(do.call("sfpca",arglist))
+    if(is_cv){
+        a <- do.call("cpp_sfpca_cv",arglist)
+        class(a) <- "moma_svd_cv"
+        return(a)
+    }
+    else{
+        return(do.call("sfpca",arglist))
+    }
 }

@@ -120,7 +120,7 @@ test_that("ISTA and FISTA should yield similar results,
                 # WARNING: We observe if zero appears in either v or u, ista and fista
                 # might not give identical results.
                 # Maybe they will both eventually go to the same point, but ista slows
-                # down a lot before it reaches it and consequently meet the stopping criteria.
+                # down a lot before it reaches it and consequently meets the stopping criterion.
                 if(sum(ista$v[,1] == 0.0) == 0
                    && sum(fista$v[,1] == 0.0) == 0){
                     expect_lte(sum((ista$v[,1]-fista$v[,1])^2),1e-6)

@@ -63,6 +63,16 @@ test_that("Prompt errors encountering inappropriate arguments", {
     expect_error(moma_svd(matrix(runif(12),3,4),
                           Omega_u = matrix(c(1),1),alpha_u=2),
                  "Omega shoud be a compatible matrix. It should be of 3x3, but is actually 1x1 (Called from check_omega)",fixed=TRUE)
+
+    # Prompt errors when users require rank-k svd and cross validation
+    expect_error(moma_svd(matrix(runif(12),3,4),lambda_u=c(1,2,3),k=2),
+                 "We don't support a range of parameters in finding a rank-k svd (Called from moma_svd)",fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12),3,4),
+                          lambda_u=c(1,2,3),
+                          lambda_v = seq(10),
+                          alpha_u = seq(10)),
+                 "We only allow changing two parameters.",fixed=TRUE)
+
     moma_set_logger_level_cpp(LEVELS[old_logger_level])
 })
 
