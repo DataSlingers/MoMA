@@ -51,7 +51,7 @@ NonNegativeLasso::~NonNegativeLasso(){
 */
 SCAD::SCAD(double g){
     MoMALogger::debug("Initializing SCAD proximal operator object");
-    if(g < 2){
+    if(g <= 2){
         MoMALogger::error("Gamma for SCAD should be larger than 2!");
     };
     gamma = g;
@@ -136,7 +136,7 @@ arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
 */
 MCP::MCP(double g){
     MoMALogger::debug("Initializing MCP proximal operator object");
-    if(g<1){
+    if(g <= 1){
         MoMALogger::error("Gamma for MCP should be larger than 1!");
     }
     gamma=g;

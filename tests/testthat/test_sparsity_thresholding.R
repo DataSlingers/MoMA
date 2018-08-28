@@ -8,10 +8,11 @@ test_that("Non-convexity parameter checks", {
     # Throw error if below threshold
     expect_error(test_prox_scad(x, lambda, 1.99))
     expect_error(test_prox_mcp( x, lambda, 0.99))
-
+    expect_error(test_prox_scad(x, lambda, 2))
+    expect_error(test_prox_mcp( x, lambda, 1))
     # Otherwise succeed
-    expect_no_error(test_prox_scad(x, lambda, 2))
-    expect_no_error(test_prox_mcp( x, lambda, 1))
+    expect_no_error(test_prox_scad(x, lambda, 2.1))
+    expect_no_error(test_prox_mcp( x, lambda, 1.1))
 
 })
 
