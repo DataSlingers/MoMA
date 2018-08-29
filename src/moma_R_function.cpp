@@ -113,7 +113,7 @@ Rcpp::List cpp_sfpca(
 
 // This function solves a squence of lambda's and alpha's
 // [[Rcpp::export]]
-Rcpp::List cpp_sfpca_cv(
+Rcpp::List cpp_sfpca_grid(
     const arma::mat &X,    // We should not change any variable in R, so const ref
     const arma::mat &w_v,
     const arma::mat &w_u,
@@ -208,8 +208,7 @@ Rcpp::List cpp_sfpca_cv(
     arma::mat V(X.n_cols,n_total);
     arma::vec d(n_total);
 
-    // find k PCs
-    int cnt = 0;
+    int problem_id = 0;
     for(int i = 0; i < n_lu; i++){
         for(int j = 0; j < n_lv; j++){
             for(int k = 0; k < n_au; k++){
@@ -225,17 +224,17 @@ Rcpp::List cpp_sfpca_cv(
                     // `solve` method use the result from last
                     // iteration as starting point
                     problem.solve();
-                    U.col(cnt) = problem.u;
-                    V.col(cnt) = problem.v;
-                    d(cnt) = arma::as_scalar(problem.u.t() * problem.X * problem.v);
+                    U.col(problem_id) = problem.u;
+                    V.col(problem_id) = problem.v;
+                    d(problem_id) = arma::as_scalar(problem.u.t() * problem.X * problem.v);
 
-                    cnt++;
+                    problem_id++;
                 }
             }
         }
     }
-    if(cnt != n_total){
-        MoMALogger::error("cnt != n_total");
+    if(problem_id != n_total){
+        MoMALogger::error("Internal error: solution not found for all grid points.");
     }
     return Rcpp::List::create(
                     Rcpp::Named("lambda_u") = lambda_u,

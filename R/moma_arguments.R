@@ -58,8 +58,10 @@ mcp <- function(gamma = 3, non_negative = FALSE){
     if(!is_logical_scalar(non_negative)){
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    if(gamma < 1){
-        moma_error("Non-convexity of MCP should be larger than 1.")
+    if(gamma <= 1){
+        moma_error("Non-convexity parameter of MCP (",
+                   sQuote("gamma"),
+                   ") must be larger than 1.")
     }
     arglist <- list(gamma = gamma, nonneg = non_negative, P = "MCP")
     class(arglist) <- "moma_sparsity"
@@ -91,8 +93,10 @@ scad <- function(gamma = 3.7, non_negative = FALSE){
     if(!is_logical_scalar(non_negative)){
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    if(gamma < 2){
-        moma_error("Non-convexity of SCAD should be larger than 2.")
+    if(gamma <= 2){
+        moma_error("Non-convexity parameter of SCAD (",
+                   sQuote("gamma"),
+                   ") must be larger than 2.")
     }
     arglist <- list(gamma = gamma, nonneg = non_negative, P = "SCAD")
     class(arglist) <- "moma_sparsity"
@@ -124,10 +128,10 @@ grplasso <- function(g, non_negative = FALSE){
     if(!is_logical_scalar(non_negative)){
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    if(class(g) != "factor"){
-        moma_error("Please provide a factor for group lasso")
+    if(!(inherits(g,c("character","numeric","factor","integer")))){
+        moma_error("Please provide a vector as an indicator of grouping.")
     }
-    arglist <- list(group = g, P = "GRPLASSO", nonneg = non_negative)
+    arglist <- list(group = as.factor(g), P = "GRPLASSO", nonneg = non_negative)
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }

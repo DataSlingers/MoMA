@@ -572,7 +572,7 @@ ProxOp::ProxOp(const std::string &s, double gamma,
     }
     else if(s.compare("GRPLASSO") == 0){
         if(group.n_elem != dim){
-            MoMALogger::error("Wrong dimension: dim(group) != dim(x).");
+            MoMALogger::error("Wrong dimension: length(group) != dim(x).");
         }
         if(nonneg){
             p = new NonNegativeGrpLasso(group);

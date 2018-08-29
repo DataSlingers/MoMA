@@ -103,7 +103,7 @@ public:
     // penalized regressions
     void solve();
 
-    // defalte u * v.t() out of X by the amount of d
+    // deflate u * v.t() out of X by the amount of d
     int deflate(double d);
 
     // check convergence

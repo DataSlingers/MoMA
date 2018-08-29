@@ -1,4 +1,4 @@
-context("Connection tests")
+context("UX / Argument parsing tests")
 test_that("Test for arguments names", {
     # This test makes sure the lasso(), mcp(), etc.,
     # return arguments with
@@ -32,22 +32,21 @@ test_that("Test for arguments names", {
 
 test_that("Prompt errors encountering inappropriate arguments", {
     old_logger_level <- MoMA::moma_logger_level()
-    moma_set_logger_level_cpp(0)
-
+    MoMA::moma_logger_level("DEBUG")
     # Wrong non-convexity arguments
     expect_error(moma_svd(matrix(runif(12),3,4),
                           u_sparsity=scad(1),lambda_u = 3),
-                 "Non-convexity of SCAD should be larger than 2. (Called from scad)",fixed=TRUE)
+                 paste0("Non-convexity parameter of SCAD (",sQuote("gamma"),") must be larger than 2."),fixed=TRUE)
     expect_error(moma_svd(matrix(runif(12),3,4),
                           u_sparsity=mcp(0.9),lambda_u = 3),
-                 "Non-convexity of MCP should be larger than 1. (Called from mcp)",fixed=TRUE)
+                 paste0("Non-convexity parameter of MCP (",sQuote("gamma"),") must be larger than 1."),fixed=TRUE)
 
     # Wrong grouping dimension in group lasso
     expect_error(moma_svd(matrix(runif(12),3,4),
                           u_sparsity=grplasso(factor(1)),lambda_u = 3),
-                 "Wrong dimension: dim(group) != dim(x).",fixed=TRUE)
+                 "Wrong dimension: length(group) != dim(x).",fixed=TRUE)
     expect_error(grplasso(matrix(1)),
-                 "Please provide a factor for group lasso",fixed=TRUE)
+                 "Please provide a vector as an indicator of grouping. (Called from grplasso)",fixed=TRUE)
 
 
     # Wrong weight matrix dimension in cluster penalty
@@ -73,13 +72,13 @@ test_that("Prompt errors encountering inappropriate arguments", {
                           alpha_u = seq(10)),
                  "We only allow changing two parameters.",fixed=TRUE)
 
-    moma_set_logger_level_cpp(LEVELS[old_logger_level])
+    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
 
 
 test_that("Correct prox match", {
     old_logger_level <- MoMA::moma_logger_level()
-    moma_set_logger_level_cpp(0)
+    MoMA::moma_logger_level("DEBUG")
 
 
     expect_output(moma_svd(matrix(runif(12),3,4)),
@@ -136,13 +135,13 @@ test_that("Correct prox match", {
                           u_sparsity=cluster(diag(3)),lambda_u = 3),
                  "Initializing a fusion lasso proximal operator object")
 
-    moma_set_logger_level_cpp(LEVELS[old_logger_level])
+    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
 
 
 test_that("Correct algorithm match", {
     old_logger_level <- MoMA::moma_logger_level()
-    moma_set_logger_level_cpp(0)
+    MoMA::moma_logger_level("DEBUG")
 
 
     expect_output(moma_svd(matrix(runif(12),3,4),solver = "ista"),
@@ -160,12 +159,12 @@ test_that("Correct algorithm match", {
                            u_sparsity=cluster(diag(3)),lambda_u = 3),
                   "Running AMA")
 
-    moma_set_logger_level_cpp(LEVELS[old_logger_level])
+    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
 
 test_that("Data matrix must be complete", {
     old_logger_level <- MoMA::moma_logger_level()
-    moma_set_logger_level_cpp(0)
+    MoMA::moma_logger_level("DEBUG")
 
     X <- matrix(runif(12),3,4)
     X[2,1] <- NA
@@ -182,6 +181,6 @@ test_that("Data matrix must be complete", {
     expect_error(moma_svd(X = X),
                   "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
 
-    moma_set_logger_level_cpp(LEVELS[old_logger_level])
+    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
 

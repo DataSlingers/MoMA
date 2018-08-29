@@ -11,14 +11,7 @@ test_that("Same results as the `flsa` package", {
                 for(lambda in seq(0,2,0.1)){
                     for(lambda2 in seq(0,2,0.2)){
                         expect_equal(test_prox_spfusedlasso(x,lambda,lambda2=lambda2),
-                                 matrix(flsaGetSolution(flsa(x),
-                                                          lambda2=lambda,
-                                                          lambda1=lambda2
-                                                          )
-
-                                        )
-                                 )
-
+                                 matrix(flsaGetSolution(flsa(x),lambda2=lambda,lambda1=lambda2)))
                         }
                 }
             }

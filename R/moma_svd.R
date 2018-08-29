@@ -1,7 +1,7 @@
 MOMA_EMPTYMAT <- matrix()
 MOMA_EMPTYVEC <- vector(mode="numeric")
 
-# This function checks
+# This function checks the validity of Omega and alpha
 check_omega <- function(Omega,alpha,n){
     if(length(alpha) == 1 && alpha == 0){
         # discard the Omega matrix specified by users
@@ -39,6 +39,16 @@ moma_svd <- function(
                     EPS_inner = 1e-10,MAX_ITER_inner = 1e+5,
                     solver = "ista",
                     k = 1){
+
+    all_para <- c(alpha_u,alpha_v,lambda_u,lambda_v)
+    if(sum(all_para < 0 || !is.finite(all_para)) > 0){
+        moma_error("All penalty levels (",
+                    sQuote("lambda_u"),", ",
+                    sQuote("lambda_v"),", ",
+                    sQuote("alpha_u"),", ",
+                    sQuote("alpha_v"),
+                    ") must be non-negative numeric.")
+    }
 
     # from scalar to vector
     alpha_u <- as.vector(alpha_u)
@@ -101,8 +111,9 @@ moma_svd <- function(
 
     # Sparsity arguments
     if(!inherits(u_sparsity,"moma_sparsity") || !inherits(v_sparsity,"moma_sparsity")){
-        moma_error("Sparse penalty should be of class '__moma_sp_'.
-             Try using, for example, `u_sparsity = lasso()`.")
+        moma_error("Sparse penalty should be of class ",
+                    sQuote("moma_sparsity"),
+                    ". Try using, for example, `u_sparsity = lasso()`.")
     }
 
     names(u_sparsity) <- if(length(u_sparsity) != 0) paste0(names(u_sparsity),"_u")
@@ -122,8 +133,8 @@ moma_svd <- function(
                 )
 
     if(is_cv){
-        a <- do.call("cpp_sfpca_cv",arglist)
-        class(a) <- "moma_svd_cv"
+        a <- do.call("cpp_sfpca_grid",arglist)
+        class(a) <- "moma_svd_grid"
         return(a)
     }
     else{

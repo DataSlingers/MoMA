@@ -1,6 +1,6 @@
-context("`cpp_sfpca_cv`` is equivalent to run `cpp_sfpca` many times")
+context("`cpp_sfpca_grid`` is equivalent to run `cpp_sfpca` many times")
 
-test_that("Using cpp_sfpca_cv is equivalent to run cpp_sfpca multiple times", {
+test_that("Using cpp_sfpca_grid is equivalent to run cpp_sfpca multiple times", {
     set.seed(332)
     n <- 7 # set n != p to avoid bugs
     p <- 11

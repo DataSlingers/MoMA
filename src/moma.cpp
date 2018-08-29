@@ -132,7 +132,11 @@ void MoMA::solve(){
 
 int MoMA::check_cnvrg(){
     if(iter >= MAX_ITER){
-        MoMALogger::warning("No convergence in MoMA!");
+        MoMALogger::warning("No convergence in MoMA!") 
+            << " lambda_u " << lambda_u
+            << " lambda_v " << lambda_v
+            << " alpha_u " << alpha_u
+            << " alpha_v " << alpha_v;
     }
     return 0;
 } 
