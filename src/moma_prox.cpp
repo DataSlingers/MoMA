@@ -51,7 +51,7 @@ NonNegativeLasso::~NonNegativeLasso(){
 */
 SCAD::SCAD(double g){
     MoMALogger::debug("Initializing SCAD proximal operator object");
-    if(g < 2){
+    if(g <= 2){
         MoMALogger::error("Gamma for SCAD should be larger than 2!");
     };
     gamma = g;
@@ -105,11 +105,11 @@ arma::vec SCAD::vec_prox(const arma::vec &x, double l){
 * Nonnegative SCAD
 */
 NonNegativeSCAD::NonNegativeSCAD(double g):SCAD(g){
-    MoMALogger::debug("Initializing non-negetive SCAD proximal operator object");
+    MoMALogger::debug("Initializing non-negative SCAD proximal operator object");
 }
 
 NonNegativeSCAD::~NonNegativeSCAD(){
-    MoMALogger::debug("Releasing non-negetive SCAD proximal operator object");
+    MoMALogger::debug("Releasing non-negative SCAD proximal operator object");
 }
 
 arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
@@ -136,7 +136,7 @@ arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
 */
 MCP::MCP(double g){
     MoMALogger::debug("Initializing MCP proximal operator object");
-    if(g<1){
+    if(g <= 1){
         MoMALogger::error("Gamma for MCP should be larger than 1!");
     }
     gamma=g;
@@ -286,8 +286,30 @@ arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
 }
 
 /*
+* Sparse fused lasso
+*/
+SparseFusedLasso::SparseFusedLasso(double i_lambda2):lambda2(i_lambda2){
+    MoMALogger::debug("Initializing a sparse fused lasso proximal operator object");
+}
+
+SparseFusedLasso::~SparseFusedLasso(){
+    MoMALogger::debug("Releasing a sparse fused lasso proximal operator object");
+}
+
+arma::vec SparseFusedLasso::operator()(const arma::vec &x, double l){
+    arma::vec tmp = fg(x,l);
+    return soft_thres(tmp,lambda2);
+}
+
+/*
 * Fusion lasso
 */
+
+// From matrix index to vector index of an upper triangular matrix
+int tri_idx(int i, int j, int n){
+    return (2 * n - i - 1) * i / 2 + j - i - 1;
+}
+
 Fusion::Fusion(const arma::mat &input_w,bool input_ADMM,bool input_acc,double input_prox_eps){
     // w should be symmetric, and have zero diagonal elements.
     // We only store the upper half of the matrix w_ij, j >= i+1.
@@ -302,10 +324,12 @@ Fusion::Fusion(const arma::mat &input_w,bool input_ADMM,bool input_acc,double in
     }
     start_point.set_size(n_col);
     start_point.zeros();
-    weight.set_size(n_col,n_col);
+    weight.set_size(n_col*(n_col-1)/2);
+
     for(int i = 0; i < n_col; i++){
         for(int j = i + 1; j < n_col; j++){
-            weight(i,j) = input_w(i,j);
+            int k = tri_idx(i,j,n_col);
+            weight(k) = input_w(i,j);
         }
     }
     MoMALogger::debug("Initializing a fusion lasso proximal operator object");
@@ -317,14 +341,16 @@ Fusion::~Fusion(){
 
 // Find the column sums and row sums of an upper triangular matrix,
 // whose diagonal elements are all zero.
-int tri_sums(const arma::mat &w, arma::vec &col_sums, arma::vec &row_sums, int n){
+int tri_sums(const arma::vec &w, arma::vec &col_sums, arma::vec &row_sums, int n){
     // col_sums and row_sums should be initialzied by zeros.
     col_sums.zeros();
     row_sums.zeros();
+    int cnt = 0;
     for(int i = 0; i < n; i++){
         for(int j = i + 1; j < n; j++){
-            row_sums(i) += w(i,j);
-            col_sums(j) += w(i,j);
+            row_sums(i) += w(cnt);
+            col_sums(j) += w(cnt);
+            cnt++;
         }
     }
     return 0;
@@ -333,19 +359,14 @@ int tri_sums(const arma::mat &w, arma::vec &col_sums, arma::vec &row_sums, int n
 // This function sets lambda += (lambda - old_lambda) * step,
 // and then set old_lambda = lambda.
 int tri_momentum(arma::mat &lambda, arma::mat &old_lambda, double step, int n){
-    for(int i = 0; i < n; i++){
-        for(int j = i + 1; j < n; j++){
-            // double diff = lambda(i,j) - old_lambda(i,j);
-            lambda(i,j) += step * (lambda(i,j) - old_lambda(i,j));
-            old_lambda(i,j) = lambda(i,j);
-        }
-    }
+    lambda += step * (lambda - old_lambda);
+    old_lambda = lambda;
     return 0;
 }
 
 arma::vec Fusion::operator()(const arma::vec &x, double l){
     const int MAX_IT = 10000;
-    arma::mat &w = weight;
+    arma::vec &w = weight;
     int n = x.n_elem;
     if(n == 2){
         MoMALogger::error("Please use ordered fused lasso instead");
@@ -359,11 +380,12 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Yue Hu, Eric C. Chi and Genevera I. Allen
 
         // Using Genevera's paper notations
+        MoMALogger::debug("Running ADMM.");
         const arma::vec &y = x;
         
         double y_bar = arma::mean(y);
-        arma::mat z(n,n);
-        arma::mat u(n,n);
+        arma::vec z(n*(n-1)/2);
+        arma::vec u(n*(n-1)/2);
         arma::vec &b = start_point;
         arma::vec old_b;
         // arma::mat old_z(n,n);
@@ -385,6 +407,7 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
             tri_sums(u,u_col_sums,u_row_sums,n);
             tri_sums(z,z_col_sums,z_row_sums,n);
             // beta subproblem: O(n)
+            // TODO: vectorize 
             for(int i = 0; i < n; i++){
                 double part1 = z_row_sums(i) + u_row_sums(i);
                 double part2 = z_col_sums(i) + u_col_sums(i);
@@ -394,14 +417,16 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
             for(int i = 0; i < n; i++){
                 for(int j = i + 1; j < n; j++){
                     // z
-                    double to_be_thres = b(i) - b(j) - u(i,j);
-                    double scale = (1 - l * w(i,j) / std::abs(to_be_thres)); // TODO
+
+                    int k = tri_idx(i,j,n);
+                    double to_be_thres = b(i) - b(j) - u(k);
+                    double scale = (1 - l * w(k) / std::abs(to_be_thres)); // TODO: vectorize
                     if(scale < 0){
                         scale = 0;
                     };
-                    z(i,j) = scale * to_be_thres;
+                    z(k) = scale * to_be_thres;
                     // u
-                    u(i,j) = u(i,j) + (z(i,j) - (b(i) - b(j)));
+                    u(k) = u(k) + (z(k) - (b(i) - b(j)));
                 }
             }
             if(acc){
@@ -435,34 +460,36 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
         // Choosing nu is not trivial. See Proposition 4.1 in 
         // Splitting Methods for Convex Clustering, Chi and Range
 
+        MoMALogger::debug("Running AMA.");
         // Find the degrees of nodes
         arma::vec deg(n);
         deg.zeros();
         for(int i = 0; i < n; i++){
             for(int j = i + 1; j < n; j++){
-                if(w(i,j) > 0){
+                if(w(tri_idx(i,j,n)) > 0){
                     deg(i)++;
                     deg(j)++;
                 }
             }
         }
+
         // Find the degree of edges, which are the sums of their nodes.
         int max_edge_deg = -1;
         for(int i = 0; i < n; i++){
             for(int j = i + 1; j < n; j++){
-                if(w(i,j) > 0){
+                if(w(tri_idx(i,j,n)) > 0){
                     max_edge_deg = std::max(double(deg(i)+deg(j)),(double)max_edge_deg);
                 }
             }
         }
         double nu = 1.0 / (std::min(n,max_edge_deg));
         arma::vec &u = start_point;
-        arma::mat lambda(n,n);
+        arma::vec lambda(n*(n-1)/2);
         // Initialze
 
         lambda.zeros();
         double old_alpha = 1;
-        arma::mat old_lambda(n,n);
+        arma::vec old_lambda(n*(n-1)/2);
         old_lambda.zeros();
         arma::vec old_u;
         int cnt = 0;
@@ -473,10 +500,11 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
             // lambda subproblem
             for(int i = 0; i < n; i++){
                 for(int j = i + 1; j < n; j++){
-                    lambda(i,j) = lambda(i,j) - nu * (u(i) - u(j));
+                    int k = tri_idx(i,j,n);
+                    lambda(k) = lambda(k) - nu * (u(i) - u(j));
                     // project onto the interval [ -w_ij*lambda_ij, w_ij*lambda_ij ]
-                    if(std::abs(lambda(i,j)) > l * w(i,j)){
-                        lambda(i,j) = l * w(i,j) * lambda(i,j) / std::abs(lambda(i,j));
+                    if(std::abs(lambda(k)) > l * w(k)){
+                        lambda(k) = l * w(k) * lambda(k) / std::abs(lambda(k));
                     }
                 }
             }
@@ -511,8 +539,9 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
 // A handle class
 ProxOp::ProxOp(const std::string &s, double gamma,
                 const arma::vec &group,
+                double lambda2,
                 const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-                bool nonneg){
+                bool nonneg, int dim){
     
     if(s.compare("NONE") == 0){
         p = new NullProx();
@@ -542,6 +571,9 @@ ProxOp::ProxOp(const std::string &s, double gamma,
         }
     }
     else if(s.compare("GRPLASSO") == 0){
+        if(group.n_elem != dim){
+            MoMALogger::error("Wrong dimension: length(group) != dim(x).");
+        }
         if(nonneg){
             p = new NonNegativeGrpLasso(group);
         }
@@ -557,7 +589,18 @@ ProxOp::ProxOp(const std::string &s, double gamma,
             p = new OrderedFusedLasso();
         }
     }
+    else if(s.compare("SPARSEFUSEDLASSO") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative sparse fused lasso is not implemented!");
+        }
+        else{
+            p = new SparseFusedLasso(lambda2);
+        }
+    }
     else if(s.compare("UNORDEREDFUSION") == 0){
+        if(w.n_rows != dim || w.n_cols != dim){
+            MoMALogger::error("Wrong dimension: dim(weight matrix) != dim(x).");
+        }
         if(nonneg){
             MoMALogger::error("Non-negative unordered fusion lasso is not implemented!");
         }
@@ -566,7 +609,7 @@ ProxOp::ProxOp(const std::string &s, double gamma,
         }
     }
     else{
-        MoMALogger::warning("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default: ") << s;
+        MoMALogger::error("Your sparse penalty is not provided by us/specified by you! Use `NullProx` by default: ") << s;
     }
 }
 

@@ -5,11 +5,12 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     /*
     * sparsity - enforced through penalties
     */
-    std::string P_v,    // Sparsity penalty info
-    std::string P_u,
-    double i_lambda_v,  // regularization level
-    double i_lambda_u,
-    double gamma,       // Non-convexity parameter
+    std::string P_u,    // Sparsity penalty info
+    std::string P_v,
+    double i_lambda_u,  // regularization level
+    double i_lambda_v,
+    double gamma_u,
+    double gamma_v,       // Non-convexity parameter
     bool nonneg_u,      // Non-negativity indicator
     bool nonneg_v,
     /*
@@ -24,6 +25,11 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     const arma::mat &Omega_v,
     double i_alpha_u,           // Smoothing levels
     double i_alpha_v,
+    /*
+    * sparse fused lasso
+    */
+    double lambda2_u,           // penalty on the absolute values of the coefficients
+    double lambda2_v,
     /*
     * unordered fusion
     */
@@ -43,26 +49,32 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     double i_EPS_inner,
     long i_MAX_ITER_inner,
     std::string i_solver):
-
+    n(i_X.n_rows),
+    p(i_X.n_cols),
     alpha_u(i_alpha_u),
     alpha_v(i_alpha_v),
     lambda_u(i_lambda_u),
     lambda_v(i_lambda_v),
-    X(i_X),
+    X(i_X),                                         // make our copy of the data
     MAX_ITER(i_MAX_ITER),
     EPS(i_EPS),
     solver_u(
             i_solver,alpha_u,Omega_u,lambda_u,P_u,
-            gamma,group_u,w_u,ADMM_u,acc_u,prox_eps_u,
-            nonneg_u,i_EPS_inner,i_MAX_ITER_inner),
+            gamma_u,group_u,lambda2_u,w_u,ADMM_u,acc_u,prox_eps_u,
+            nonneg_u,i_EPS_inner,i_MAX_ITER_inner,i_X.n_rows),
     solver_v(
             i_solver,alpha_v,Omega_v,lambda_v,P_v,
-            gamma,group_v,w_v,ADMM_v,acc_v,prox_eps_v,
-            nonneg_v,i_EPS_inner,i_MAX_ITER_inner)
+            gamma_v,group_v,lambda2_v,w_v,ADMM_v,acc_v,prox_eps_v,
+            nonneg_v,i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
      // const reference must be passed to initializer list
 {
-    MoMALogger::info("Setting up model");
-
+    MoMALogger::info("Initializing MoMA object:")
+    << " lambda_u " << lambda_u
+    << " lambda_v " << lambda_v
+    << " alpha_u " << alpha_u
+    << " alpha_v " << alpha_v
+    << " P_u " << P_u
+    << " P_v " << P_v;
     // Step 2: Initialize to leading singular vectors
     //
     //         MoMA is a regularized SVD, which is a non-convex (bi-convex)
@@ -111,7 +123,28 @@ void MoMA::solve(){
         v = solver_v.solve(X.t()*u, v);
 
         tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
-        MoMALogger::debug("Outer loop No.") << iter << "--"<< "%change " << tol;
+        MoMALogger::debug("Outer loop No.") << iter << "--" << tol;
     }
+    
     MoMALogger::info("--Finish iter: ") << iter << "---" ;
+    check_cnvrg();
+}
+
+int MoMA::check_cnvrg(){
+    if(iter >= MAX_ITER){
+        MoMALogger::warning("No convergence in MoMA!") 
+            << " lambda_u " << lambda_u
+            << " lambda_v " << lambda_v
+            << " alpha_u " << alpha_u
+            << " alpha_v " << alpha_v;
+    }
+    return 0;
+} 
+
+int MoMA::reset(double newlambda_u,double newlambda_v,
+                double newalpha_u,double newalpha_v){
+
+    solver_u.reset(newlambda_u,newalpha_u);
+    solver_v.reset(newlambda_v,newalpha_v);
+    return 0;
 }

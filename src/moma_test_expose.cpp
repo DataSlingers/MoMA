@@ -79,6 +79,15 @@ arma::vec test_prox_orderedfusion(const arma::vec &x,double l)
 }
 
 // [[Rcpp::export]]
+arma::vec test_prox_spfusedlasso(const arma::vec &x,double l,double lambda2)
+{
+    // lambda2: the level of penalty on
+    // the absolute values of the coefficients
+    SparseFusedLasso a(lambda2);
+    return a(x,l);
+}
+
+// [[Rcpp::export]]
 arma::vec test_prox_fusion(const arma::vec &x,double l,const arma::mat w,bool ADMM,bool acc,double prox_eps=1e-10)
 {
     Fusion a(w,ADMM,acc,prox_eps);

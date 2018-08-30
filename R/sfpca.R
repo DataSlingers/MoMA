@@ -1,19 +1,20 @@
-MOMA_EMPTYMAT <- matrix()
-MOMA_EMPTYVEC <- vector(mode="numeric")
-
 sfpca <- function(X,
                   # sparsity
-                  P_v = "lasso",
-                  P_u = "lasso",
-                  lambda_v = 0,
+                  P_v = "none",
+                  P_u = "none",
+                  lambda_v = 0,  # a vector or scalar, same for lambda_u, alpha_u/v
                   lambda_u = 0,
-                  gamma=3,
+                  gamma_v=3,
+                  gamma_u=3,
                   # non-negativity
                   nonneg_u = FALSE,
                   nonneg_v = FALSE,
                   # grouping
                   group_u = MOMA_EMPTYVEC,
                   group_v = MOMA_EMPTYVEC,
+                  # sparse fused lasso
+                  lambda2_u = 0,    # penalty on the abs value of parameters
+                  lambda2_v = 0,
                   # unordered fusion
                   w_u = MOMA_EMPTYMAT,
                   w_v = MOMA_EMPTYMAT,
@@ -36,7 +37,7 @@ sfpca <- function(X,
                   solver = "ista",
                   k = 1){
     if (!is.null(X) && !is.matrix(X)){
-        stop("X must be a matrix.")
+        moma_error("X must be a matrix.")
     }
     n <- dim(X)[1]
     p <- dim(X)[2]
@@ -45,32 +46,22 @@ sfpca <- function(X,
     P_u <- toupper(P_u)
     P_v <- toupper(P_v)
     solver <- toupper(solver)
-    # Smoothness arguments
-    if(alpha_u == 0){
-        # regardless of input Omega_u
-        Omega_u <- diag(n)
-    }
-    else if(is.null(Omega_u)){
-        # The user wants smooth penalty
-        # but does not specify Omega matrix
-        stop("here")
-        Omega_u <- second.diff.mat(n)
-    }
-    if(alpha_v == 0){
-        Omega_v <- diag(p)
-    }
-    else if(is.null(Omega_v)){
-        stop("here")
 
-        Omega_v <- second.diff.mat(p)
-    }
+    alpha_u <- as.vector(alpha_u)
+    alpha_v <- as.vector(alpha_v)
+    lambda_u <- as.vector(lambda_u)
+    lambda_v <- as.vector(lambda_v)
+
+    Omega_u <- if(is.null(Omega_u)) diag(dim(X)[1]) else Omega_u
+    Omega_v <- if(is.null(Omega_v)) diag(dim(X)[2]) else Omega_v
 
     return(cpp_sfpca(X = X,
                      w_v = w_v,w_u = w_u,
                      Omega_u = Omega_u,Omega_v = Omega_v,
                      alpha_u = alpha_u,alpha_v = alpha_v,
                      lambda_u = lambda_u,lambda_v = lambda_v,
-                     P_u = P_u,P_v = P_v,gamma = gamma,
+                     P_u = P_u,P_v = P_v,gamma_u = gamma_u,gamma_v = gamma_v,
+                     lambda2_u = lambda2_u, lambda2_v = lambda2_v,
                      ADMM_u = ADMM_u,ADMM_v = ADMM_v,
                      acc_u = acc_u,acc_v = acc_v,
                      prox_eps_u = prox_eps_u, prox_eps_v = prox_eps_v,

@@ -144,7 +144,6 @@ test_that("Unweighted and fully connected graph, i.e., w_ij = 1 for all i, j", {
                              err.ADMM)){
                     expect_lte(err,1e-6)
                 }
-                print(i)
             }
         }
     }

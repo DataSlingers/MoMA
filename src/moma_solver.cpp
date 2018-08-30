@@ -7,7 +7,7 @@
 // S = I + alpha * Omega
 arma::vec _PR_solver::normalize(const arma::vec &u){
     arma::vec res = u;
-    double mn = mat_norm(u,S,I);
+    double mn = I? arma::norm(u) : arma::as_scalar(arma::sqrt(u.t() * S * u));
     if(mn > 0){
         res /= mn;
     }else{
@@ -16,16 +16,26 @@ arma::vec _PR_solver::normalize(const arma::vec &u){
     return res;
 }
 
+int _PR_solver::check_cnvrg(){
+    if(iter >= MAX_ITER){
+        MoMALogger::warning("No convergence in _PR_solver!");
+    }
+    return 0;
+}
+
 _PR_solver::_PR_solver(
         double i_alpha, const arma::mat &i_Omega, double i_lambda,
         const std::string &sparsity_string, double gamma,
-        const arma::vec &group, const arma::mat &w,
+        const arma::vec &group, 
+        double lambda2,
+        const arma::mat &w,
         bool ADMM, bool acc, double prox_eps, bool nonneg,
-        double i_EPS, int i_MAX_ITER):
+        double i_EPS, int i_MAX_ITER, int i_dim):
+        dim(i_dim),
         lambda(i_lambda),
         alpha(i_alpha),
-        Omega(i_Omega),
-        p(sparsity_string,gamma,group,w,ADMM,acc,prox_eps,nonneg),
+        Omega(i_Omega),         // reference to the matrix on the R side, no extra copy
+        p(sparsity_string,gamma,group,lambda2,w,ADMM,acc,prox_eps,nonneg,i_dim),
         EPS(i_EPS),
         MAX_ITER(i_MAX_ITER){
 
@@ -81,21 +91,25 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     tol = 1;
     iter = 0;
     arma::vec u = start_point;
-    arma::vec old;    // store working result
+    arma::vec oldu;    // store working result
 
     while (tol > EPS && iter < MAX_ITER)
     {
         iter++;
-        old = u;
+        oldu = u;
 
         u = g(u,y,grad_step_size,S,I);
         u = p(u,prox_step_size);
 
-        tol = arma::norm(u - old) / arma::norm(old);
-        MoMALogger::debug("No.") << iter << "--"<< "%change " << tol;
+        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        if(iter % 1000 == 0){
+            MoMALogger::debug("No.") << iter << "--"<< tol;
+        }
     }
     u = normalize(u);
     
+    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
+    check_cnvrg();
     return u;
 }
 
@@ -106,25 +120,30 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
     tol = 1;
     iter = 0;
     arma::vec u = start_point;
-    arma::vec old;    // store working result
+    arma::vec newu = start_point;
+    arma::vec oldu;    // store working result
 
     double t = 1;   
     while (tol > EPS && iter < MAX_ITER)
     {
         iter++;
-        old = u;
+        oldu = u;
         double oldt = t;
         t = 0.5 * (1 + std::sqrt(1 + 4 * oldt*oldt));
 
-        u = g(u,y,grad_step_size,S,I);
+        u = g(newu,y,grad_step_size,S,I);
         u = p(u,prox_step_size);
-        u = u + (oldt - 1) / t * (u - old);
+        newu = u + (oldt - 1) / t * (u - oldu);
 
-        tol = arma::norm(u - old) / arma::norm(old);
-        MoMALogger::debug("No.") << iter << "--"<< "%change " << tol;
+        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        if(iter % 1000 == 0){
+            MoMALogger::debug("No.") << iter << "--"<< tol;
+        }
     }
     u = normalize(u);
     
+    check_cnvrg();
+    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
     return u;
 }
 
@@ -135,21 +154,25 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
     tol = 1;
     iter = 0;
     arma::vec u = start_point;
-    arma::vec old;    // store working result
+    arma::vec oldu;    // store working result
 
     while (tol > EPS && iter < MAX_ITER)
     {
         iter++;
-        old = u;
+        oldu = u;
 
         u = g(u,y,grad_step_size,S,I);
         u = p(u,prox_step_size);
         u = normalize(u);
 
-        tol = arma::norm(u - old) / arma::norm(old);
-        MoMALogger::debug("No.") << iter << "--"<< "%change " << tol;
+        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        if(iter % 1000 == 0){
+            MoMALogger::debug("No.") << iter << "--"<< tol;
+        }
     }
     
+    check_cnvrg();
+    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
     return u;
 }
 
@@ -159,27 +182,28 @@ PR_solver::PR_solver(
     double i_lambda,
     const std::string &sparsity_string, double gamma,
     const arma::vec &group,
+    double i_lambda2,
     const arma::mat &w, bool ADMM, bool acc, double prox_eps,
     bool nonneg,
-    double i_EPS,int i_MAX_ITER){
+    double i_EPS, int i_MAX_ITER, int dim){
 
     if (algorithm_string.compare("ISTA") == 0){
         prs = new ISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
-                    gamma,group,w,ADMM,acc,prox_eps,nonneg,
-                    i_EPS,i_MAX_ITER);
+                    gamma,group,i_lambda2,w,ADMM,acc,prox_eps,nonneg,
+                    i_EPS,i_MAX_ITER,dim);
     }
     else if (algorithm_string.compare("FISTA") == 0){
         prs =  new FISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
-                    gamma,group,w,ADMM,acc,prox_eps,nonneg,
-                    i_EPS,i_MAX_ITER);
+                    gamma,group,i_lambda2,w,ADMM,acc,prox_eps,nonneg,
+                    i_EPS,i_MAX_ITER,dim);
     }
-    else if (algorithm_string.compare("FISTA") == 0){
+    else if (algorithm_string.compare("ONESTEPISTA") == 0){
         prs =  new OneStepISTA(
                     i_alpha,i_Omega,i_lambda,sparsity_string,
-                    gamma,group,w,ADMM,acc,prox_eps,nonneg,
-                    i_EPS,i_MAX_ITER);
+                    gamma,group,i_lambda2,w,ADMM,acc,prox_eps,nonneg,
+                    i_EPS,i_MAX_ITER,dim);
     }
     else{
         MoMALogger::error("Your choice of algorithm not provided: ") << algorithm_string;

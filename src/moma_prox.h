@@ -106,9 +106,21 @@ public:
     arma::vec operator()(const arma::vec &x, double l);       
 };
 
+class SparseFusedLasso: public Prox{
+private:
+    OrderedFusedLasso fg;
+    double lambda2; // lambda2 is the level of penalty on
+                    // the absolute values of the coefficients
+
+public:
+    SparseFusedLasso(double);
+    ~SparseFusedLasso();
+    arma::vec operator()(const arma::vec &x, double l);       
+};
+
 class Fusion: public Prox{
 private:
-    arma::mat weight;
+    arma::vec weight;
     bool ADMM;
     bool acc;
     double prox_eps;
@@ -132,8 +144,9 @@ public:
     ProxOp(
         const std::string &s, double gamma,
         const arma::vec &group,
+        double lambda2,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-        bool nonneg);
+        bool nonneg, int dim);
 
     ~ProxOp(){
         delete p;

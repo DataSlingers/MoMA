@@ -53,11 +53,12 @@ public:
         /*
          * sparsity - enforced through penalties
          */
-        std::string P_v,        // Sparsity penalty info
-        std::string P_u,
-        double i_lambda_v,      // regularization level
-        double i_lambda_u,
-        double gamma,           // Non-convexity parameter
+        std::string P_u,        // Sparsity penalty info
+        std::string P_v,
+        double i_lambda_u,      // regularization level
+        double i_lambda_v,
+        double gamma_u,    
+        double gamma_v,         // Non-convexity parameter
         bool nonneg_u,          // Non-negativity indicator
         bool nonneg_v,
         /*
@@ -72,6 +73,12 @@ public:
         const arma::mat &Omega_v,
         double i_alpha_u,               // Smoothing levels
         double i_alpha_v,
+        /*
+        *   sparse fused lasso
+        */
+        double lambda2_u,
+        double lambda2_v,               // level of penalty on
+                                        // the absolute values of the coefficients
         /*
          * unordered fusion
          */
@@ -96,8 +103,15 @@ public:
     // penalized regressions
     void solve();
 
-    // defalte u * v.t() out of X by the amount of d
+    // deflate u * v.t() out of X by the amount of d
     int deflate(double d);
+
+    // check convergence
+    int check_cnvrg();
+
+    // change penalty level
+    int reset(double newlambda_u,double newlambda_v,
+                double newalpha_u,double newalpha_v);
 };
 
 #endif
