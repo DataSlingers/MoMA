@@ -93,3 +93,10 @@ arma::vec test_prox_fusion(const arma::vec &x,double l,const arma::mat w,bool AD
     Fusion a(w,ADMM,acc,prox_eps);
     return a(x,l);
 }
+
+// [[Rcpp::export]]
+arma::vec test_prox_l1gf(const arma::vec &x,double l)
+{
+    L1TrendFiltering a;
+    return a(x,l);
+}

@@ -132,6 +132,13 @@ public:
     arma::vec operator()(const arma::vec &x, double l);
 };
 
+class L1TrendFiltering: public Prox{
+public:
+    L1TrendFiltering();
+    ~L1TrendFiltering();
+    arma::vec operator()(const arma::vec &x, double l); 
+};
+
 // A handle class that deals with matching proximal operators
 // and constructing and releasing the pointer
 class ProxOp{
