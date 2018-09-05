@@ -7,6 +7,7 @@
 #include "moma_logging.h"
 #include "moma_prox_fusion_util.h"
 #define MAX(a,b) (a)>(b)?(a):(b)
+#define MIN(a,b) (a)<(b)?(a):(b)
 #define THRES_P(x,l) (MAX(x-l,0.0)) // shrink a positive value by `l`
 
 inline arma::vec soft_thres(const arma::vec &x, double l){

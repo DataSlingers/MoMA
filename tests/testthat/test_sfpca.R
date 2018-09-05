@@ -114,8 +114,6 @@ test_that("ISTA and FISTA should yield similar results,
                                Omega_u=O_u,Omega_v=O_v,alpha_u=sp,alpha_v=sp,
                                lambda_u=sm,lambda_v=sm,P_u="LASSO",P_v=sptype,
                                EPS=1e-6,MAX_ITER = 1e+3,solve="FISTA",EPS_inner = 1e-9)
-                ista$v[,1]
-                fista$v[,1]
 
                 # WARNING: We observe if zero appears in either v or u, ista and fista
                 # might not give identical results.
