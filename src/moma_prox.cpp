@@ -599,10 +599,10 @@ ProxOp::ProxOp(const std::string &s, double gamma,
     }
     else if(s.compare("L1TRENDFILTERING") == 0){
         if(nonneg){
-            MoMALogger::error("Non-negative L1 trend filtering is not implemented!");
+            MoMALogger::error("Non-negative L1 linear trend filtering is not implemented!");
         }
         else{
-            p = new L1TrendFiltering();
+            p = new L1TrendFiltering(dim,1);        // only support linear linear trend filtering now (second diff mat)
         }
     }
     else if(s.compare("UNORDEREDFUSION") == 0){

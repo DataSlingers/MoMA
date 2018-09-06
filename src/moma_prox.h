@@ -133,8 +133,25 @@ public:
 };
 
 class L1TrendFiltering: public Prox{
+private:
+    int k;      // k \in 0,1,2, corresponding to fused lasso, linear tf and 
+                // third diff amt
+    
+    // The backtracking parameters
+    // shrink stepsize by `bata`
+    // if f(x + stepsize * dx) >= (1 - alpha * step) * f(x)
+    // Ref: http://www.stat.cmu.edu/~ryantibs/convexopt-F15/lectures/16-primal-dual.pdf page 12
+    static constexpr double alpha = 0.01;
+    static constexpr double beta = 0.5;
+    static const int MAX_ITER = 20;
+    static const int MAX_BT_ITER = 5;
+    static constexpr double prox_eps = 1e-5;
+
+    arma::mat D;
+
 public:
-    L1TrendFiltering();
+    // n is the dim of the problem, k the degree of differences
+    L1TrendFiltering(int n = -1, int i_k = 1);
     ~L1TrendFiltering();
     arma::vec operator()(const arma::vec &x, double l); 
 };

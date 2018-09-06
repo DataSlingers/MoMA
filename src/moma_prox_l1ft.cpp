@@ -6,25 +6,39 @@
 
 // A second difference matrix
 // [0 0 ... 1 -2 1 ... 0 0]
-arma::mat sec_diff_mat(int m){
-    if(m < 3){
-        MoMALogger::error("A second difference matrix should have more that 3 columns.");
+arma::mat sec_diff_mat(int m, int k){
+    if(m < k + 2){
+        MoMALogger::error("A difference matrix should have more columns.");
     }
-    arma::mat D = arma::zeros<arma::mat>(m-2,m);
-    for(int i = 0; i < m-2; i++){
+    if(k >= 2){
+        MoMALogger::error("We don't support higher-than-second difference matrix now.");
+    }
+    arma::mat D = arma::zeros<arma::mat>(m-1-k,m);
+    for(int i = 0; i < m-1-k; i++){
         D(i,i) = 1;
-        D(i,i+1) = -2;
-        D(i,i+2) = 1;
+        D(i,i+1) = -1 - k;      // k only takes 0 or 1 now
+        if(k == 1) D(i,i+2) = 1;
     }
     return D;
 }
 
-L1TrendFiltering::L1TrendFiltering(){
-    MoMALogger::debug("Initializing a L1 trend filtering proximal operator object");
+L1TrendFiltering::L1TrendFiltering(int n,int i_k){
+    if(i_k >= 2){
+        MoMALogger::error("We don't support higher-than-second difference matrix now.");
+    }
+    if(n == -1){
+        MoMALogger::error("Class L1TrendFiltering needs to know dimension of the problem.");
+    }
+
+    D = sec_diff_mat(n,i_k); 
+    
+    k = i_k;
+
+    MoMALogger::debug("Initializing a L1 linear trend filtering proximal operator object");
 }
 
 L1TrendFiltering::~L1TrendFiltering(){
-    MoMALogger::debug("Releasing a L1 trend filtering proximal operator object");
+    MoMALogger::debug("Releasing a L1 linear trend filtering proximal operator object");
 }
 
 // Find the sum of dual residual and centering residual
@@ -65,22 +79,15 @@ double init_stepsize(const arma::vec &mu,const arma::vec &dmu,double step){
 }
 
 arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
-    int MAX_ITER = 20;
-    int MAX_BT_ITER = 5;
-    double prox_eps = 1e-10;
-
-    // The backtracking parameters
-    // shrink stepsize by `bata`
-    // if f(x + stepsize * dx) >= (1 - alpha * step) * f(x)
-    // Ref: http://www.stat.cmu.edu/~ryantibs/convexopt-F15/lectures/16-primal-dual.pdf page 12
-    double alpha = 0.01;
-    double beta = 0.5;
 
     int n = x.n_elem;
+    int m = n - 1 - k;          // # of rows of the diff mat
+    if(D.n_cols != n || D.n_rows != m){
+        MoMALogger::error("Error in initialzing difference matrix.");
+    }
     const arma::vec &y = x; 
 
     // Commonly used mat and vec
-    arma::mat D = sec_diff_mat(n);
     arma::mat DDt = D * D.t();
     arma::vec Dy = D * y;
 
@@ -90,9 +97,9 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
     // Initialzation with a strictly feasible point
     // Ref: l1 Trend Filtering by Seung-Jean Kim, Kwangmoo Koh
     // Stephen Boyd and Dimitry Gorinevsky
-    arma::vec nu = arma::zeros<arma::vec> (n-2);        // The dual variable, y - D^t*nu is what we need
-    arma::vec mu1 = arma::ones<arma::vec> (n-2);        // Multipliers to solve the dual problem
-    arma::vec mu2 = arma::ones<arma::vec> (n-2);
+    arma::vec nu = arma::zeros<arma::vec> (m);        // The dual variable, y - D^t*nu is what we need
+    arma::vec mu1 = arma::ones<arma::vec> (m);        // Multipliers to solve the dual problem
+    arma::vec mu2 = arma::ones<arma::vec> (m);
 
     arma::vec new_nu;
     arma::vec new_mu1;
@@ -122,7 +129,7 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
         }
 
         // Ref: PPT page 11
-        t = 4 * (n-2) / gap;
+        t = 4 * m / gap;
 
         arma::mat part1 = DDt - arma::diagmat(mu1/f1+mu2/f2);       // A band matrix
         arma::vec part2 = -DDt*nu + Dy + (1/t) / f1 - (1/t) / f2;
@@ -168,7 +175,7 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
     }
 
     if(iter == MAX_ITER){
-        MoMALogger::warning("No convergence in L1 trend filtering solver. Surrogate duality gap = ") 
+        MoMALogger::info("No convergence in L1 linear trend filtering solver. Surrogate duality gap = ") 
                     << gap 
                     << ".";
     }

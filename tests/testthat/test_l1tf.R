@@ -1,4 +1,4 @@
-context("Test L1 trend filtering")
+context("Test L1 linear trend filtering")
 test_that("Return original data when lambda = 0", {
     set.seed(33)
     rep <- 23
@@ -32,7 +32,7 @@ sec_diff_mat <- function(m){
     return(D)
 }
 
-test_that("Compare with `CVZ` with random lambda's", {
+test_that("Compare with `CVX` with random lambda's", {
     p <- 10
 
     # answers obtained from matlab package `CVX`
@@ -89,3 +89,26 @@ test_that("Commutability with affine adjustment", {
     }
 })
 
+test_that("Eqivalent to fused lasso when using first-diff-mat",{
+    set.seed(2)
+    rep <- 5
+    p <- 17
+    for(i in 1:rep){
+        x <- runif(p)
+        for(lambda in seq(0,5,0.3)){
+            # WARNING: primal-dual method only attains
+            # low precision
+
+            # primal-dual methods
+            pd <- test_prox_l1gf(x,lambda,0)
+
+            # path algorithm
+            pa <- test_prox_orderedfusion(x,lambda)
+
+            # Most of the results are the same
+            # for at least 5 digits after decimal points,
+            # but some give outrageous errors
+            expect_lte(sum((pd-pa)^2),6e-3)
+        }
+    }
+})

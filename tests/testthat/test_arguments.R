@@ -126,10 +126,10 @@ test_that("Correct prox match", {
                   "Initializing non-negative group lasso proximal operator object")
 
 
-    # L1 trend filtering
+    # L1 linear trend filtering
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=l1tf(),lambda_u = 3),
-                  "Initializing a L1 trend filtering proximal operator object")
+                  "Initializing a L1 linear trend filtering proximal operator object")
     # sparse fused lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=spfusedlasso(lambda2=3),lambda_u = 3),
