@@ -37,6 +37,7 @@ test_that("Compare with `CVX` with random lambda's", {
 
     # answers obtained from matlab package `CVX`
     x = c(.22,.11,.11,.06,.4,.45,.37,.76,.63,.77)
+    # WARNING: probably it it not accurate itself
     ans <- matrix(c(
         0.220000,0.176667,0.151667,0.126667,0.109894,0.095532,0.081170,0.066809,0.052447,0.038364,0.038364,
         0.110000,0.146667,0.146667,0.146667,0.142553,0.137234,0.131915,0.126596,0.121277,0.116061,0.116061,
@@ -108,7 +109,7 @@ test_that("Eqivalent to fused lasso when using first-diff-mat",{
             # Most of the results are the same
             # for at least 5 digits after decimal points,
             # but some give outrageous errors
-            expect_lte(sum((pd-pa)^2),6e-3)
+            expect_lte(sum((pd-pa)^2),1e-9)
         }
     }
 })

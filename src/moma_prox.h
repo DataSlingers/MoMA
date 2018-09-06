@@ -143,7 +143,7 @@ private:
     // Ref: http://www.stat.cmu.edu/~ryantibs/convexopt-F15/lectures/16-primal-dual.pdf page 12
     static constexpr double alpha = 0.01;
     static constexpr double beta = 0.5;
-    static const int MAX_ITER = 20;
+    static const int MAX_ITER = 200;
     static const int MAX_BT_ITER = 5;
     static constexpr double prox_eps = 1e-10;
 

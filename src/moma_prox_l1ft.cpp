@@ -146,6 +146,7 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
         }
 
         // Ref: PPT page 11
+        // NOTE: this is different from the `l1tf` C implementation
         t = 4 * m / gap;
 
         arma::mat part1 = DDt - arma::diagmat(mu1/f1+mu2/f2);       // A band matrix
@@ -182,7 +183,7 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
                 break;
             }
         }
-
+        MoMALogger::debug("Picking step = ") << step << ".";
         // Update variable with selected stepsize
         nu = new_nu;
         mu1 = new_mu1;
@@ -192,10 +193,19 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
     }
 
     if(iter == MAX_ITER){
-        MoMALogger::info("No convergence in L1 linear trend filtering solver. Surrogate duality gap = ") 
-                    << gap 
+        MoMALogger::info("No convergence in L1 linear trend filtering solver. Surrogate duality (gap,iter) = ") 
+                    << "(" << gap << "," << iter << ")"
                     << ".";
     }
-
+    arma::vec Dymm = Dy - (mu1 - mu2);
+    double dres = 0.5 * arma::as_scalar(Dymm.t() * arma::solve(DDt,Dymm)) + l * arma::sum(mu1+mu2);
+    arma::vec Dtnu = D.t() * nu;
+    double pres = -0.5 * arma::as_scalar(Dtnu.t() * Dtnu) + arma::as_scalar(Dy.t() * nu);
+    MoMALogger::debug("Primal loss = ") << pres 
+                    << " , dual loss = " << dres 
+                    << " , gap = " << pres - dres 
+                    << " , surrogate gap = " << gap
+                    << " , iter = " << iter
+                    << ".";
     return y - D.t() * nu;
 }
