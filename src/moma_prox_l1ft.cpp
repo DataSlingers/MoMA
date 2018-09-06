@@ -6,35 +6,52 @@
 
 // A second difference matrix
 // [0 0 ... 1 -2 1 ... 0 0]
-arma::mat sec_diff_mat(int m, int k){
+// [[Rcpp::export]]
+arma::mat l1tf_sec_diff_mat(int m, int k){
+    if(k < 0){
+        MoMALogger::error("k should be non-negative integer.");
+    }
     if(m < k + 2){
         MoMALogger::error("A difference matrix should have more columns.");
     }
-    if(k >= 2){
-        MoMALogger::error("We don't support higher-than-second difference matrix now.");
+
+    arma::vec coef(k+2);        // Note for k = 0, D = [... 1, -1 ...]
+                                // k = 1, D = [... 1, -2, 1 ...]
+                                // k = 2, D = [... 1, -3, 3, -1, ...]
+                                // The (k+1)-th row of the Pascal triangle
+    coef(0) = std::pow(-1,k);
+    int flag = -coef(0);
+    coef(k+1) = -1;
+    for(int i = 1; i <= (k + 1) / 2; i++){
+        coef(i) = -1 * coef(i-1) * (k - i + 2) / i;
+        coef(k+1-i) = flag * coef(i);
     }
+
     arma::mat D = arma::zeros<arma::mat>(m-1-k,m);
     for(int i = 0; i < m-1-k; i++){
-        D(i,i) = 1;
-        D(i,i+1) = -1 - k;      // k only takes 0 or 1 now
-        if(k == 1) D(i,i+2) = 1;
+        for(int j = 0; j < k + 2; j++){
+            D(i,i+j) = coef(j);
+        }
     }
+
     return D;
 }
 
 L1TrendFiltering::L1TrendFiltering(int n,int i_k){
     if(i_k >= 2){
-        MoMALogger::error("We don't support higher-than-second difference matrix now.");
+        MoMALogger::warning("TF with higher-than-second difference matrix is not tested yet.");
     }
     if(n == -1){
         MoMALogger::error("Class L1TrendFiltering needs to know dimension of the problem.");
     }
 
-    D = sec_diff_mat(n,i_k); 
+    D = l1tf_sec_diff_mat(n,i_k); 
     
     k = i_k;
 
-    MoMALogger::debug("Initializing a L1 linear trend filtering proximal operator object");
+    MoMALogger::debug("Initializing a L1 linear trend filtering proximal operator object of degree ") 
+                << k
+                << ".";
 }
 
 L1TrendFiltering::~L1TrendFiltering(){

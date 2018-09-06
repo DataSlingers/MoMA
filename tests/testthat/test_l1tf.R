@@ -112,3 +112,38 @@ test_that("Eqivalent to fused lasso when using first-diff-mat",{
         }
     }
 })
+
+test_that("Tests for difference matrix",{
+    mat1 <- matrix(c(1,-1,0,0,
+                     0,1,-1,0,
+                     0,0,1,-1),byrow=TRUE,nrow=3)
+
+    mat2 <- matrix(c(-1,2,-1,0,0,
+                     0,-1,2,-1,0,
+                     0,0,-1,2,-1),byrow=TRUE,nrow=3)
+
+    mat3 <- matrix(c(1,-5,10 , -10, 5,-1, 0, 0, 0,  0,
+                     0, 1,-5,10 , -10, 5,-1, 0, 0,  0,
+                     0, 0, 1,-5,10 , -10, 5,-1, 0,  0,
+                     0, 0, 0, 1,-5,10 , -10, 5,-1,  0,
+                     0, 0, 0, 0, 1,-5,10 , -10, 5, -1),byrow=TRUE,nrow=5)
+
+    mat4 <- matrix(c(
+                    -1, 4,-6, 4,-1, 0, 0, 0, 0,  0,
+                    0,-1, 4,-6, 4,-1, 0, 0, 0,  0,
+                    0, 0,-1, 4,-6, 4,-1, 0, 0,  0,
+                    0, 0, 0,-1, 4,-6, 4,-1, 0,  0,
+                    0, 0, 0, 0,-1, 4,-6, 4,-1,  0,
+                    0, 0, 0, 0, 0,-1, 4,-6, 4, -1),byrow=TRUE,nrow=6)
+
+    mat5 <- matrix(c(1,-3, 3,-1, 0, 0, 0,
+                     0, 1,-3, 3,-1, 0, 0,
+                     0, 0, 1,-3, 3,-1, 0,
+                     0, 0, 0, 1,-3, 3,-1),byrow=TRUE,nrow=4)
+    expect_equal(norm(mat1-l1tf_sec_diff_mat(4,0)),0)
+    expect_equal(norm(mat2-l1tf_sec_diff_mat(5,1)),0)
+    expect_equal(norm(mat5-l1tf_sec_diff_mat(7,2)),0)
+    expect_equal(norm(mat4-l1tf_sec_diff_mat(10,3)),0)
+    expect_equal(norm(mat3-l1tf_sec_diff_mat(10,4)),0)
+
+})
