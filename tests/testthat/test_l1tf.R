@@ -148,3 +148,31 @@ test_that("Tests for difference matrix",{
     expect_equal(norm(mat3-l1tf_sec_diff_mat(10,4)),0)
 
 })
+
+test_that("Equivalent to polynomrial regression",{
+    # NOTE: theory to be confirmed
+
+    set.seed(22)
+    large_lam <- 100000
+
+    t <- seq(0,10,0.1)
+
+    # an "N"-shape curve
+    y <-  (t - 2)^2 +  0.2 * (3 - t)^3 + rnorm(length(t),sd = 2)
+
+    for(deg in seq(2)){
+        # WARNING: tests fail for deg >= 5
+        # polynomial regression fit
+        md <- lm(y~poly(t,deg,raw=TRUE))
+        pr <- rep(0,length(t))
+        for(i in 1:(deg+1)){
+            # poly regression
+            pr = pr + coef(md)[i] * t^(i-1)
+        }
+
+        # trend filtering fit
+        tf <- test_prox_l1gf(y,1000000,deg)
+
+        expect_equal(matrix(pr),tf)
+    }
+})
