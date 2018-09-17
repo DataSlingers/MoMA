@@ -141,11 +141,11 @@ test_that("Tests for difference matrix",{
                      0, 1,-3, 3,-1, 0, 0,
                      0, 0, 1,-3, 3,-1, 0,
                      0, 0, 0, 1,-3, 3,-1),byrow=TRUE,nrow=4)
-    expect_equal(norm(mat1-l1tf_sec_diff_mat(4,0)),0)
-    expect_equal(norm(mat2-l1tf_sec_diff_mat(5,1)),0)
-    expect_equal(norm(mat5-l1tf_sec_diff_mat(7,2)),0)
-    expect_equal(norm(mat4-l1tf_sec_diff_mat(10,3)),0)
-    expect_equal(norm(mat3-l1tf_sec_diff_mat(10,4)),0)
+    expect_equal(norm(mat1-l1tf_diff_mat(4,0)),0)
+    expect_equal(norm(mat2-l1tf_diff_mat(5,1)),0)
+    expect_equal(norm(mat5-l1tf_diff_mat(7,2)),0)
+    expect_equal(norm(mat4-l1tf_diff_mat(10,3)),0)
+    expect_equal(norm(mat3-l1tf_diff_mat(10,4)),0)
 
 })
 

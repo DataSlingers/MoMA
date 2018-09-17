@@ -7,7 +7,7 @@
 // A second difference matrix
 // [0 0 ... 1 -2 1 ... 0 0]
 // [[Rcpp::export]]
-arma::mat l1tf_sec_diff_mat(int m, int k){
+arma::mat l1tf_diff_mat(int m, int k){
     if(k < 0){
         MoMALogger::error("k should be non-negative integer.");
     }
@@ -45,7 +45,7 @@ L1TrendFiltering::L1TrendFiltering(int n,int i_k){
         MoMALogger::error("Class L1TrendFiltering needs to know dimension of the problem.");
     }
 
-    D = l1tf_sec_diff_mat(n,i_k); 
+    D = l1tf_diff_mat(n,i_k); 
     
     k = i_k;
 
