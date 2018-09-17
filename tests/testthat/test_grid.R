@@ -20,6 +20,8 @@ test_that("Using cpp_sfpca_grid is equivalent to run cpp_sfpca multiple times", 
     # WARNING: cannot add scad or mcp here
     # I guess because they are non-convex, so
     # there is slight difference in the results
+
+    # TODO: Add l1tf
     for(sptype in c(lasso,fusedlasso)){
         ista.cv <- moma_svd(X,
                             Omega_u=O_u,Omega_v=O_v,alpha_u=0,alpha_v=sm_set,

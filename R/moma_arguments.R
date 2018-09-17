@@ -156,6 +156,25 @@ fusedlasso <- function(){
     return(arglist)
 }
 
+#' L1 trend filtering
+#'
+#' Use this function to set the penalty function as fused lasso \cr
+#' \eqn{\lambda \sum \| x_{i-1} - 2x_{i} + x_{i+1}}, \cr
+#' where
+#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#'
+#' @return a \code{moma_sparsity} object, which is an empty list.
+#'
+#' @examples
+#' l1tf()
+#'
+#' @export
+l1tf <- function(){
+    # fused lasso
+    arglist <- list(P = "L1TRENDFILTERING")
+    class(arglist) <- "moma_sparsity"
+    return(arglist)
+}
 
 #' Sparse fused lasso
 #'

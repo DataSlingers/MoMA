@@ -597,6 +597,14 @@ ProxOp::ProxOp(const std::string &s, double gamma,
             p = new SparseFusedLasso(lambda2);
         }
     }
+    else if(s.compare("L1TRENDFILTERING") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative L1 trend filtering is not implemented!");
+        }
+        else{
+            p = new L1TrendFiltering();
+        }
+    }
     else if(s.compare("UNORDEREDFUSION") == 0){
         if(w.n_rows != dim || w.n_cols != dim){
             MoMALogger::error("Wrong dimension: dim(weight matrix) != dim(x).");

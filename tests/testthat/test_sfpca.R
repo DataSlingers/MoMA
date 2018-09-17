@@ -105,6 +105,7 @@ test_that("ISTA and FISTA should yield similar results,
     cnt = 0
     for(sp in seq(0,5,0.1)){
         for(sm in seq(0,5,0.1)){
+            # TODO: Add "L1TRENDFILTERING"
             for(sptype in c("LASSO","SCAD","MCP","ORDEREDFUSED")){
                 ista <- sfpca(X,
                               Omega_u=O_u,Omega_v=O_v,alpha_u=sp,alpha_v=sp,
