@@ -11,10 +11,9 @@ empty <- function(){
 
 #' LASSO
 #'
-#' Use this function to set the penalty function as lasso \cr
-#' \eqn{\lambda \sum \|x_{i} \| }, \cr
-#' where
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' Use this function to set the penalty function as lasso
+#' \deqn{\lambda \sum \| x_{i} \| ,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #'
 #' @param non_negative a boolean value. Set \code{TRUE} to add non-negativity
 #' constraint.
@@ -36,10 +35,9 @@ lasso <- function(non_negative = FALSE){
 
 #' MCP (minimax concave penalty)
 #'
-#' Use this function to set the penalty function as MCP \cr
-#' \eqn{\lambda P (x; \gamma) }, \cr
-#' where
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{P} is
+#' Use this function to set the penalty function as MCP
+#' \deqn{\lambda P (x; \gamma),}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{P} is
 #' determined by \eqn{\gamma}. See Zhang, Cun-Hui. "Nearly unbiased variable
 #' selection under minimax concave penalty." The Annals of statistics 38.2 (2010): 894-942.
 #'
@@ -70,10 +68,9 @@ mcp <- function(gamma = 3, non_negative = FALSE){
 
 #' SCAD
 #'
-#' Use this function to set the penalty function as SCAD \cr
-#' \eqn{\lambda P (x; \gamma) }, \cr
-#' where
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{P} is
+#' Use this function to set the penalty function as SCAD
+#' \deqn{\lambda P (x; \gamma) ,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{P} is
 #' determined by \eqn{\gamma}. See Fan, Jianqing, and Runze Li. "Variable selection
 #'  via nonconcave penalized likelihood and its oracle properties." Journal of
 #'  the American statistical Association 96.456 (2001): 1348-1360.
@@ -105,11 +102,10 @@ scad <- function(gamma = 3.7, non_negative = FALSE){
 
 #' Group LASSO
 #'
-#' Use this function to set the penalty function as group lasso \cr
-#' \eqn{\lambda \sum_{g \in Group} \|x_g \} }, \cr
-#' where
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{\|x_g\} is
-#' the vector comprised of elements of \eqn{x} picked out by \eqn{g}.
+#' Use this function to set the penalty function as group lasso
+#' \deqn{\lambda \sum_{g \in Group} \| x_g \|,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{\|x_g\|} is
+#' the vector comprised of elements of \eqn{x} picked out by indeces set \eqn{g}.
 #'
 #' @param g a vector of integer or characters, or a factor itself. It gets transformed
 #' to factor eventually to indicate grouping.
@@ -138,10 +134,9 @@ grplasso <- function(g, non_negative = FALSE){
 
 #' Fused lasso
 #'
-#' Use this function to set the penalty function as fused lasso \cr
-#' \eqn{\lambda \sum \| x_{i} - x_{i-1}}, \cr
-#' where
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' Use this function to set the penalty function as fused lasso
+#' \deqn{\lambda \sum \| x_{i} - x_{i-1} \|,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #'
 #' @return a \code{moma_sparsity} object, which is an empty list.
 #'
@@ -156,14 +151,21 @@ fusedlasso <- function(){
     return(arglist)
 }
 
-#' L1 linear trend filtering
+#' L1 trend filtering
 #'
-#' Use this function to set the penalty function as l1 linear trend filtering \cr
-#' \eqn{\lambda \sum \| x_{i-1} - 2x_{i} + x_{i+1}}, \cr
-#' where
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
-#' @param k use (k+1) difference matrix in trend filtering
-#.
+#' Use this function to set the penalty function as l1 trend filtering. An
+#' important special case is when \eqn{k=1}. In this case the penalty
+#' term becomes
+#' \deqn{\lambda \sum \| x_{i-1} - 2x_{i} + x_{i+1} \|,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' The general formula of the penalty term for \eqn{k \in N} can be found in
+#' Tibshirani, Ryan J. "Adaptive piecewise polynomial estimation via trend
+#' filtering." The Annals of Statistics 42.1 (2014): 285-323.
+#'
+#' @param l1tf_k use (k+1)-difference matrix in trend filtering. Note \eqn{k = 0}
+#'          implies piecewise constant, \eqn{k=1} implies piecewise linear, \eqn{k=2}
+#'          piecewise quadratic etc.
+#'
 #' @return a \code{moma_sparsity} object, which is an empty list.
 #'
 #' @examples
@@ -179,10 +181,9 @@ l1tf <- function(l1tf_k=1){
 
 #' Sparse fused lasso
 #'
-#' Use this function to set the penalty function as sparse fused lasso \cr
-#' \eqn{\lambda_1 \sum \| x_{i} - x_{i-1} \| + \lambda_2 \sum \|x_{i} \| }, \cr
-#' where
-#' \eqn{\lambda_} is set by \code{lambda_u/v} in the function \code{moma_svd}, and \eqn{\lambda_2}
+#' Use this function to set the penalty function as sparse fused lasso
+#' \deqn{\lambda_1 \sum \| x_{i} - x_{i-1} \| + \lambda_2 \sum \|x_{i} \| ,}
+#' where \eqn{\lambda_} is set by \code{lambda_u/v} in the function \code{moma_svd}, and \eqn{\lambda_2}
 #' is specified in here.
 #'
 #' @param lambda2 the level of penalty on the absolute values of the coefficients
@@ -201,10 +202,9 @@ spfusedlasso <- function(lambda2){
 
 #' Cluster penalty
 #'
-#' Use this function to set the penalty function as \cr
-#' \eqn{\lambda \sum w_{ij} \| x_{i} - x_{j} \|}, \cr
-#' wherr
-#' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' Use this function to set the penalty function as
+#' \deqn{\lambda \sum w_{ij} \| x_{i} - x_{j} \|,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #'
 #' @param w a symmetric square matrix. \code{w[i][j]} is the \eqn{w_{ij}} described above.
 #' @param ADMM a boolean value. Set to \code{TRUE} to use ADMM, set to \code{FALSE} to use AMA.
