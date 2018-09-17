@@ -81,6 +81,9 @@ moma_svd <- function(
                         acc_v = FALSE,
                         prox_eps_u = 1e-10,
                         prox_eps_v = 1e-10,
+                        # trend filtering
+                        l1tf_k_u = 1,
+                        l1tf_k_v = 1,
                         # smoothness
                         alpha_u = alpha_u,
                         alpha_v = alpha_v,

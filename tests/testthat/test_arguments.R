@@ -129,7 +129,14 @@ test_that("Correct prox match", {
     # L1 linear trend filtering
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=l1tf(),lambda_u = 3),
-                  "Initializing a L1 linear trend filtering proximal operator object")
+                  "Initializing a L1 linear trend filtering proximal operator object of degree 1")
+    expect_output(moma_svd(matrix(runif(100),10,10),
+                           u_sparsity=l1tf(l1tf_k = 2),lambda_u = 3),
+                  "Initializing a L1 linear trend filtering proximal operator object of degree 2")
+    expect_error(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=l1tf(l1tf_k = 2),lambda_u = 3),
+                  "A difference matrix should have more columns.")
+
     # sparse fused lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=spfusedlasso(lambda2=3),lambda_u = 3),

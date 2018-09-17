@@ -541,6 +541,7 @@ ProxOp::ProxOp(const std::string &s, double gamma,
                 const arma::vec &group,
                 double lambda2,
                 const arma::mat &w, bool ADMM, bool acc, double prox_eps,
+                int l1tf_k,
                 bool nonneg, int dim){
     
     if(s.compare("NONE") == 0){
@@ -602,7 +603,7 @@ ProxOp::ProxOp(const std::string &s, double gamma,
             MoMALogger::error("Non-negative L1 linear trend filtering is not implemented!");
         }
         else{
-            p = new L1TrendFiltering(dim,1);        // only support linear linear trend filtering now (second diff mat)
+            p = new L1TrendFiltering(dim,l1tf_k);        // now support any order of difference matrix
         }
     }
     else if(s.compare("UNORDEREDFUSION") == 0){

@@ -42,6 +42,11 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     double prox_eps_u,
     double prox_eps_v,
     /*
+    * trend filtering
+    */
+    int l1tf_k_u,
+    int l1tf_k_v,
+    /*
     * Algorithm parameters:
     */
     double i_EPS,
@@ -60,11 +65,11 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     EPS(i_EPS),
     solver_u(
             i_solver,alpha_u,Omega_u,lambda_u,P_u,
-            gamma_u,group_u,lambda2_u,w_u,ADMM_u,acc_u,prox_eps_u,
+            gamma_u,group_u,lambda2_u,w_u,ADMM_u,acc_u,prox_eps_u,l1tf_k_u,
             nonneg_u,i_EPS_inner,i_MAX_ITER_inner,i_X.n_rows),
     solver_v(
             i_solver,alpha_v,Omega_v,lambda_v,P_v,
-            gamma_v,group_v,lambda2_v,w_v,ADMM_v,acc_v,prox_eps_v,
+            gamma_v,group_v,lambda2_v,w_v,ADMM_v,acc_v,prox_eps_v,l1tf_k_v,
             nonneg_v,i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
      // const reference must be passed to initializer list
 {

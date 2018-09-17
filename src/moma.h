@@ -90,6 +90,9 @@ public:
         bool acc_v,
         double prox_eps_u,
         double prox_eps_v,
+        /* trend filtering */
+        int l1tf_k_u,
+        int l1tf_k_v,
         /*
          * Algorithm parameters:
          */

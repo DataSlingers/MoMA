@@ -145,7 +145,7 @@ private:
     static constexpr double beta = 0.5;
     static const int MAX_ITER = 20;
     static const int MAX_BT_ITER = 5;
-    static constexpr double prox_eps = 1e-5;
+    static constexpr double prox_eps = 1e-10;
 
     arma::mat D;
 
@@ -171,6 +171,7 @@ public:
         const arma::vec &group,
         double lambda2,
         const arma::mat &w, bool ADMM, bool acc, double prox_eps,
+        int l1tf_k,
         bool nonneg, int dim);
 
     ~ProxOp(){

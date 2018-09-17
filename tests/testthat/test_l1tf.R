@@ -58,7 +58,7 @@ test_that("Compare with `CVX` with random lambda's", {
         my_l1tf <- round(test_prox_l1gf(x,lambda),2)
 
         # At least the first two digits are the same.
-        expect_lt(sum((my_l1tf-as.matrix(ans[cnt,]))^2),0.2e-3)
+        expect_lt(sum((my_l1tf-as.matrix(ans[cnt,]))^2),0.6e-3)
 
         cnt = cnt + 1
     }

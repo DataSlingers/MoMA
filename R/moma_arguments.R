@@ -162,16 +162,17 @@ fusedlasso <- function(){
 #' \eqn{\lambda \sum \| x_{i-1} - 2x_{i} + x_{i+1}}, \cr
 #' where
 #' \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
-#'
+#' @param k use (k+1) difference matrix in trend filtering
+#.
 #' @return a \code{moma_sparsity} object, which is an empty list.
 #'
 #' @examples
-#' l1tf()
+#' l1tf(l1tf_k=1)
 #'
 #' @export
-l1tf <- function(){
+l1tf <- function(l1tf_k=1){
     # l1 linear trend filtering
-    arglist <- list(P = "L1TRENDFILTERING")
+    arglist <- list(P = "L1TRENDFILTERING",l1tf_k = l1tf_k)
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }

@@ -25,6 +25,8 @@ Rcpp::List cpp_sfpca(
     bool acc_v,
     double prox_eps_u,
     double prox_eps_v,
+    int l1tf_k_u,
+    int l1tf_k_v,
     bool nonneg_u,
     bool nonneg_v,
     arma::vec group_u,
@@ -69,6 +71,9 @@ Rcpp::List cpp_sfpca(
               acc_v,
               prox_eps_u,
               prox_eps_v,
+              /* trend filtering */
+              l1tf_k_u,
+              l1tf_k_v,
               /* algorithm parameters */
               EPS,
               MAX_ITER,
@@ -139,6 +144,8 @@ Rcpp::List cpp_sfpca_grid(
     bool nonneg_v,
     arma::vec group_u,
     arma::vec group_v,
+    int l1tf_k_u,
+    int l1tf_k_v,
     double EPS,
     long MAX_ITER,
     double EPS_inner,
@@ -196,6 +203,9 @@ Rcpp::List cpp_sfpca_grid(
               acc_v,
               prox_eps_u,
               prox_eps_v,
+              /* trend filtering */
+              l1tf_k_u,
+              l1tf_k_v,
               /* algorithm parameters */
               EPS,
               MAX_ITER,
