@@ -166,13 +166,7 @@ public:
         p = nullptr;
     }
     
-    ProxOp(
-        const std::string &s, double gamma,
-        const arma::vec &group,
-        double lambda2,
-        const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-        int l1tf_k,
-        bool nonneg, int dim);
+    ProxOp(Rcpp::List prox_arg_list, int dim);
 
     ~ProxOp(){
         delete p;

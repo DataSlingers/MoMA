@@ -537,13 +537,17 @@ arma::vec Fusion::operator()(const arma::vec &x, double l){
 }
 
 // A handle class
-ProxOp::ProxOp(const std::string &s, double gamma,
-                const arma::vec &group,
-                double lambda2,
-                const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-                int l1tf_k,
-                bool nonneg, int dim){
-    
+ProxOp::ProxOp(Rcpp::List prox_arg_list, int dim){
+    const  std::string &s   = Rcpp::as<std::string>(prox_arg_list["P"]);
+    double gamma            = Rcpp::as<double>(prox_arg_list["gamma"]);
+    const  arma::vec group  = Rcpp::as<arma::vec>(prox_arg_list["group"]);
+    double lambda2          = Rcpp::as<double>(prox_arg_list["lambda2"]);
+    const  arma::mat w      = Rcpp::as<arma::mat>(prox_arg_list["w"]);
+    bool   ADMM             = Rcpp::as<bool>(prox_arg_list["ADMM"]);
+    bool   acc              = Rcpp::as<bool>(prox_arg_list["acc"]);
+    double prox_eps         = Rcpp::as<double>(prox_arg_list["prox_eps"]);
+    int    l1tf_k           = Rcpp::as<int>(prox_arg_list["l1tf_k"]);
+    bool   nonneg           = Rcpp::as<bool>(prox_arg_list["nonneg"]);
     if(s.compare("NONE") == 0){
         p = new NullProx();
     }

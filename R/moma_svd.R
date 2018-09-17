@@ -1,5 +1,20 @@
 MOMA_EMPTYMAT <- matrix()
 MOMA_EMPTYVEC <- vector(mode="numeric")
+MOMA_DEFAULT_PROX <- list(
+                        P = "NONE",
+                        gamma = 3,
+                        # non-negativity
+                        nonneg = FALSE,
+                        # grouping
+                        group = MOMA_EMPTYVEC,
+                        lambda2 = 0,
+                        # unordered fusion
+                        w = MOMA_EMPTYMAT,
+                        ADMM = FALSE,
+                        acc = FALSE,
+                        prox_eps = 1e-10,
+                        # trend filtering
+                        l1tf_k = 1)
 
 # This function checks the validity of Omega and alpha
 check_omega <- function(Omega,alpha,n){
@@ -56,34 +71,10 @@ moma_svd <- function(
     lambda_u <- as.vector(lambda_u)
     lambda_v <- as.vector(lambda_v)
 
-    df.arg.list <- list(
+    df_arg_list <- list(
                         X = X,
-                        P_v = "NONE",
-                        P_u = "NONE",
                         lambda_u = lambda_u,
                         lambda_v = lambda_v,
-                        gamma_u = 3,
-                        gamma_v = 3,
-                        # non-negativity
-                        nonneg_u = FALSE,
-                        nonneg_v = FALSE,
-                        # grouping
-                        group_u = MOMA_EMPTYVEC,
-                        group_v = MOMA_EMPTYVEC,
-                        lambda2_u = 0,
-                        lambda2_v = 0,
-                        # unordered fusion
-                        w_u = MOMA_EMPTYMAT,
-                        w_v = MOMA_EMPTYMAT,
-                        ADMM_u = FALSE,
-                        ADMM_v = FALSE,
-                        acc_u = FALSE,
-                        acc_v = FALSE,
-                        prox_eps_u = 1e-10,
-                        prox_eps_v = 1e-10,
-                        # trend filtering
-                        l1tf_k_u = 1,
-                        l1tf_k_v = 1,
                         # smoothness
                         alpha_u = alpha_u,
                         alpha_v = alpha_v,
@@ -94,7 +85,10 @@ moma_svd <- function(
                         MAX_ITER_inner = MAX_ITER_inner,
                         solver = toupper(solver),
                         k = k)
-    if (!is.matrix(X)){
+    df_prox_arg_list_u <- MOMA_DEFAULT_PROX
+    df_prox_arg_list_v <- MOMA_DEFAULT_PROX
+
+     if (!is.matrix(X)){
         moma_error("X must be a matrix.")
     }
     if (sum(!is.finite(X)) >= 1){
@@ -107,6 +101,7 @@ moma_svd <- function(
               length(alpha_v) > 1 ||
               length(lambda_u) > 1 ||
               length(lambda_v) > 1
+
     # k must be 1 if alpha_u/v or lambda_u/v is of vector form
     if(is_cv && k != 1){
         moma_error("We don't support a range of parameters in finding a rank-k svd")
@@ -119,28 +114,21 @@ moma_svd <- function(
                     ". Try using, for example, `u_sparsity = lasso()`.")
     }
 
-    names(u_sparsity) <- if(length(u_sparsity) != 0) paste0(names(u_sparsity),"_u")
-    # because paste0(NULL,"_u") =  "_u", check length(..) == 0 first
-    names(v_sparsity) <- if(length(v_sparsity) != 0) paste0(names(v_sparsity),"_v")
-
-    # We need u_sparsity to be a list
-    arglist <- modifyList(df.arg.list,c(u_sparsity,v_sparsity))
-
-
     # Smoothness arguments
-    arglist <- c(
-                arglist,
+    df_arg_list <- c(
+                df_arg_list,
                 list(
                     Omega_u = check_omega(Omega_u,alpha_u,n),
-                    Omega_v = check_omega(Omega_v,alpha_v,p))
-                )
+                    Omega_v = check_omega(Omega_v,alpha_v,p),
+                    prox_arg_list_u = modifyList(df_prox_arg_list_u,u_sparsity),
+                    prox_arg_list_v = modifyList(df_prox_arg_list_v,v_sparsity)))
 
     if(is_cv){
-        a <- do.call("cpp_sfpca_grid",arglist)
+        a <- do.call("cpp_sfpca_grid",df_arg_list)
         class(a) <- "moma_svd_grid"
         return(a)
     }
     else{
-        return(do.call("sfpca",arglist))
+        return(do.call("cpp_sfpca",df_arg_list))
     }
 }

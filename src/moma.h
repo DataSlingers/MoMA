@@ -53,46 +53,19 @@ public:
         /*
          * sparsity - enforced through penalties
          */
-        std::string P_u,        // Sparsity penalty info
-        std::string P_v,
         double i_lambda_u,      // regularization level
         double i_lambda_v,
-        double gamma_u,    
-        double gamma_v,         // Non-convexity parameter
-        bool nonneg_u,          // Non-negativity indicator
-        bool nonneg_v,
-        /*
-        * grouping
-        */
-        const arma::vec &group_u,
-        const arma::vec &group_v,
+        Rcpp::List i_prox_arg_list_u,
+        Rcpp::List i_prox_arg_list_v,
+        
         /*
          * smoothness - enforced through constraints
          */
-        const arma::mat &Omega_u,       // Smoothing matrices
-        const arma::mat &Omega_v,
         double i_alpha_u,               // Smoothing levels
         double i_alpha_v,
-        /*
-        *   sparse fused lasso
-        */
-        double lambda2_u,
-        double lambda2_v,               // level of penalty on
-                                        // the absolute values of the coefficients
-        /*
-         * unordered fusion
-         */
-        const arma::mat &w_u,
-        const arma::mat &w_v,
-        bool ADMM_u,
-        bool ADMM_v,
-        bool acc_u,
-        bool acc_v,
-        double prox_eps_u,
-        double prox_eps_v,
-        /* trend filtering */
-        int l1tf_k_u,
-        int l1tf_k_v,
+        const arma::mat &Omega_u,       // Smoothing matrices
+        const arma::mat &Omega_v,
+        
         /*
          * Algorithm parameters:
          */
