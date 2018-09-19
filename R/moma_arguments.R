@@ -158,6 +158,11 @@ fusedlasso <- function(){
 #' term becomes
 #' \deqn{\lambda \sum \| x_{i-1} - 2x_{i} + x_{i+1} \|,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' For other values of \eqn{k} please refer to the following table:
+#' \tabular{llll}{
+#' k=0                \tab k=1              \tab k=2                \tab ... \cr
+#' piecewise constant \tab peicewise linear \tab piecewise quadratic \tab ...
+#' }
 #' The general formula of the penalty term for \eqn{k \in N} can be found in
 #' Tibshirani, Ryan J. "Adaptive piecewise polynomial estimation via trend
 #' filtering." The Annals of Statistics 42.1 (2014): 285-323.
