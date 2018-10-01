@@ -7,6 +7,7 @@
 #include "moma_logging.h"
 #include "moma_prox_fusion_util.h"
 #define MAX(a,b) (a)>(b)?(a):(b)
+#define MIN(a,b) (a)<(b)?(a):(b)
 #define THRES_P(x,l) (MAX(x-l,0.0)) // shrink a positive value by `l`
 
 inline arma::vec soft_thres(const arma::vec &x, double l){
@@ -131,6 +132,30 @@ public:
     arma::vec operator()(const arma::vec &x, double l);
 };
 
+class L1TrendFiltering: public Prox{
+private:
+    int k;      // k \in 0,1,2, corresponding to fused lasso, linear tf and 
+                // third diff amt
+    
+    // The backtracking parameters
+    // shrink stepsize by `bata`
+    // if f(x + stepsize * dx) >= (1 - alpha * step) * f(x)
+    // Ref: http://www.stat.cmu.edu/~ryantibs/convexopt-F15/lectures/16-primal-dual.pdf page 12
+    static constexpr double alpha = 0.01;
+    static constexpr double beta = 0.5;
+    static const int MAX_ITER = 200;
+    static const int MAX_BT_ITER = 5;
+    static constexpr double prox_eps = 1e-10;
+
+    arma::mat D;
+
+public:
+    // n is the dim of the problem, k the degree of differences
+    L1TrendFiltering(int n = -1, int i_k = 1);
+    ~L1TrendFiltering();
+    arma::vec operator()(const arma::vec &x, double l); 
+};
+
 // A handle class that deals with matching proximal operators
 // and constructing and releasing the pointer
 class ProxOp{
@@ -141,12 +166,7 @@ public:
         p = nullptr;
     }
     
-    ProxOp(
-        const std::string &s, double gamma,
-        const arma::vec &group,
-        double lambda2,
-        const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-        bool nonneg, int dim);
+    ProxOp(Rcpp::List prox_arg_list, int dim);
 
     ~ProxOp(){
         delete p;

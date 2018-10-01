@@ -24,18 +24,14 @@ int _PR_solver::check_cnvrg(){
 }
 
 _PR_solver::_PR_solver(
-        double i_alpha, const arma::mat &i_Omega, double i_lambda,
-        const std::string &sparsity_string, double gamma,
-        const arma::vec &group, 
-        double lambda2,
-        const arma::mat &w,
-        bool ADMM, bool acc, double prox_eps, bool nonneg,
+        double i_alpha, const arma::mat &i_Omega,
+        double i_lambda, Rcpp::List prox_arg_list,
         double i_EPS, int i_MAX_ITER, int i_dim):
         dim(i_dim),
         lambda(i_lambda),
         alpha(i_alpha),
         Omega(i_Omega),         // reference to the matrix on the R side, no extra copy
-        p(sparsity_string,gamma,group,lambda2,w,ADMM,acc,prox_eps,nonneg,i_dim),
+        p(prox_arg_list,i_dim),
         EPS(i_EPS),
         MAX_ITER(i_MAX_ITER){
 
@@ -178,31 +174,26 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
 
 PR_solver::PR_solver(
     const std::string &algorithm_string,
-    double i_alpha,const arma::mat &i_Omega,
-    double i_lambda,
-    const std::string &sparsity_string, double gamma,
-    const arma::vec &group,
-    double i_lambda2,
-    const arma::mat &w, bool ADMM, bool acc, double prox_eps,
-    bool nonneg,
+    double i_alpha, const arma::mat &i_Omega,
+    double i_lambda, Rcpp::List prox_arg_list,
     double i_EPS, int i_MAX_ITER, int dim){
 
     if (algorithm_string.compare("ISTA") == 0){
         prs = new ISTA(
-                    i_alpha,i_Omega,i_lambda,sparsity_string,
-                    gamma,group,i_lambda2,w,ADMM,acc,prox_eps,nonneg,
+                    i_alpha,i_Omega,
+                    i_lambda,prox_arg_list,
                     i_EPS,i_MAX_ITER,dim);
     }
     else if (algorithm_string.compare("FISTA") == 0){
         prs =  new FISTA(
-                    i_alpha,i_Omega,i_lambda,sparsity_string,
-                    gamma,group,i_lambda2,w,ADMM,acc,prox_eps,nonneg,
+                    i_alpha,i_Omega,
+                    i_lambda,prox_arg_list,
                     i_EPS,i_MAX_ITER,dim);
     }
     else if (algorithm_string.compare("ONESTEPISTA") == 0){
         prs =  new OneStepISTA(
-                    i_alpha,i_Omega,i_lambda,sparsity_string,
-                    gamma,group,i_lambda2,w,ADMM,acc,prox_eps,nonneg,
+                    i_alpha,i_Omega,
+                    i_lambda,prox_arg_list,
                     i_EPS,i_MAX_ITER,dim);
     }
     else{

@@ -5,30 +5,14 @@
 // [[Rcpp::export]]
 Rcpp::List cpp_sfpca(
     const arma::mat &X,    // We should not change any variable in R, so const ref
-    const arma::mat &w_v,
-    const arma::mat &w_u,
-    const arma::mat &Omega_u, // Default values for these matrices should be set in R
-    const arma::mat &Omega_v,
     const arma::vec &alpha_u,
     const arma::vec &alpha_v,
+    const arma::mat &Omega_u, // Default values for these matrices should be set in R
+    const arma::mat &Omega_v,
     const arma::vec &lambda_u,
     const arma::vec &lambda_v,
-    std::string P_u,
-    std::string P_v,
-    double gamma_u,
-    double gamma_v,
-    double lambda2_u,
-    double lambda2_v,
-    bool ADMM_u,
-    bool ADMM_v,
-    bool acc_u,
-    bool acc_v,
-    double prox_eps_u,
-    double prox_eps_v,
-    bool nonneg_u,
-    bool nonneg_v,
-    arma::vec group_u,
-    arma::vec group_v,
+    const Rcpp::List &prox_arg_list_u,
+    const Rcpp::List &prox_arg_list_v,
     double EPS,
     long MAX_ITER,
     double EPS_inner,
@@ -40,35 +24,15 @@ Rcpp::List cpp_sfpca(
     // in the exact order of MoMA constructor
     MoMA problem(X,
               /* sparsity */
-              P_u,
-              P_v,
               lambda_u(0),
               lambda_v(0),
-              gamma_u,
-              gamma_v,
-              /* non-negativity */
-              nonneg_u,
-              nonneg_v,
-              /* grouping */
-              group_u,
-              group_v,
+              prox_arg_list_u,
+              prox_arg_list_v,
               /* smoothness */
-              Omega_u,
-              Omega_v,
               alpha_u(0),
               alpha_v(0),
-              /* sparse fused lasso*/
-              lambda2_u,
-              lambda2_v,
-              /* unordered fusion*/
-              w_u,
-              w_v,
-              ADMM_u,
-              ADMM_v,
-              acc_u,
-              acc_v,
-              prox_eps_u,
-              prox_eps_v,
+              Omega_u,
+              Omega_v,
               /* algorithm parameters */
               EPS,
               MAX_ITER,
@@ -115,30 +79,14 @@ Rcpp::List cpp_sfpca(
 // [[Rcpp::export]]
 Rcpp::List cpp_sfpca_grid(
     const arma::mat &X,    // We should not change any variable in R, so const ref
-    const arma::mat &w_v,
-    const arma::mat &w_u,
-    const arma::mat &Omega_u, // Default values for these matrices should be set in R
-    const arma::mat &Omega_v,
     const arma::vec &alpha_u,
     const arma::vec &alpha_v,
+    const arma::mat &Omega_u, // Default values for these matrices should be set in R
+    const arma::mat &Omega_v,
     const arma::vec &lambda_u,
     const arma::vec &lambda_v,
-    std::string P_u,
-    std::string P_v,
-    double gamma_u,
-    double gamma_v,
-    double lambda2_u,
-    double lambda2_v,
-    bool ADMM_u,
-    bool ADMM_v,
-    bool acc_u,
-    bool acc_v,
-    double prox_eps_u,
-    double prox_eps_v,
-    bool nonneg_u,
-    bool nonneg_v,
-    arma::vec group_u,
-    arma::vec group_v,
+    const Rcpp::List &prox_arg_list_u,
+    const Rcpp::List &prox_arg_list_v,
     double EPS,
     long MAX_ITER,
     double EPS_inner,
@@ -167,35 +115,15 @@ Rcpp::List cpp_sfpca_grid(
     // in the exact order of MoMA constructor
     MoMA problem(X,
               /* sparsity */
-              P_u,
-              P_v,
               lambda_u(0),
               lambda_v(0),
-              gamma_u,
-              gamma_v,
-              /* non-negativity */
-              nonneg_u,
-              nonneg_v,
-              /* grouping */
-              group_u,
-              group_v,
+              prox_arg_list_u,
+              prox_arg_list_v,
               /* smoothness */
-              Omega_u,
-              Omega_v,
               alpha_u(0),
               alpha_v(0),
-              /* sparse fused lasso*/
-              lambda2_u,
-              lambda2_v,
-              /* unordered fusion*/
-              w_u,
-              w_v,
-              ADMM_u,
-              ADMM_v,
-              acc_u,
-              acc_v,
-              prox_eps_u,
-              prox_eps_v,
+              Omega_u,
+              Omega_v,
               /* algorithm parameters */
               EPS,
               MAX_ITER,

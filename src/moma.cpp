@@ -5,42 +5,19 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     /*
     * sparsity - enforced through penalties
     */
-    std::string P_u,    // Sparsity penalty info
-    std::string P_v,
     double i_lambda_u,  // regularization level
     double i_lambda_v,
-    double gamma_u,
-    double gamma_v,       // Non-convexity parameter
-    bool nonneg_u,      // Non-negativity indicator
-    bool nonneg_v,
-    /*
-    * grouping
-    */
-    const arma::vec &group_u,
-    const arma::vec &group_v,
+    Rcpp::List i_prox_arg_list_u,
+    Rcpp::List i_prox_arg_list_v,
+
     /*
     * smoothness - enforced through constraints
     */
-    const arma::mat &Omega_u,   // Smoothing matrices
-    const arma::mat &Omega_v,
     double i_alpha_u,           // Smoothing levels
     double i_alpha_v,
-    /*
-    * sparse fused lasso
-    */
-    double lambda2_u,           // penalty on the absolute values of the coefficients
-    double lambda2_v,
-    /*
-    * unordered fusion
-    */
-    const arma::mat &w_u,
-    const arma::mat &w_v,
-    bool ADMM_u,
-    bool ADMM_v,
-    bool acc_u,
-    bool acc_v,
-    double prox_eps_u,
-    double prox_eps_v,
+    const arma::mat &Omega_u,   // Smoothing matrices
+    const arma::mat &Omega_v,
+
     /*
     * Algorithm parameters:
     */
@@ -59,13 +36,15 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     MAX_ITER(i_MAX_ITER),
     EPS(i_EPS),
     solver_u(
-            i_solver,alpha_u,Omega_u,lambda_u,P_u,
-            gamma_u,group_u,lambda2_u,w_u,ADMM_u,acc_u,prox_eps_u,
-            nonneg_u,i_EPS_inner,i_MAX_ITER_inner,i_X.n_rows),
+            i_solver,
+            alpha_u,Omega_u,
+            lambda_u,i_prox_arg_list_u,
+            i_EPS_inner,i_MAX_ITER_inner,i_X.n_rows),
     solver_v(
-            i_solver,alpha_v,Omega_v,lambda_v,P_v,
-            gamma_v,group_v,lambda2_v,w_v,ADMM_v,acc_v,prox_eps_v,
-            nonneg_v,i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
+            i_solver,
+            alpha_v,Omega_v,
+            lambda_v,i_prox_arg_list_v,
+            i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
      // const reference must be passed to initializer list
 {
     MoMALogger::info("Initializing MoMA object:")
@@ -73,8 +52,8 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
     << " lambda_v " << lambda_v
     << " alpha_u " << alpha_u
     << " alpha_v " << alpha_v
-    << " P_u " << P_u
-    << " P_v " << P_v;
+    << " P_u " << Rcpp::as<std::string>(i_prox_arg_list_u["P"])
+    << " P_v " << Rcpp::as<std::string>(i_prox_arg_list_v["P"]);
     // Step 2: Initialize to leading singular vectors
     //
     //         MoMA is a regularized SVD, which is a non-convex (bi-convex)

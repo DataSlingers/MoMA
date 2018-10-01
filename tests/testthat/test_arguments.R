@@ -12,7 +12,9 @@ test_that("Test for arguments names", {
     for(fun in c(lasso,
                  scad,
                  mcp,
-                 fusedlasso)){
+                 fusedlasso,
+                 l1tf
+                 )){
         test_args <- c(test_args, names(fun()))
 
     }
@@ -33,6 +35,9 @@ test_that("Test for arguments names", {
 test_that("Prompt errors encountering inappropriate arguments", {
     old_logger_level <- MoMA::moma_logger_level()
     MoMA::moma_logger_level("DEBUG")
+    on.exit(MoMA::moma_logger_level(old_logger_level))
+
+
     # Wrong non-convexity arguments
     expect_error(moma_svd(matrix(runif(12),3,4),
                           u_sparsity=scad(1),lambda_u = 3),
@@ -40,6 +45,7 @@ test_that("Prompt errors encountering inappropriate arguments", {
     expect_error(moma_svd(matrix(runif(12),3,4),
                           u_sparsity=mcp(0.9),lambda_u = 3),
                  paste0("Non-convexity parameter of MCP (",sQuote("gamma"),") must be larger than 1."),fixed=TRUE)
+
 
     # Wrong grouping dimension in group lasso
     expect_error(moma_svd(matrix(runif(12),3,4),
@@ -63,6 +69,7 @@ test_that("Prompt errors encountering inappropriate arguments", {
                           Omega_u = matrix(c(1),1),alpha_u=2),
                  "Omega shoud be a compatible matrix. It should be of 3x3, but is actually 1x1 (Called from check_omega)",fixed=TRUE)
 
+
     # Prompt errors when users require rank-k svd and cross validation
     expect_error(moma_svd(matrix(runif(12),3,4),lambda_u=c(1,2,3),k=2),
                  "We don't support a range of parameters in finding a rank-k svd (Called from moma_svd)",fixed=TRUE)
@@ -71,15 +78,13 @@ test_that("Prompt errors encountering inappropriate arguments", {
                           lambda_v = seq(10),
                           alpha_u = seq(10)),
                  "We only allow changing two parameters.",fixed=TRUE)
-
-    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
 
 
 test_that("Correct prox match", {
     old_logger_level <- MoMA::moma_logger_level()
     MoMA::moma_logger_level("DEBUG")
-
+    on.exit(MoMA::moma_logger_level(old_logger_level))
 
     expect_output(moma_svd(matrix(runif(12),3,4)),
                   "Initializing null proximal operator object")
@@ -121,6 +126,17 @@ test_that("Correct prox match", {
                   "Initializing non-negative group lasso proximal operator object")
 
 
+    # L1 linear trend filtering
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=l1tf(),lambda_u = 3),
+                  "Initializing a L1 linear trend filtering proximal operator object of degree 1")
+    expect_output(moma_svd(matrix(runif(100),10,10),
+                           u_sparsity=l1tf(l1tf_k = 2),lambda_u = 3),
+                  "Initializing a L1 linear trend filtering proximal operator object of degree 2")
+    expect_error(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=l1tf(l1tf_k = 2),lambda_u = 3),
+                  "A difference matrix should have more columns.")
+
     # sparse fused lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=spfusedlasso(lambda2=3),lambda_u = 3),
@@ -134,10 +150,7 @@ test_that("Correct prox match", {
     expect_output(moma_svd(matrix(runif(12),3,4),
                           u_sparsity=cluster(diag(3)),lambda_u = 3),
                  "Initializing a fusion lasso proximal operator object")
-
-    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
-
 
 test_that("Correct algorithm match", {
     old_logger_level <- MoMA::moma_logger_level()
@@ -165,6 +178,7 @@ test_that("Correct algorithm match", {
 test_that("Data matrix must be complete", {
     old_logger_level <- MoMA::moma_logger_level()
     MoMA::moma_logger_level("DEBUG")
+    on.exit(MoMA::moma_logger_level(old_logger_level))
 
     X <- matrix(runif(12),3,4)
     X[2,1] <- NA
@@ -180,7 +194,4 @@ test_that("Data matrix must be complete", {
     X[1,4] <- NaN
     expect_error(moma_svd(X = X),
                   "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
-
-    on.exit(MoMA::moma_logger_level(old_logger_level))
 })
-

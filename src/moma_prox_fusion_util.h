@@ -78,7 +78,6 @@ public:
     // into situation that the two lines are 
     // parallel. In order to deal with this, 
     // we return MOMA_INFTY.
-    static constexpr double MOMA_INFTY = std::numeric_limits<double>::infinity();
 
     // A vector stroing all the beta values
     std::vector<Group> g;
