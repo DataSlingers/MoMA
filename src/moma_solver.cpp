@@ -7,7 +7,7 @@
 // S = I + alpha * Omega
 arma::vec _PR_solver::normalize(const arma::vec &u){
     arma::vec res = u;
-    double mn = I? arma::norm(u) : arma::as_scalar(arma::sqrt(u.t() * S * u));
+    double mn = is_S_idmat ? arma::norm(u) : arma::as_scalar(arma::sqrt(u.t() * S * u));
     if(mn > 0){
         res /= mn;
     }else{
@@ -43,16 +43,16 @@ _PR_solver::_PR_solver(
 
     grad_step_size = 1 / L;
     prox_step_size = lambda / L;
-    I = (alpha == 0.0);
+    is_S_idmat = (alpha == 0.0);
     tol = 1;
     iter = 0;
 }
 
 arma::vec _PR_solver::g(
                     const arma::vec &v, const arma::vec &y,
-                    double step_size, const arma::mat &S, bool I){
+                    double step_size, const arma::mat &S, bool is_S_idmat){
     arma::vec res;
-    if(I){
+    if(is_S_idmat){
         res = v + step_size * (y - v);
     }else{
         res = v + step_size * (y - S*v);
@@ -76,8 +76,24 @@ int _PR_solver::reset(double new_lambda, double new_alpha){
     }
     lambda = new_lambda;
     alpha = new_alpha;
-    I = (new_alpha == 0.0);
+    is_S_idmat = (new_alpha == 0.0);
     return 0;
+}
+
+double _PR_solver::bic(arma::vec y, const arma::vec &est){
+    // Find out the bic of the following estimator:
+    // argmin_x || y - x || + lambda P(x) s.t. || x ||_S <= 1, S = I + alpah * Omega.
+    // It is approximated by 
+    // log{1/2n * squared error} + log(n)/n * df + const
+    // NOTE: We ignore the effect of smoothing matrix Omega.
+
+    // Ref: Proposition 2 in 
+    // Allen, Genevera I. 
+    // "Sparse and functional principal components analysis." 
+    // arXiv preprint arXiv:1309.2895 (2013).
+    double res = arma::norm(y - est);
+    double df  = p.df(est);
+    return std::log(res * res / dim) + std::log(dim) / dim * df;       // ignore some constants here
 }
 
 arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
@@ -94,7 +110,7 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
         iter++;
         oldu = u;
 
-        u = g(u,y,grad_step_size,S,I);
+        u = g(u,y,grad_step_size,S,is_S_idmat);
         u = p(u,prox_step_size);
 
         tol = arma::norm(u - oldu) / arma::norm(oldu);
@@ -127,7 +143,7 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
         double oldt = t;
         t = 0.5 * (1 + std::sqrt(1 + 4 * oldt*oldt));
 
-        u = g(newu,y,grad_step_size,S,I);
+        u = g(newu,y,grad_step_size,S,is_S_idmat);
         u = p(u,prox_step_size);
         newu = u + (oldt - 1) / t * (u - oldu);
 
@@ -157,7 +173,7 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
         iter++;
         oldu = u;
 
-        u = g(u,y,grad_step_size,S,I);
+        u = g(u,y,grad_step_size,S,is_S_idmat);
         u = p(u,prox_step_size);
         u = normalize(u);
 
@@ -207,4 +223,8 @@ arma::vec PR_solver::solve(arma::vec y, const arma::vec &start_point){
     
 int PR_solver::reset(double new_lambda, double new_alpha){
     return (*prs).reset(new_lambda,new_alpha);
+}
+
+double PR_solver::bic(arma::vec y, const arma::vec &est){
+    return (*prs).bic(y,est);
 }
