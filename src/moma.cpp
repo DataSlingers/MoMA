@@ -109,6 +109,93 @@ void MoMA::solve(){
     check_cnvrg();
 }
 
+Rcpp::List MoMA::select_nestedBIC( 
+        const arma::vec &alpha_u,
+        const arma::vec &alpha_v,
+        const arma::vec &lambda_u,
+        const arma::vec &lambda_v,
+        int n_search = 5){          // suggested in the sfpca_nested_bic.m
+    
+    MoMALogger::debug("Running nested BIC parameter selection.");
+    tol = 1;
+    iter = 0;
+    arma::vec oldu;
+    arma::vec oldv;
+    arma::vec working_u;
+    arma::vec working_v;
+    double working_bic_u;
+    double working_bic_v;
+    double minbic_u;
+    double minbic_v;
+    double opt_alpha_u;
+    double opt_alpha_v;
+    double opt_lambda_u;
+    double opt_lambda_v;
+
+    while(tol > EPS && iter < MAX_ITER && iter < n_search){
+        iter++;
+        oldu = u;
+        oldv = v;
+        minbic_u = 1e+10;
+        minbic_v = 1e+10;
+
+        // choose lambda/alpha_u
+        for(int i = 0; i < alpha_u.n_elem; i++){
+            for(int j = 0; j < lambda_u.n_elem; j++){
+                // Put lambda_u in the inner loop to avoid reconstructing S many times
+                solver_u.reset(lambda_u(j),alpha_u(i));
+                working_u     = solver_u.solve(X*v, working_u);
+                working_bic_u = solver_u.bic(X*v, working_u);
+                
+                if(working_bic_u < minbic_u){
+                    minbic_u     = working_bic_u;
+                    u            = working_u;
+                    opt_lambda_u = lambda_u(j);
+                    opt_alpha_u  = alpha_u(i);
+                }
+            }
+        }
+        MoMALogger::debug("Search No.") << iter << ", BIC(u) = " << minbic_u << 
+                                        ", (al,lam) = (" << opt_alpha_u << 
+                                        ", " << opt_lambda_u << ").";
+        // choose lambda/alpha_v
+        for(int i = 0; i < alpha_v.n_elem; i++){
+            for(int j = 0; j < lambda_v.n_elem; j++){
+                // Put lambda_v in the inner loop to avoid reconstructing S many times
+                solver_v.reset(lambda_v(j),alpha_v(i));
+                working_v     = solver_v.solve(X.t()*u, working_v);
+                working_bic_v = solver_v.bic(X.t()*u, working_v);
+
+                if(working_bic_v < minbic_v){
+                    minbic_v     = working_bic_v;
+                    v            = working_v;
+                    opt_lambda_v = lambda_v(j);
+                    opt_alpha_v  = alpha_v(i);
+                }
+            }
+        }
+        MoMALogger::debug("Search No.") << iter << ", BIC(v) = " << minbic_v << 
+                                                ", (al,lam) = (" << opt_alpha_v << 
+                                                ", " << opt_lambda_v << ").";
+
+        tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
+        MoMALogger::debug("Outer loop No.") << iter << "--" << tol;
+    }
+    
+    // A final run on the chosen set of parameters
+    reset(opt_lambda_u,opt_lambda_v,opt_alpha_u,opt_alpha_v);
+    solve();
+    return Rcpp::List::create(
+                        Rcpp::Named("lambda_u") = opt_lambda_u,
+                        Rcpp::Named("lambda_v") = opt_lambda_v,
+                        Rcpp::Named("alpha_u") = opt_alpha_u,
+                        Rcpp::Named("alpha_v") = opt_alpha_v,
+                        Rcpp::Named("u") = u,
+                        Rcpp::Named("v") = v,
+                        Rcpp::Named("d") = arma::as_scalar(u.t() * X * v));
+
+}
+
 int MoMA::check_cnvrg(){
     if(iter >= MAX_ITER){
         MoMALogger::warning("No convergence in MoMA!") 

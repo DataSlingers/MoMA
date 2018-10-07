@@ -53,7 +53,8 @@ moma_svd <- function(
                     EPS = 1e-10, MAX_ITER = 1000,
                     EPS_inner = 1e-10,MAX_ITER_inner = 1e+5,
                     solver = "ista",
-                    k = 1){
+                    k = 1,
+                    select = "gridsearch"){
 
     all_para <- c(alpha_u,alpha_v,lambda_u,lambda_v)
     if(sum(all_para < 0 || !is.finite(all_para)) > 0){
@@ -97,13 +98,13 @@ moma_svd <- function(
     n <- dim(X)[1]
     p <- dim(X)[2]
 
-    is_cv <- length(alpha_u) > 1 ||
+    is_multiple_para <- length(alpha_u) > 1 ||
               length(alpha_v) > 1 ||
               length(lambda_u) > 1 ||
               length(lambda_v) > 1
 
     # k must be 1 if alpha_u/v or lambda_u/v is of vector form
-    if(is_cv && k != 1){
+    if(is_multiple_para && k != 1){
         moma_error("We don't support a range of parameters in finding a rank-k svd")
     }
 
@@ -123,10 +124,21 @@ moma_svd <- function(
                     prox_arg_list_u = modifyList(df_prox_arg_list_u,u_sparsity),
                     prox_arg_list_v = modifyList(df_prox_arg_list_v,v_sparsity)))
 
-    if(is_cv){
-        a <- do.call("cpp_sfpca_grid",df_arg_list)
-        class(a) <- "moma_svd_grid"
-        return(a)
+    if(is_multiple_para){
+        if(select == "gridsearch"){
+            a <- do.call("cpp_sfpca_grid",df_arg_list)
+            class(a) <- "moma_svd_grid"
+            return(a)
+        }
+        else if(select == "nestedBIC"){
+            a <- do.call("cpp_sfpca_nestedBIC",df_arg_list)
+            class(a) <- "moma_svc_nestedBIC"
+            return(a)
+        }
+        else{
+            moma_error("Wrong parameter selection methods!")
+        }
+
     }
     else{
         return(do.call("cpp_sfpca",df_arg_list))
