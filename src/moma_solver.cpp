@@ -93,12 +93,13 @@ double _PR_solver::bic(arma::vec y, const arma::vec &est){
     // arXiv preprint arXiv:1309.2895 (2013).
     double res = arma::norm(y - est);
     double df  = p.df(est);
+    MoMALogger::debug("(RES, DF) = （") << res << ", " << df << ").";
     return std::log(res * res / dim) + std::log(dim) / dim * df;       // ignore some constants here
 }
 
 arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
-        MoMALogger::error("Wroing dimension in PRsolver::solve");
+        MoMALogger::error("Wroing dimension in PRsolver::solve:") << start_point.n_elem << ":" << S.n_cols;
     }
     tol = 1;
     iter = 0;
@@ -113,14 +114,21 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
         u = g(u,y,grad_step_size,S,is_S_idmat);
         u = p(u,prox_step_size);
 
-        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        double old_norm  = arma::norm(oldu);
+        double diff_norm = arma::norm(u - oldu);
+
+        if(old_norm != 0.0)
+            tol = diff_norm / old_norm;
+        else{
+            tol = diff_norm;
+        }
         if(iter % 1000 == 0){
-            MoMALogger::debug("No.") << iter << "--"<< tol;
+            MoMALogger::debug("Solving PR: No.") << iter << "--"<< tol;
         }
     }
     u = normalize(u);
     
-    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving RP: total iter =  No.") << iter << "--" << tol;
     check_cnvrg();
     return u;
 }
@@ -147,15 +155,21 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
         u = p(u,prox_step_size);
         newu = u + (oldt - 1) / t * (u - oldu);
 
-        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        double old_norm  = arma::norm(oldu);
+        double diff_norm = arma::norm(u - oldu);
+        if(old_norm != 0.0)
+            tol = diff_norm / old_norm;
+        else{
+            tol = diff_norm;
+        }
         if(iter % 1000 == 0){
-            MoMALogger::debug("No.") << iter << "--"<< tol;
+            MoMALogger::debug("Solving PR: No.") << iter << "--"<< tol;
         }
     }
     u = normalize(u);
     
     check_cnvrg();
-    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving RP: total iter =  No.") << iter << "--" << tol;
     return u;
 }
 
@@ -177,14 +191,21 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
         u = p(u,prox_step_size);
         u = normalize(u);
 
-        tol = arma::norm(u - oldu) / arma::norm(oldu);
+        double old_norm  = arma::norm(oldu);
+        double diff_norm = arma::norm(u - oldu);
+        if(old_norm != 0.0)
+            tol = diff_norm / old_norm;
+        else{
+            tol = diff_norm;
+        }
+
         if(iter % 1000 == 0){
-            MoMALogger::debug("No.") << iter << "--"<< tol;
+            MoMALogger::debug("Solving PR: No.") << iter << "--"<< tol;
         }
     }
     
     check_cnvrg();
-    MoMALogger::debug("Inner loop No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving RP: total iter =  No.") << iter << "--" << tol;
     return u;
 }
 
