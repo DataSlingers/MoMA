@@ -139,7 +139,10 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
     for(; iter < MAX_ITER; iter++){
 
         // Surrogate duality gap
-        // Ref: PPT page 10
+        // Ref: Primal-Dual Interior-Point Methods, 
+        // Ryan Tibshirani, Convex Optimization 10-725/36-725
+        // Powerpoint presentation page 10
+        // http://www.cs.cmu.edu/~pradeepr/convexopt/Lecture_Slides/primal-dual.pdf
         gap = - (sum(mu1 % f1 + mu2 % f2));
         if(gap < prox_eps){
             break;
