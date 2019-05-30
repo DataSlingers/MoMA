@@ -54,8 +54,9 @@ moma_svd <- function(
                     EPS_inner = 1e-10,MAX_ITER_inner = 1e+5,
                     solver = "ista",
                     k = 1,
-                    select = "gridsearch"){
+                    select = c("gridsearch","nestedBIC")){
 
+    select <- match.arg(select)
     all_para <- c(alpha_u,alpha_v,lambda_u,lambda_v)
     if(sum(all_para < 0 || !is.finite(all_para)) > 0){
         moma_error("All penalty levels (",
