@@ -99,7 +99,7 @@ double _PR_solver::bic(arma::vec y, const arma::vec &est){
 
 arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
-        MoMALogger::error("Wroing dimension in PRsolver::solve:") << start_point.n_elem << ":" << S.n_cols;
+        MoMALogger::error("Wrong dimension in PRsolver::solve:") << start_point.n_elem << ":" << S.n_cols;
     }
     tol = 1;
     iter = 0;
@@ -128,14 +128,14 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     }
     u = normalize(u);
     
-    MoMALogger::debug("Finish solving RP: total iter =  No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving PR: total iter =  No.") << iter << "--" << tol;
     check_cnvrg();
     return u;
 }
 
 arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
-        MoMALogger::error("Wroing dimension in PRsolver::solve");
+        MoMALogger::error("Wrong dimension in PRsolver::solve");
     }
     tol = 1;
     iter = 0;
@@ -169,13 +169,13 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
     u = normalize(u);
     
     check_cnvrg();
-    MoMALogger::debug("Finish solving RP: total iter =  No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving PR: total iter =  No.") << iter << "--" << tol;
     return u;
 }
 
 arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
     if(start_point.n_elem != S.n_cols || y.n_elem != S.n_cols){
-        MoMALogger::error("Wroing dimension in PRsolver::solve");
+        MoMALogger::error("Wrong dimension in PRsolver::solve");
     }
     tol = 1;
     iter = 0;
@@ -205,7 +205,7 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
     }
     
     check_cnvrg();
-    MoMALogger::debug("Finish solving RP: total iter =  No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving PR: total iter =  No.") << iter << "--" << tol;
     return u;
 }
 

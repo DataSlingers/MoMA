@@ -114,9 +114,9 @@ Rcpp::List MoMA::select_nestedBIC(
         const arma::vec &alpha_v,
         const arma::vec &lambda_u,
         const arma::vec &lambda_v,
-        int n_search = 5){          // suggested in the sfpca_nested_bic.m
+        int max_bic_iter = 5){          // suggested in the sfpca_nested_bic.m
     
-    MoMALogger::message("Running nested BIC parameter selection.");
+    MoMALogger::info("Running nested BIC parameter selection.");
     tol = 1;
     iter = 0;
     arma::vec oldu;
@@ -132,7 +132,7 @@ Rcpp::List MoMA::select_nestedBIC(
     double opt_lambda_u;
     double opt_lambda_v;
 
-    while(tol > EPS && iter < MAX_ITER && iter < n_search){
+    while(tol > EPS && iter < MAX_ITER && iter < max_bic_iter){
         iter++;
         oldu = u;
         oldv = v;

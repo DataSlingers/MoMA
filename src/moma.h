@@ -85,7 +85,7 @@ public:
         const arma::vec &alpha_v,
         const arma::vec &lambda_u,
         const arma::vec &lambda_v,
-        int n_search);
+        int max_bic_iter);
 
     // deflate u * v.t() out of X by the amount of d
     int deflate(double d);
