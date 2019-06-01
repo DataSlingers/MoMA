@@ -109,11 +109,12 @@ int test_df_orderedfusion(const arma::vec &x)
 }
 
 // [[Rcpp::export]]
-int test_df_spfusedlasso(const arma::vec &x,double lambda2)
+int test_df_spfusedlasso(const arma::vec &x)
 {
-    // lambda2: the level of penalty on
-    // the absolute values of the coefficients
-    SparseFusedLasso a(lambda2);
+    // SparseFusedLasso object needs a `lambda2` argument
+    // (the level of penalty on the absolute values of
+    // the coefficients) to initialize
+    SparseFusedLasso a(1);
     return a.df(x);
 }
 

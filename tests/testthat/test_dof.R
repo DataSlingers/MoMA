@@ -26,39 +26,39 @@ test_that("DoF of fused lasso", {
 test_that("DoF of sparse fused lasso", {
     # constant
     x <- c(1,1,1,1)
-    expect_equal(1, test_df_orderedfusion(x))
+    expect_equal(1, test_df_spfusedlasso(x))
 
-    # fused group at the start
+    # fused group at the beginning
     x <- c(1,1,1,2,1)
-    expect_equal(3, test_df_orderedfusion(x))
+    expect_equal(3, test_df_spfusedlasso(x))
 
     # fused group at the end
     x <- c(1,2,1,1,1,1)
-    expect_equal(3, test_df_orderedfusion(x))
+    expect_equal(3, test_df_spfusedlasso(x))
 
     # multiple fused groups
     x <- c(1,2,2,3,3,4,4,4,5,5,6)
-    expect_equal(6, test_df_orderedfusion(x))
+    expect_equal(6, test_df_spfusedlasso(x))
 
     # no fusion happens
     x <- seq(20)
-    expect_equal(20, test_df_orderedfusion(x))
+    expect_equal(20, test_df_spfusedlasso(x))
 
-    # zeros at the start
+    # zeros at the beginning
     x <- c(0,0,1,2,1,1)
-    expect_equal(3, test_df_spfusedlasso(x,1))
+    expect_equal(3, test_df_spfusedlasso(x))
 
     # zeros in the middle
     x <- c(1,0,0,2,1,1)
-    expect_equal(3, test_df_spfusedlasso(x,1))
+    expect_equal(3, test_df_spfusedlasso(x))
 
     # multiple groups of zeros in the middle
     x <- c(1,0,0,2,0,0,0,3,3,0,1,1)
-    expect_equal(4, test_df_spfusedlasso(x,1))
+    expect_equal(4, test_df_spfusedlasso(x))
 
     # zeros in the end
     x <- c(1,0,0,2,1,1,0)
-    expect_equal(3, test_df_spfusedlasso(x,1))
+    expect_equal(3, test_df_spfusedlasso(x))
 })
 
 
