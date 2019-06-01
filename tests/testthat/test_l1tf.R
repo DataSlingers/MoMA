@@ -149,7 +149,7 @@ test_that("Tests for difference matrix",{
 
 })
 
-test_that("Equivalent to polynomrial regression",{
+test_that("Equivalent to polynomial regression",{
     # NOTE: theory to be confirmed
 
     set.seed(22)

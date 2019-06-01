@@ -100,3 +100,34 @@ arma::vec test_prox_l1gf(const arma::vec &x,double l,int k = 1)
     L1TrendFiltering a(x.n_elem,k);
     return a(x,l);
 }
+
+// [[Rcpp::export]]
+int test_df_orderedfusion(const arma::vec &x)
+{
+    OrderedFusedLasso a;
+    return a.df(x);
+}
+
+// [[Rcpp::export]]
+int test_df_spfusedlasso(const arma::vec &x)
+{
+    // SparseFusedLasso object needs a `lambda2` argument
+    // (the level of penalty on the absolute values of
+    // the coefficients) to initialize
+    SparseFusedLasso a(1);
+    return a.df(x);
+}
+
+// [[Rcpp::export]]
+int test_df_l1gf(const arma::vec &x,int k = 1)
+{
+    L1TrendFiltering a(x.n_elem,k);
+    return a.df(x);
+}
+
+// [[Rcpp::export]]
+int test_df_grplasso(const arma::vec &x, const arma::vec &g)
+{
+    GrpLasso a(g);
+    return a.df(x);
+}

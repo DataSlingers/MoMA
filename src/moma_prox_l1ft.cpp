@@ -39,7 +39,7 @@ arma::mat l1tf_diff_mat(int m, int k){
 
 L1TrendFiltering::L1TrendFiltering(int n,int i_k){
     if(i_k >= 2){
-        MoMALogger::warning("TF with higher-than-second difference matrix is not tested yet.");
+        MoMALogger::message("TF with higher-than-second difference matrix is not well tested yet.");
     }
     if(n == -1){
         MoMALogger::error("Class L1TrendFiltering needs to know dimension of the problem.");
@@ -139,7 +139,10 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
     for(; iter < MAX_ITER; iter++){
 
         // Surrogate duality gap
-        // Ref: PPT page 10
+        // Ref: Primal-Dual Interior-Point Methods, 
+        // Ryan Tibshirani, Convex Optimization 10-725/36-725
+        // Powerpoint presentation page 10
+        // http://www.cs.cmu.edu/~pradeepr/convexopt/Lecture_Slides/primal-dual.pdf
         gap = - (sum(mu1 % f1 + mu2 % f2));
         if(gap < prox_eps){
             break;
@@ -208,4 +211,57 @@ arma::vec L1TrendFiltering::operator()(const arma::vec &x, double l){
                     << " , iter = " << iter
                     << ".";
     return y - D.t() * nu;
+}
+
+int L1TrendFiltering::df(const arma::vec &x){
+    if(k == 0){
+        MoMALogger::error("Please use fused lasso instead.");
+    }
+    else if(k == 1){
+        // df = number of knots + k + 1
+        // Ref: 
+        // Table 2 of Tibshirani, Robert. 
+        // "Regression shrinkage and selection via the lasso: a retrospective." 
+        // Journal of the Royal Statistical Society: Series B (Statistical Methodology) 73.3 (2011): 273-282.
+        // D = [... −1 2 −1 ...]
+
+        if(x.n_elem < 3){
+            MoMALogger::error("dim(x) must be larger than 2.");
+        }
+        int knots = 0;
+        // Count the number of knots (changes in slope in the case of linear trend filtering)
+        for(int i = 2; i < x.n_elem; i++){
+            if(std::abs(x(i-2) - 2 * x(i-1) + x(i))  > 1e-10){
+                printf("%d",i);
+                knots++;
+            }
+        }
+        return knots + k + 1;
+    }
+    else if(k == 2){
+        // df = number of knots + k + 1
+        // Ref: 
+        // Table 2 of Tibshirani, Robert. 
+        // "Regression shrinkage and selection via the lasso: a retrospective." 
+        // Journal of the Royal Statistical Society: Series B (Statistical Methodology) 73.3 (2011): 273-282.
+        // D = [...   1   -3    3   -1  ...]
+
+        if(x.n_elem < 4){
+            MoMALogger::error("dim(x) must be larger than 3.");
+        }
+        int knots = 0;
+        // Count the number of knots (changes in second derivative in the case of quadratic trend filtering)
+        for(int i = 3; i < x.n_elem; i++){
+            if(std::abs(x(i-3) - 3 * x(i-2) + 3 * x(i-1) - x(i)) > 1e-10){
+                knots++;
+            }
+        }
+        
+        return knots + k + 1;
+    }
+    else{
+        MoMALogger::error("Error in L1TrendFiltering::df: Invalid k.");
+        return 0;
+    }
+
 }

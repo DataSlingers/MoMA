@@ -18,9 +18,9 @@ protected:
     double alpha;
     double L;
     const arma::mat &Omega;
-     // S = I + alpha * Omega for u, v smoothing
+    // S = I + alpha * Omega for u, v smoothing
     arma::mat S;
-    bool I; // indicator of alpha == 0.0 <=> S == I
+    bool is_S_idmat;            // indicator of alpha == 0.0 <=> S == I
 
 
     // Step size for proximal gradient algorithm
@@ -35,7 +35,7 @@ protected:
     // A gradient operator
     arma::vec g(
         const arma::vec &v, const arma::vec &y,
-        double step_size, const arma::mat &S, bool I);
+        double step_size, const arma::mat &S, bool is_S_idmat);
     arma::vec normalize(const arma::vec &u);
 
 
@@ -58,6 +58,7 @@ public:
 
     // Used when solving for a bunch of lambda's and alpha's
     int reset(double new_lambda, double new_alpha);
+    double bic(arma::vec y, const arma::vec &est);
     virtual ~_PR_solver() = default;
     virtual arma::vec solve(arma::vec y, const arma::vec &start_point) = 0;
 };
@@ -116,6 +117,7 @@ public:
 
     // wrap operations in _PR_solver class
     arma::vec solve(arma::vec y, const arma::vec &start_point);
+    double bic(arma::vec y, const arma::vec &est);
     int reset(double new_lambda, double new_alpha);
 
     ~PR_solver(){

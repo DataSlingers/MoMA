@@ -48,14 +48,18 @@ second_diff_mat <- function(n){
 
 moma_svd <- function(
                     X,
-                    u_sparsity=empty(),v_sparsity=empty(),lambda_u=0,lambda_v=0,    # lambda is a vector or scalar
-                    Omega_u=NULL,Omega_v=NULL,alpha_u=0,alpha_v=0,                  # so is alpha
+                    u_sparsity=empty(),v_sparsity=empty(),lambda_u=0,lambda_v=0,    # lambda_u/_v is a vector or scalar
+                    Omega_u=NULL,Omega_v=NULL,alpha_u=0,alpha_v=0,                  # so is alpha_u/_v
                     EPS = 1e-10, MAX_ITER = 1000,
                     EPS_inner = 1e-10,MAX_ITER_inner = 1e+5,
                     solver = "ista",
-                    k = 1){
+                    k = 1,                                                          # number of pairs of singular vecters
+                    select = c("gridsearch","nestedBIC")){
 
+    select <- match.arg(select)
     all_para <- c(alpha_u,alpha_v,lambda_u,lambda_v)
+
+    # verify all alphas and lambdas are positive numbers
     if(sum(all_para < 0 || !is.finite(all_para)) > 0){
         moma_error("All penalty levels (",
                     sQuote("lambda_u"),", ",
@@ -71,6 +75,8 @@ moma_svd <- function(
     lambda_u <- as.vector(lambda_u)
     lambda_v <- as.vector(lambda_v)
 
+    # update argument lists
+    # GP loop argument
     df_arg_list <- list(
                         X = X,
                         lambda_u = lambda_u,
@@ -85,10 +91,18 @@ moma_svd <- function(
                         MAX_ITER_inner = MAX_ITER_inner,
                         solver = toupper(solver),
                         k = k)
+
+    # Prox arguments for u and v
+    # To call a C function we have to specify
+    # all arguments. However, some arguments
+    # are specific for a particular prox. So
+    # we first assign a default arg list to 
+    # `df_prox_arg_list_u/_v` and
+    # then update them.
     df_prox_arg_list_u <- MOMA_DEFAULT_PROX
     df_prox_arg_list_v <- MOMA_DEFAULT_PROX
 
-     if (!is.matrix(X)){
+    if (!is.matrix(X)){
         moma_error("X must be a matrix.")
     }
     if (sum(!is.finite(X)) >= 1){
@@ -97,24 +111,29 @@ moma_svd <- function(
     n <- dim(X)[1]
     p <- dim(X)[2]
 
-    is_cv <- length(alpha_u) > 1 ||
+    # If all of alpha_u, alpha_v, lambda_u, lambda_v are
+    # a number, we just solve ONE MoMA problem.
+    is_multiple_para <- length(alpha_u) > 1 ||
               length(alpha_v) > 1 ||
               length(lambda_u) > 1 ||
               length(lambda_v) > 1
 
     # k must be 1 if alpha_u/v or lambda_u/v is of vector form
-    if(is_cv && k != 1){
+    if(is_multiple_para && k != 1){
         moma_error("We don't support a range of parameters in finding a rank-k svd")
     }
 
     # Sparsity arguments
+    # "moma_sparsity" includes all penalty types, including fused lasso
+    # group lasso and so on.
     if(!inherits(u_sparsity,"moma_sparsity") || !inherits(v_sparsity,"moma_sparsity")){
         moma_error("Sparse penalty should be of class ",
                     sQuote("moma_sparsity"),
                     ". Try using, for example, `u_sparsity = lasso()`.")
     }
 
-    # Smoothness arguments
+    # Pack all argument into a list
+    # First we check the smoothness term argument.
     df_arg_list <- c(
                 df_arg_list,
                 list(
@@ -123,10 +142,20 @@ moma_svd <- function(
                     prox_arg_list_u = modifyList(df_prox_arg_list_u,u_sparsity),
                     prox_arg_list_v = modifyList(df_prox_arg_list_v,v_sparsity)))
 
-    if(is_cv){
-        a <- do.call("cpp_sfpca_grid",df_arg_list)
-        class(a) <- "moma_svd_grid"
-        return(a)
+    if(is_multiple_para){
+        if(select == "gridsearch"){
+            a <- do.call("cpp_sfpca_grid",df_arg_list)
+            class(a) <- "moma_svd_grid"
+            return(a)
+        }
+        else if(select == "nestedBIC"){
+            a <- do.call("cpp_sfpca_nestedBIC",df_arg_list)
+            class(a) <- "moma_svc_nestedBIC"
+            return(a)
+        }
+        else{
+            moma_error("Wrong parameter selection methods!")
+        }
     }
     else{
         return(do.call("cpp_sfpca",df_arg_list))

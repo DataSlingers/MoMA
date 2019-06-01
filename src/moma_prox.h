@@ -25,6 +25,7 @@ class Prox{
 public:
     virtual arma::vec operator()(const arma::vec &x, double l) = 0;
     virtual ~Prox() = default;
+    virtual int df(const arma::vec &x) = 0;
 };
 
 class NullProx: public Prox{
@@ -32,6 +33,7 @@ public:
     NullProx();
     arma::vec operator()(const arma::vec &x, double l);
     ~NullProx();
+    int df(const arma::vec &x);
 };
 
 class Lasso: public Prox{
@@ -39,6 +41,7 @@ public:
     Lasso();
     arma::vec operator()(const arma::vec &x, double l);
     ~Lasso();
+    int df(const arma::vec &x);
 };
 
 class NonNegativeLasso: public Prox{
@@ -46,6 +49,7 @@ public:
     NonNegativeLasso();
     arma::vec operator()(const arma::vec &x, double l);
     ~NonNegativeLasso();
+    int df(const arma::vec &x);
 };
 
 class SCAD: public Prox{
@@ -56,6 +60,7 @@ public:
     ~SCAD();
     arma::vec operator()(const arma::vec &x, double l);
     arma::vec vec_prox(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class NonNegativeSCAD: public SCAD{
@@ -63,6 +68,7 @@ public:
     NonNegativeSCAD(double g = 3.7);
     ~NonNegativeSCAD();
     arma::vec operator()(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class MCP: public Prox{
@@ -73,6 +79,7 @@ public:
     ~MCP();
     arma::vec operator()(const arma::vec &x, double l);
     arma::vec vec_prox(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class NonNegativeMCP: public MCP{
@@ -80,6 +87,7 @@ public:
     NonNegativeMCP(double g = 3);
     ~NonNegativeMCP();
     arma::vec operator()(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class GrpLasso: public Prox{
@@ -91,6 +99,7 @@ public:
     ~GrpLasso();
     arma::vec operator()(const arma::vec &x, double l);
     arma::vec vec_prox(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class NonNegativeGrpLasso: public GrpLasso{
@@ -98,6 +107,7 @@ public:
     NonNegativeGrpLasso(const arma::vec &grp);
     ~NonNegativeGrpLasso();
     arma::vec operator()(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class OrderedFusedLasso: public Prox{
@@ -105,6 +115,7 @@ public:
     OrderedFusedLasso();
     ~OrderedFusedLasso();
     arma::vec operator()(const arma::vec &x, double l);       
+    int df(const arma::vec &x);
 };
 
 class SparseFusedLasso: public Prox{
@@ -116,7 +127,8 @@ private:
 public:
     SparseFusedLasso(double);
     ~SparseFusedLasso();
-    arma::vec operator()(const arma::vec &x, double l);       
+    arma::vec operator()(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 class Fusion: public Prox{
@@ -130,8 +142,11 @@ public:
     Fusion(const arma::mat &input_w = arma::zeros<arma::mat>(0,0),bool input_ADMM = 1,bool input_acc = 1,double input_prox_eps=1e-10);
     ~Fusion();
     arma::vec operator()(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
+
+// Its implementation is in `moma_prox_l1tf.cpp`
 class L1TrendFiltering: public Prox{
 private:
     int k;      // k \in 0,1,2, corresponding to fused lasso, linear tf and 
@@ -154,6 +169,7 @@ public:
     L1TrendFiltering(int n = -1, int i_k = 1);
     ~L1TrendFiltering();
     arma::vec operator()(const arma::vec &x, double l); 
+    int df(const arma::vec &x);
 };
 
 // A handle class that deals with matching proximal operators
@@ -172,6 +188,7 @@ public:
         delete p;
     }
     arma::vec operator()(const arma::vec &x, double l);
+    int df(const arma::vec &x);
 };
 
 #endif

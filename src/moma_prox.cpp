@@ -15,6 +15,10 @@ NullProx::~NullProx() {
     MoMALogger::debug("Releasing null proximal operator object");
 };
 
+int NullProx::df(const arma::vec &x){
+    return x.n_elem;
+}
+
 /*
 * Lasso
 */
@@ -31,6 +35,10 @@ Lasso::~Lasso(){
     MoMALogger::debug("Releasing Lasso proximal operator object");
 }
 
+int Lasso::df(const arma::vec &x){
+    return arma::sum(x != 0.0);
+}
+
 /*
 * Non-negative Lasso
 */
@@ -44,6 +52,10 @@ arma::vec NonNegativeLasso::operator()(const arma::vec &x, double l){
 
 NonNegativeLasso::~NonNegativeLasso(){
     MoMALogger::debug("Releasing non-negative Lasso proximal operator object");
+}
+
+int NonNegativeLasso::df(const arma::vec &x){
+    return arma::sum(x != 0.0);
 }
 
 /*
@@ -101,6 +113,11 @@ arma::vec SCAD::vec_prox(const arma::vec &x, double l){
     return sgnx % z;
 }
 
+int SCAD::df(const arma::vec &x){
+    // An approximation
+    return arma::sum(x != 0.0);
+}
+
 /*
 * Nonnegative SCAD
 */
@@ -129,6 +146,11 @@ arma::vec NonNegativeSCAD::operator()(const arma::vec &x, double l){
                                                 );
     }
     return z;
+}
+
+int NonNegativeSCAD::df(const arma::vec &x){
+    // An approximation
+    return arma::sum(x != 0.0);
 }
 
 /*
@@ -179,6 +201,11 @@ arma::vec MCP::vec_prox(const arma::vec &x, double l){
     return sgnx % z;
 }
 
+int MCP::df(const arma::vec &x){
+    // An approximation
+    return arma::sum(x != 0.0);
+}
+
 /*
 * Non-negative MCP
 */
@@ -201,6 +228,11 @@ arma::vec NonNegativeMCP::operator()(const arma::vec &x, double l){
         z(i) = x(i) > gamma * l ? x(i) : (gamma / (gamma - 1)) * THRES_P(x(i),l);
     }
     return z;
+}
+
+int NonNegativeMCP::df(const arma::vec &x){
+    // An approximation
+    return arma::sum(x != 0.0);
 }
 
 /*
@@ -235,6 +267,21 @@ arma::vec GrpLasso::operator()(const arma::vec &x, double l){
     return x % scale;
 }
 
+int GrpLasso::df(const arma::vec &x){
+    // Ref: Equation (6.3) of
+    // Yuan, Ming, and Yi Lin. 
+    // "Model selection and estimation in regression with grouped variables." 
+    // Journal of the Royal Statistical Society: Series B (Statistical Methodology) 68.1 (2006): 49-67.
+
+    arma::vec grp_norm = arma::zeros<arma::vec>(n_grp);
+    for(int i = 0; i < x.n_elem; i++){
+        grp_norm(group(i)) += x(i)*x(i);
+    }
+    // Approxiamte df = number of groups that are not zero + num_para - num_group
+    // The unbiased estimate is a bit complicated, involving finding OLS estimates.
+    return arma::sum(grp_norm != 0.0) + x.n_elem - n_grp;
+}
+
 /*
 * Non-negative group lasso
 */
@@ -265,6 +312,16 @@ arma::vec NonNegativeGrpLasso::operator()(const arma::vec &x_, double l){
     return x % scale;
 }
 
+int NonNegativeGrpLasso::df(const arma::vec &x){
+    arma::vec grp_norm = arma::zeros<arma::vec>(n_grp);
+    for(int i = 0; i < x.n_elem; i++){
+        grp_norm(group(i)) += x(i)*x(i);
+    }
+    // Approxiamte df = number of groups that are not zero + num_para - num_group
+    // The unbiased estimate is a bit complicated, involving find OLS estimates.
+    return arma::sum(grp_norm != 0.0) + x.n_elem - n_grp;
+}
+
 /*
 * Ordered fused lasso
 */
@@ -285,6 +342,24 @@ arma::vec OrderedFusedLasso::operator()(const arma::vec &x, double l){
     return fg.find_beta_at(l);
 }
 
+int OrderedFusedLasso::df(const arma::vec &x){
+    // Ref:
+    // Table 2 of Tibshirani, Robert. 
+    // "Regression shrinkage and selection via the lasso: a retrospective." 
+    // Journal of the Royal Statistical Society: Series B (Statistical Methodology) 73.3 (2011): 273-282.
+    if(x.n_elem < 2){
+        MoMALogger::error("x must not be a scalar");
+    }
+    int df = 1;
+    // Cound the number of transitions, which is the number of fused groups
+    for(int i = 1; i < x.n_elem; i++){
+        if(abs(x(i)-x(i-1)) > 1e-10){
+            df++;
+        }
+    }
+   return df;
+}
+
 /*
 * Sparse fused lasso
 */
@@ -299,6 +374,25 @@ SparseFusedLasso::~SparseFusedLasso(){
 arma::vec SparseFusedLasso::operator()(const arma::vec &x, double l){
     arma::vec tmp = fg(x,l);
     return soft_thres(tmp,lambda2);
+}
+
+int SparseFusedLasso::df(const arma::vec &x){
+    // Ref:
+    // Table 2 of Tibshirani, Robert. 
+    // "Regression shrinkage and selection via the lasso: a retrospective." 
+    // Journal of the Royal Statistical Society: Series B (Statistical Methodology) 73.3 (2011): 273-282.
+
+    if(x.n_elem < 2){
+        MoMALogger::error("x must not be a scalar");
+    }
+    int df = x(0) != 0;
+    // the number of non-zero fused groups
+    for(int i = 1; i < x.n_elem; i++){
+        if(x(i) != 0 && abs(x(i)-x(i-1)) > 1e-10){
+            df++;
+        }
+    }
+   return df;
 }
 
 /*
@@ -354,6 +448,20 @@ int tri_sums(const arma::vec &w, arma::vec &col_sums, arma::vec &row_sums, int n
         }
     }
     return 0;
+}
+
+int Fusion::df(const arma::vec &x){
+    // First construct a graph, where any nodes are connected if
+    // they have the same value. Then a good intuition is to find
+    // the number of connected components, which is the multiplicity 
+    // of 0 as an eigenvalue of the laplacian matrix of the graph. Way too complicated.
+
+    // There could be cases when two groups happen to have the 
+    // same value, but are not actually "fused".
+
+    // Let's just count the number of different values.
+    arma::vec uq = arma::unique(x);
+    return arma::sum(uq > 0);
 }
 
 // This function sets lambda += (lambda - old_lambda) * step,
@@ -628,4 +736,8 @@ ProxOp::ProxOp(Rcpp::List prox_arg_list, int dim){
 
 arma::vec ProxOp::operator()(const arma::vec &x, double l){
     return (*p)(x,l);
+}
+
+int ProxOp::df(const arma::vec &x){
+    return (*p).df(x);
 }
