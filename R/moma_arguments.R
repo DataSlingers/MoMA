@@ -100,6 +100,27 @@ scad <- function(gamma = 3.7, non_negative = FALSE){
     return(arglist)
 }
 
+#' SLOPE
+#'
+#' Use this function to set the penalty function as SLOPE - Sorted L-One Penalized Estimation
+#' \deqn{\lambda P (x) = \lambda \sum _ { i = 1 } ^ { n } \lambda _ { i } | x | _ { ( i ) } .}
+#' where \eqn{\lambda_i = \Phi ^ { - 1 } ( 1 - q _ { i } ) ,  q _ { i } = i \cdot q / 2 p, q = 0.05.}
+#' Here \eqn{q} is the false discovery rate (FDR).
+#' See Bogdan, Malgorzata, et al. "SLOPE - adaptive variable selection via convex optimization." 
+#' The annals of applied statistics 9.3 (2015): 1103.
+#'
+#' @return a \code{moma_sparsity} object, which contains a list containing the string "SLOPE".
+#'
+#' @examples
+#' slope()
+#'
+#' @export
+slope <- function(){
+    arglist <- list(P = "SLOPE")
+    class(arglist) <- "moma_sparsity"
+    return(arglist)
+}
+
 #' Group LASSO
 #'
 #' Use this function to set the penalty function as group lasso
