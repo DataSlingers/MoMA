@@ -102,6 +102,15 @@ arma::vec test_prox_l1gf(const arma::vec &x,double l,int k = 1)
 }
 
 // [[Rcpp::export]]
+arma::vec test_prox_slope(const arma::vec &x,double l)
+{
+    // lambda2: the level of penalty on
+    // the absolute values of the coefficients
+    SLOPE a(x.n_elem);
+    return a(x,l);
+}
+
+// [[Rcpp::export]]
 int test_df_orderedfusion(const arma::vec &x)
 {
     OrderedFusedLasso a;

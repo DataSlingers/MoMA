@@ -40,6 +40,47 @@ int Lasso::df(const arma::vec &x){
 }
 
 /*
+* SLOPE - Sorted L-One Penalized Estimation
+*/
+SLOPE::SLOPE(int dim){
+    // BH-type rule
+    // lambda_BH(i) = Phi_inv ()
+    lambda.resize(dim);
+    double q = 0.05;
+    for(int i = 0; i < dim; i++){
+        lambda(i) = R::qnorm(1 - (i + 1) * q / (2 * dim), 0.0, 1.0, 1, 0);
+    }
+    
+    MoMALogger::debug("Initializing SLOPE proximal operator object");
+}
+
+arma::vec SLOPE::operator()(const arma::vec &x, double l){
+    int n = x.n_elem;
+    arma::vec x_sgn = arma::sign(x);
+    arma::vec x_abs = arma::abs(x);
+
+    arma::uvec order = arma::sort_index(x_abs,"descend");
+
+    arma::vec ordered_absx(n);
+    //  arma::vec ordered_abs(n);
+    for(int i =0; i < n; i++){
+        ordered_absx(i) = x_abs(order(i));
+    }
+    
+    arma::vec scratch(x.n_elem);
+    evaluateProx(ordered_absx,lambda * l,scratch,x.n_elem,order);
+    return scratch % x_sgn;
+}
+
+SLOPE::~SLOPE(){
+    MoMALogger::debug("Releasing SLOPE proximal operator object");
+}
+
+int SLOPE::df(const arma::vec &x){
+    return arma::sum(x != 0.0);
+}
+
+/*
 * Non-negative Lasso
 */
 NonNegativeLasso::NonNegativeLasso(){
@@ -681,6 +722,14 @@ ProxOp::ProxOp(Rcpp::List prox_arg_list, int dim){
         }
         else{
             p = new MCP(gamma);
+        }
+    }
+    else if (s.compare("SLOPE") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative SLOPE is not implemented!");
+        }
+        else{
+            p = new SLOPE(dim);
         }
     }
     else if(s.compare("GRPLASSO") == 0){

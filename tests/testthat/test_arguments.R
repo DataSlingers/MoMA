@@ -13,7 +13,8 @@ test_that("Test for arguments names", {
                  scad,
                  mcp,
                  fusedlasso,
-                 l1tf
+                 l1tf,
+                 slope
                  )){
         test_args <- c(test_args, names(fun()))
 
@@ -89,6 +90,23 @@ test_that("Correct prox match", {
     expect_output(moma_svd(matrix(runif(12),3,4)),
                   "Initializing null proximal operator object")
 
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=lasso(),lambda_u = 3),
+                  "Initializing Lasso proximal operator object")
+
+    # SLOPE
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=slope(),lambda_u = 3),
+                  "P_u SLOPE")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=slope(),lambda_u = 3),
+                  "Initializing SLOPE proximal operator object")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           v_sparsity=slope(),lambda_u = 3),
+                  "P_v SLOPE")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           v_sparsity=slope()),
+                  "Initializing SLOPE proximal operator object")
 
     # lasso
     expect_output(moma_svd(matrix(runif(12),3,4),
