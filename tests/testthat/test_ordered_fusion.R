@@ -43,12 +43,36 @@ test_that("Same results as the `flsa` package", {
     set.seed(43)
     if(requireNamespace("flsa")){
         library(flsa)
-        pset = seq(2,8)
-        for(p in pset){
-            for(i in 1:100){
+
+        # Problem size ranging from 2 to 200
+        for(p in  seq(2,200,10)){
+            # Repeat 10 times
+            for(i in 1:10){
                 x <- 10 * runif(p)
+                # Penalty levels
                 for(lambda in seq(0,5,0.5)){
-                    expect_equal(test_prox_orderedfusion(x,lambda),t(flsaGetSolution(flsa(x),lambda2=lambda)))
+                    expect_equal(test_prox_fusedlassopath(x,lambda),
+                                 t(flsa::flsaGetSolution(flsa::flsa(x),lambda2=lambda)))
+                }
+            }
+        }
+    }
+})
+
+test_that("DP approach should give the same results as the `flsa` package", {
+    set.seed(43)
+    if(requireNamespace("flsa")){
+        library(flsa)
+
+        # Problem size ranging from 2 to 200
+        for(p in seq(2,200,10)){
+            # Repeat 10 times
+            for(i in 1:10){
+                x <- 10 * runif(p)
+                # Penalty levels
+                for(lambda in seq(0,5,0.5)){
+                    expect_equal(test_prox_fusedlassodp(x,lambda),
+                                 t(flsa::flsaGetSolution(flsa::flsa(x),lambda2=lambda)))
                 }
             }
         }
