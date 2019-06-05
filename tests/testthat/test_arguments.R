@@ -163,6 +163,31 @@ test_that("Correct prox match", {
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=fusedlasso(),lambda_u = 3),
                   "Initializing a ordered fusion lasso proximal operator object")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=fusedlasso(),lambda_u = 3),
+                  "P_u ORDEREDFUSED P_v NONE")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           v_sparsity=fusedlasso(),lambda_u = 3),
+                  "P_u NONE P_v ORDEREDFUSED")
+
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
+                  "P_u ORDEREDFUSEDDP P_v NONE")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=fusedlasso(algo="dp"),
+                           v_sparsity=fusedlasso(),
+                           lambda_u = 3),
+                  "P_u ORDEREDFUSEDDP P_v ORDEREDFUSED")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
+                  "P_u ORDEREDFUSEDDP P_v NONE")
+
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           u_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
+                  "Initializing a ordered fusion lasso proximal operator object \\(DP\\)")
+    expect_output(moma_svd(matrix(runif(12),3,4),
+                           v_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
+                  "Initializing a ordered fusion lasso proximal operator object \\(DP\\)")
 
     # cluster penalty
     expect_output(moma_svd(matrix(runif(12),3,4),
