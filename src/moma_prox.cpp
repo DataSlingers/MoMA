@@ -767,6 +767,14 @@ ProxOp::ProxOp(Rcpp::List prox_arg_list, int dim){
             p = new OrderedFusedLasso();
         }
     }
+    else if(s.compare("ORDEREDFUSEDDP") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative ordered fused lasso is not implemented!");
+        }
+        else{
+            p = new OrderedFusedLassoDP();
+        }
+    }
     else if(s.compare("SPARSEFUSEDLASSO") == 0){
         if(nonneg){
             MoMALogger::error("Non-negative sparse fused lasso is not implemented!");

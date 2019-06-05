@@ -22,7 +22,7 @@ test_that("A numeric example: Ordered fused lasso should return correct values u
                   byrow=T)
     lambdas <- seq(0,10,1)
     for(l in 1:10){
-        expect_lte(norm(test_prox_orderedfusion(x,lambdas[l])-matrix(goal[,l],nrow=10)),1e-5)
+        expect_lte(norm(test_prox_fusedlassopath(x,lambdas[l])-matrix(goal[,l],nrow=10)),1e-5)
     }
 })
 
@@ -31,7 +31,7 @@ test_that("Equals to mean when lambda is large enough", {
     set.seed(34)
     for(i in 1000){
         x <- 10 * runif(10)
-        proxed.x <- test_prox_orderedfusion(x,l)
+        proxed.x <- test_prox_fusedlassopath(x,l)
         for(i in 1:9){
             expect_equal(proxed.x[i],proxed.x[i+1])
         }

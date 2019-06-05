@@ -72,9 +72,16 @@ arma::vec test_prox_nngrplasso(const arma::vec &x, const arma::vec &g, double l)
 }
 
 // [[Rcpp::export]]
-arma::vec test_prox_orderedfusion(const arma::vec &x,double l)
+arma::vec test_prox_fusedlassopath(const arma::vec &x,double l)
 {
     OrderedFusedLasso a;
+    return a(x,l);
+}
+
+// [[Rcpp::export]]
+arma::vec test_prox_fusedlassodp(const arma::vec &x,double l)
+{
+    OrderedFusedLassoDP a;
     return a(x,l);
 }
 

@@ -78,9 +78,9 @@ test_that("Ordered fused lasso when w_ij = 1 all j = i+1", {
 
         for(i in 1:rep){
             y <- 10 * runif(p)
-            err.AMA.unacc <-    norm(test_prox_orderedfusion(y,1)-test_prox_fusion(y,1,w,ADMM=FALSE,acc=TRUE))
-            err.AMA.acc <-      norm(test_prox_orderedfusion(y,1)-test_prox_fusion(y,1,w,ADMM=FALSE,acc=TRUE))
-            err.ADMM <-         norm(test_prox_orderedfusion(y,1)-test_prox_fusion(y,1,w,ADMM=TRUE,acc=FALSE))
+            err.AMA.unacc <-    norm(test_prox_fusedlassodp(y,1)-test_prox_fusion(y,1,w,ADMM=FALSE,acc=TRUE))
+            err.AMA.acc <-      norm(test_prox_fusedlassodp(y,1)-test_prox_fusion(y,1,w,ADMM=FALSE,acc=TRUE))
+            err.ADMM <-         norm(test_prox_fusedlassodp(y,1)-test_prox_fusion(y,1,w,ADMM=TRUE,acc=FALSE))
             for(err in c(err.AMA.unacc,
                          err.AMA.acc,
                          err.ADMM)){
