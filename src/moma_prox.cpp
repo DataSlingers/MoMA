@@ -413,7 +413,7 @@ OrderedFusedLassoDP::~OrderedFusedLassoDP(){
 }
 
 arma::vec OrderedFusedLassoDP::operator()(const arma::vec& x, double l) {
-    return myflsadp(x, l, 5000);
+    return myflsadp(x, l, MOMA_FUSEDLASSODP_BUFFERSIZE);
 }  
 
 

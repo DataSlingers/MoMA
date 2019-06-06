@@ -159,9 +159,9 @@ grplasso <- function(g, non_negative = FALSE){
 #' \deqn{\lambda \sum \| x_{i} - x_{i-1} \|,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #' @param algo a string being either "path" or "dp". Defaults to "path". Partial matching
-#' is suppoorted. Two solving algorithms
-#' are supported. When "path" is chosen, the algorithm in  When "dp" is chosen, algorithm by
-#' Hoefling, H. (2010) is used. When "dp" is chosen, algorithm by Johnson, N. A. (2013) is used.
+#' is supported. Two solving algorithms
+#' are provided. When "path" is chosen, the algorithm by
+#' Hoefling, H. (2010) is used. When "dp" is chosen, the algorithm by Johnson, N. A. (2013) is used.
 #'
 #' @references Hoefling, H. (2010). A path algorithm
 #' for the fused lasso signal approximator. Journal of Computational and Graphical

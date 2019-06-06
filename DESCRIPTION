@@ -5,7 +5,8 @@ Date: 2018-05-07
 Authors@R: c(
     person("Michael", "Weylandt", email="michael.weylandt@rice.edu", role=c("aut", "cre")),
     person("Genevera", "Allen", email="gallen@rice.edu", role="aut"),
-    person("Luofeng", "Liao", email="luofengl@student.unimelb.edu.au", role="aut")
+    person("Luofeng", "Liao", email="luofengl@student.unimelb.edu.au", role="aut"),
+    person("Nicholas", "Johnson", role = "cph", comment = "src/moma_prox_flsadp.cpp")
     )
 Description: Unified approach to modern multivariate analysis providing sparse,
     smooth, and structured versions of PCA, PLS, LDA, and CCA.

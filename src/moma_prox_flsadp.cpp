@@ -40,23 +40,6 @@
 // "A dynamic programming algorithm for the fused lasso and l 0-segmentation." 
 // Journal of Computational and Graphical Statistics 22.2 (2013): 246-260.
 
-void Msg::print(){
-        // printf("==================================");
-        // printf("buf_.size = %d, len_ = %d \n",buf_.size(),len_);
-        // printf("No.\t\tx_\t\tsgn_\t\tlin_\t\tquad_\n");
-        // printf("init_\t\t%.6f\t\t%d\t\t%.6f\t\t%.6f\n", 
-        //     init_knot_.x_,  init_knot_.sgn_,    init_knot_.lin_,    init_knot_.quad_);
-        // printf("\n");
-        // for(int i = 0; i < len_; i++){
-        //     MsgElt &k = buf_[start_idx_ + i];
-        //     printf("%d\t\t%.6f\t\t%d\t\t%.6f\t\t%.6f\n",start_idx_ + i,
-        //     k.x_,k          .sgn_,              k.lin_,     k.quad_);
-
-        // }
-        // printf("\n");
-        // printf("end_\t\t%.6f\t\t%d\t\t%.6f\t\t%.6f\n", end_knot_.x_,end_knot_.sgn_,end_knot_.lin_,end_knot_.quad_);
-}
-
 double Msg::Argmax(double * max_val) {
     // printf("Enter MaxMsg");
     const std::vector<MsgElt>& buf = buf_;
@@ -422,7 +405,6 @@ arma::vec myflsadp(const arma::vec& x, double lambda2, int init_buf_sz) {
     for (int j = 1, bp = 2; j < seq_len; ++j, bp += 2, --check_msg) {
         msg.UpdMsgOpt(lambda2, x(j), -0.5, bp);
         // call ShiftMsg periodically
-        msg.print();
         if (!check_msg) {
             check_msg = check_freq - 1;
             msg.ShiftMsg(check_freq);
