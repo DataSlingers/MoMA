@@ -73,7 +73,32 @@ test_that("DP approach should give the same results as the `flsa` package", {
                 for(lambda in seq(0,5,0.5)){
                     expect_equal(test_prox_fusedlassodp(x,lambda),
                                  t(flsa::flsaGetSolution(flsa::flsa(x),lambda2=lambda)))
+                    if(lambda == 5){
+                        # make sure we test the entire path
+                        expect(sum(abs(test_prox_fusedlassodp(x,lambda))), 0)
+                    }
                 }
+            }
+        }
+    }
+})
+
+test_that("Test DP approach buffer size", {
+    set.seed(43)
+    if(requireNamespace("flsa")){
+        library(flsa)
+        lambda <- 1
+        # Problem size
+        for(p in c(10000000)){
+            # Repeat 10 times
+            for(i in 1:10){
+                print(i)
+                x <- 10 * runif(p)
+                # Path algorithm takes 10 seconds to solve each.
+                # DP takes 0.5 seconds.
+                expect_equal(test_prox_fusedlassodp(x, lambda),
+                             test_prox_fusedlassopath(x, lambda)
+                             )
             }
         }
     }
