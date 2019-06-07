@@ -378,7 +378,8 @@ arma::vec Msg::BackTrace(int seq_len, double last_msg_max) {
 }
 
 arma::vec myflsadp(const arma::vec& x, double lambda2, int init_buf_sz) {
-
+    // lambda2 is the penalty level on the difference
+    // of adjacent elements.
     int seq_len = x.n_elem;
 
     if (lambda2 == 0.0){
