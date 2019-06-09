@@ -104,7 +104,7 @@ test_that("Eqivalent to fused lasso when using first-diff-mat",{
             pd <- test_prox_l1gf(x,lambda,0)
 
             # path algorithm
-            pa <- test_prox_orderedfusion(x,lambda)
+            pa <- test_prox_fusedlassopath(x,lambda)
 
             # Most of the results are the same
             # for at least 5 digits after decimal points,

@@ -22,7 +22,7 @@ test_that("A numeric example: Ordered fused lasso should return correct values u
                   byrow=T)
     lambdas <- seq(0,10,1)
     for(l in 1:10){
-        expect_lte(norm(test_prox_orderedfusion(x,lambdas[l])-matrix(goal[,l],nrow=10)),1e-5)
+        expect_lte(norm(test_prox_fusedlassopath(x,lambdas[l])-matrix(goal[,l],nrow=10)),1e-5)
     }
 })
 
@@ -31,7 +31,7 @@ test_that("Equals to mean when lambda is large enough", {
     set.seed(34)
     for(i in 1000){
         x <- 10 * runif(10)
-        proxed.x <- test_prox_orderedfusion(x,l)
+        proxed.x <- test_prox_fusedlassopath(x,l)
         for(i in 1:9){
             expect_equal(proxed.x[i],proxed.x[i+1])
         }
@@ -43,13 +43,62 @@ test_that("Same results as the `flsa` package", {
     set.seed(43)
     if(requireNamespace("flsa")){
         library(flsa)
-        pset = seq(2,8)
-        for(p in pset){
-            for(i in 1:100){
+
+        # Problem size ranging from 2 to 200
+        for(p in  seq(2,200,10)){
+            # Repeat 10 times
+            for(i in 1:10){
                 x <- 10 * runif(p)
+                # Penalty levels
                 for(lambda in seq(0,5,0.5)){
-                    expect_equal(test_prox_orderedfusion(x,lambda),t(flsaGetSolution(flsa(x),lambda2=lambda)))
+                    expect_equal(test_prox_fusedlassopath(x,lambda),
+                                 t(flsa::flsaGetSolution(flsa::flsa(x),lambda2=lambda)))
                 }
+            }
+        }
+    }
+})
+
+test_that("DP approach should give the same results as the `flsa` package", {
+    set.seed(43)
+    if(requireNamespace("flsa")){
+        library(flsa)
+
+        # Problem size ranging from 2 to 200
+        for(p in seq(2,200,10)){
+            # Repeat 10 times
+            for(i in 1:10){
+                x <- 10 * runif(p)
+                # Penalty levels
+                for(lambda in seq(0,5,0.5)){
+                    expect_equal(test_prox_fusedlassodp(x,lambda),
+                                 t(flsa::flsaGetSolution(flsa::flsa(x),lambda2=lambda)))
+                    if(lambda == 5){
+                        # make sure we test the entire path
+                        expect(sum(abs(test_prox_fusedlassodp(x,lambda))), 0)
+                    }
+                }
+            }
+        }
+    }
+})
+
+test_that("Test DP approach buffer size", {
+    set.seed(43)
+    if(requireNamespace("flsa")){
+        library(flsa)
+        lambda <- 1
+        # Problem size
+        for(p in c(10000000)){
+            # Repeat 10 times
+            for(i in 1:10){
+                print(i)
+                x <- 10 * runif(p)
+                # Path algorithm takes 10 seconds to solve each.
+                # DP takes 0.5 seconds.
+                expect_equal(test_prox_fusedlassodp(x, lambda),
+                             test_prox_fusedlassopath(x, lambda)
+                             )
             }
         }
     }

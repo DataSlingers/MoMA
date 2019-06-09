@@ -25,7 +25,7 @@ test_that("When lambda = 0, prox operators are no-ops", {
                        test_prox_mcp,
                        test_prox_scadvec,
                        test_prox_mcpvec,
-                       test_prox_orderedfusion)){
+                       test_prox_fusedlassopath)){
         expect_equal(x,
                      prox_func(x, lambda))
     }

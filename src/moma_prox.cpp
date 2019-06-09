@@ -402,6 +402,22 @@ int OrderedFusedLasso::df(const arma::vec &x){
 }
 
 /*
+* Ordered fused lasso-dynamic programming approach
+*/
+OrderedFusedLassoDP::OrderedFusedLassoDP(){
+    MoMALogger::debug("Initializing a ordered fusion lasso proximal operator object (DP)");
+}
+
+OrderedFusedLassoDP::~OrderedFusedLassoDP(){
+    MoMALogger::debug("Releasing a ordered fusion lasso proximal operator object (DP)");
+}
+
+arma::vec OrderedFusedLassoDP::operator()(const arma::vec& x, double l) {
+    return myflsadp(x, l, MOMA_FUSEDLASSODP_BUFFERSIZE);
+}  
+
+
+/*
 * Sparse fused lasso
 */
 SparseFusedLasso::SparseFusedLasso(double i_lambda2):lambda2(i_lambda2){
@@ -749,6 +765,14 @@ ProxOp::ProxOp(Rcpp::List prox_arg_list, int dim){
         }
         else{
             p = new OrderedFusedLasso();
+        }
+    }
+    else if(s.compare("ORDEREDFUSEDDP") == 0){
+        if(nonneg){
+            MoMALogger::error("Non-negative ordered fused lasso is not implemented!");
+        }
+        else{
+            p = new OrderedFusedLassoDP();
         }
     }
     else if(s.compare("SPARSEFUSEDLASSO") == 0){

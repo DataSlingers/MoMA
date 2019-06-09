@@ -17,4 +17,5 @@
 // we add a small "nugget" here to regularize the computations
 #define MOMA_EIGENVALUE_REGULARIZATION 0.01
 static constexpr double MOMA_INFTY = std::numeric_limits<double>::infinity();
+#define MOMA_FUSEDLASSODP_BUFFERSIZE 5000
 #endif

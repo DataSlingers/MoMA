@@ -7,6 +7,7 @@
 #include "moma_logging.h"
 #include "moma_prox_fusion_util.h"
 #include "moma_prox_sortedL1.h"
+#include "moma_prox_flsadp.h"
 
 #define MAX(a,b) (a)>(b)?(a):(b)
 #define MIN(a,b) (a)<(b)?(a):(b)
@@ -127,6 +128,13 @@ public:
     ~OrderedFusedLasso();
     arma::vec operator()(const arma::vec &x, double l);       
     int df(const arma::vec &x);
+};
+
+class OrderedFusedLassoDP: public OrderedFusedLasso{
+public:
+    OrderedFusedLassoDP();
+    ~OrderedFusedLassoDP();
+    arma::vec operator()(const arma::vec &x, double l);
 };
 
 class SparseFusedLasso: public Prox{

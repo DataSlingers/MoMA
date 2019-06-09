@@ -158,16 +158,33 @@ grplasso <- function(g, non_negative = FALSE){
 #' Use this function to set the penalty function as fused lasso
 #' \deqn{\lambda \sum \| x_{i} - x_{i-1} \|,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' @param algo a string being either "path" or "dp". Defaults to "path". Partial matching
+#' is supported. Two solving algorithms
+#' are provided. When "path" is chosen, the algorithm by
+#' Hoefling, H. (2010) is used. When "dp" is chosen, the algorithm by Johnson, N. A. (2013) is used.
 #'
+#' @references Hoefling, H. (2010). A path algorithm
+#' for the fused lasso signal approximator. Journal of Computational and Graphical
+#'  Statistics, 19(4), 984-1006, doi: 10.1198/jcgs.2010.09208.
+#' @references Johnson, N. A. (2013). A dynamic programming algorithm for the
+#' fused lasso and l 0-segmentation. Journal of Computational and Graphical
+#' Statistics, 22(2), 246-260, doi: 10.1080/10618600.2012.681238.
 #' @return a \code{moma_sparsity} object, which is an empty list.
 #'
 #' @examples
 #' fusedlasso()
 #'
 #' @export
-fusedlasso <- function(){
+fusedlasso <- function(algo=c("path","dp")){
     # fused lasso
-    arglist <- list(P = "ORDEREDFUSED")
+
+    # Two options for solving the proximal operator
+    # of fused lasso are supported
+    # "dp": dynamic programming
+    # "path": solution path-based algorithm
+    algo <- match.arg(algo)
+    prox_name = ifelse(algo=="path","ORDEREDFUSED","ORDEREDFUSEDDP")
+    arglist <- list(P = prox_name)
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }
