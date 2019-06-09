@@ -15,6 +15,18 @@ MOMA_DEFAULT_PROX <- list(
                         prox_eps = 1e-10,
                         # trend filtering
                         l1tf_k = 1)
+sparsity_to_proxarglist <- function(sparsity_type){
+    # sparsity_type: prox arguments for u and v
+
+    # To call a C function we have to specify
+    # all arguments. However, some arguments
+    # are specific for a particular prox. So
+    # we first assign a default arg list to 
+    # `df_prox_arg_list_u/_v` and
+    # then update them.
+    return(modifyList(MOMA_DEFAULT_PROX, sparsity_type))
+}
+
 
 # This function checks the validity of Omega and alpha
 check_omega <- function(Omega,alpha,n){
@@ -92,16 +104,6 @@ moma_svd <- function(
                         solver = toupper(solver),
                         k = k)
 
-    # Prox arguments for u and v
-    # To call a C function we have to specify
-    # all arguments. However, some arguments
-    # are specific for a particular prox. So
-    # we first assign a default arg list to 
-    # `df_prox_arg_list_u/_v` and
-    # then update them.
-    df_prox_arg_list_u <- MOMA_DEFAULT_PROX
-    df_prox_arg_list_v <- MOMA_DEFAULT_PROX
-
     if (!is.matrix(X)){
         moma_error("X must be a matrix.")
     }
@@ -139,8 +141,8 @@ moma_svd <- function(
                 list(
                     Omega_u = check_omega(Omega_u,alpha_u,n),
                     Omega_v = check_omega(Omega_v,alpha_v,p),
-                    prox_arg_list_u = modifyList(df_prox_arg_list_u,u_sparsity),
-                    prox_arg_list_v = modifyList(df_prox_arg_list_v,v_sparsity)))
+                    prox_arg_list_u = sparsity_to_proxarglist(u_sparsity),
+                    prox_arg_list_v = sparsity_to_proxarglist(v_sparsity)))
 
     if(is_multiple_para){
         if(select == "gridsearch"){
