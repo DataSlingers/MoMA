@@ -207,6 +207,15 @@ test_that("Correct algorithm match", {
     expect_output(moma_svd(matrix(runif(12),3,4),solver = "onestepista"),
                   "Initializing an one-step ISTA solver")
 
+
+    expect_output(moma_svd(matrix(runif(12),3,4),solver = "ista"),
+                  "Releasing a ISTA object")
+    expect_output(moma_svd(matrix(runif(12),3,4),solver = "fista"),
+                  "Releasing a FISTA object")
+    expect_output(moma_svd(matrix(runif(12),3,4),solver = "onestepista"),
+                  "Releasing a OneStepISTA object")
+
+
     expect_output(moma_svd(matrix(runif(12),3,4),
                            u_sparsity=cluster(diag(3),ADMM=TRUE),lambda_u = 3),
                   "Running ADMM")

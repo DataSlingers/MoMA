@@ -74,6 +74,9 @@ public:
         MoMALogger::debug("Initializing a ISTA solver.");
     };
     arma::vec solve(arma::vec y,const arma::vec &start_point);
+    ~ISTA(){
+        MoMALogger::debug("Releasing a ISTA object");
+    }
 };
 
 class FISTA: public _PR_solver{
@@ -87,6 +90,9 @@ public:
         MoMALogger::debug("Initializing a FISTA solver.");
     };
     arma::vec solve(arma::vec y,const arma::vec &start_point);
+    ~FISTA(){
+        MoMALogger::debug("Releasing a FISTA object");
+    }
 };
 
 class OneStepISTA: public _PR_solver{
@@ -100,6 +106,9 @@ public:
         MoMALogger::debug("Initializing an one-step ISTA solver.");
     };
     arma::vec solve(arma::vec y,const arma::vec &start_point);
+    ~OneStepISTA(){
+        MoMALogger::debug("Releasing a OneStepISTA object");
+    }
 };
 
 // A handle class
