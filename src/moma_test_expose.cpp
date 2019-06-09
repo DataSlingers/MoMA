@@ -1,5 +1,5 @@
 # include "moma_prox.h"
-
+# include "moma_solver.h"
 // [[Rcpp::export]]
 arma::vec test_prox_lasso(const arma::vec &x, double l)
 {
@@ -146,4 +146,23 @@ int test_df_grplasso(const arma::vec &x, const arma::vec &g)
 {
     GrpLasso a(g);
     return a.df(x);
+}
+
+// [[Rcpp::export]]
+double test_BIC( 
+        const arma::vec y, const arma::vec y_est,
+        const std::string &algorithm_string,
+        double i_alpha, const arma::mat &i_Omega,
+        double i_lambda, Rcpp::List prox_arg_list,
+        int dim,
+        double i_EPS=1e-6, int i_MAX_ITER=1e+3)
+{
+        
+    PR_solver solver(
+            algorithm_string,
+            i_alpha, i_Omega,
+            i_lambda, prox_arg_list,
+            i_EPS, i_MAX_ITER, dim);
+
+    return solver.bic(y, y_est);
 }
