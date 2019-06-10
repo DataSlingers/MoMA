@@ -128,7 +128,8 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point){
     }
     u = normalize(u);
     
-    MoMALogger::debug("Finish solving PR: total iter =  No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving PR: (total_iter, tol) = ") << 
+                "(" <<  iter << "," << tol << ")";
     check_cnvrg();
     return u;
 }
@@ -169,7 +170,8 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point){
     u = normalize(u);
     
     check_cnvrg();
-    MoMALogger::debug("Finish solving PR: total iter =  No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving PR: (total_iter, tol) = ") << 
+                "(" <<  iter << "," << tol << ")";
     return u;
 }
 
@@ -205,7 +207,8 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point){
     }
     
     check_cnvrg();
-    MoMALogger::debug("Finish solving PR: total iter =  No.") << iter << "--" << tol;
+    MoMALogger::debug("Finish solving PR: (total_iter, tol) = ") << 
+                "(" <<  iter << "," << tol << ")";
     return u;
 }
 
