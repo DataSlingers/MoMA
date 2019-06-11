@@ -94,6 +94,9 @@ double _PR_solver::bic(arma::vec y, const arma::vec &est){
     double res = arma::norm(y - est);
     double df  = p.df(est);
     MoMALogger::debug("(RES, DF) = （") << res << ", " << df << ").";
+    if(res == 0.0) {
+        MoMALogger::warning("BIC = -infty due to zero resdiual.");
+    }
     return std::log(res * res / dim) + std::log(dim) / dim * df;       // ignore some constants here
 }
 
