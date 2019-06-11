@@ -1,5 +1,7 @@
 # include "moma_prox.h"
 # include "moma_solver.h"
+# include "moma.h"
+
 // [[Rcpp::export]]
 arma::vec test_prox_lasso(const arma::vec &x, double l)
 {
@@ -165,4 +167,67 @@ double test_BIC(
             i_EPS, i_MAX_ITER, dim);
 
     return solver.bic(y, y_est);
+}
+
+// This function solves a squence of lambda's and alpha's
+// [[Rcpp::export]]
+Rcpp::List testnestedBIC(
+    const arma::mat &X,    // We should not change any variable in R, so const ref
+    const arma::vec &alpha_u,
+    const arma::vec &alpha_v,
+    const arma::mat &Omega_u, // Default values for these matrices should be set in R
+    const arma::mat &Omega_v,
+    const arma::vec &lambda_u,
+    const arma::vec &lambda_v,
+    const Rcpp::List &prox_arg_list_u,
+    const Rcpp::List &prox_arg_list_v,
+    double EPS,
+    long MAX_ITER,
+    double EPS_inner,
+    long MAX_ITER_inner,
+    std::string solver,
+    int bicau,  // flags; = 0 means grid, = 1 means BIC search
+    int bicav,
+    int biclu,
+    int biclv,
+    int k = 1){
+    // We only allow changing two parameters
+    int n_lu = lambda_u.n_elem;
+    int n_lv = lambda_v.n_elem;
+    int n_au = alpha_u.n_elem;
+    int n_av = alpha_v.n_elem;
+
+    int n_more_than_one = int(n_lv > 1) + int(n_lu > 1) + int(n_au > 1) + int(n_av > 1);
+    // if(n_more_than_one > 2){
+    //     MoMALogger::error("We only allow changing two parameters.");
+    // }
+
+    if(n_lv == 0 || n_lu == 0 || n_au == 0 || n_av == 0){
+        MoMALogger::error("Please specify all four parameters.");
+    }
+
+    int n_total = n_lv * n_lu * n_au * n_av;
+
+    // NOTE: arguments should be listed
+    // in the exact order of MoMA constructor
+    MoMA problem(X,
+              /* sparsity */
+              lambda_u(0),
+              lambda_v(0),
+              prox_arg_list_u,
+              prox_arg_list_v,
+              /* smoothness */
+              alpha_u(0),
+              alpha_v(0),
+              Omega_u,
+              Omega_v,
+              /* algorithm parameters */
+              EPS,
+              MAX_ITER,
+              EPS_inner,
+              MAX_ITER_inner,
+              solver);
+    return problem.grid_BIC_mix(alpha_u,alpha_v,lambda_u,lambda_v,
+                        bicau,bicav,biclu,biclv);
+    // return problem.select_nestedBIC(alpha_u,alpha_v,lambda_u,lambda_v,5);
 }

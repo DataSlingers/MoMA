@@ -258,6 +258,18 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     arma::vec grid_au = set_grid(alpha_u, !bicau);
     arma::vec grid_av = set_grid(alpha_v, !bicav);
 
+    if((bicau == 1 && grid_au.n_elem != 1)
+        || (bicav == 1 && grid_av.n_elem != 1)
+        || (biclu == 1 && grid_lu.n_elem != 1)
+        || (biclv == 1 && grid_lv.n_elem != 1) )
+    {
+        MoMALogger::error("Wrong grid-search grid!")
+        << "grid_lu.n_elem=" << grid_lu.n_elem
+        << ", grid_av.n_elem=" << grid_av.n_elem
+        << ", grid_lu.n_elem" << grid_lu.n_elem
+        << ", grid_lv.n_elem" << grid_lv.n_elem;
+    }
+
     int n_lu = grid_lu.n_elem;
     int n_lv = grid_lv.n_elem;
     int n_au = grid_au.n_elem;
@@ -266,25 +278,38 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     
     Rcpp::List my_list(n_lu * n_lv * n_au * n_av);
     my_list.attr("dim") = Rcpp::NumericVector::create(
-                n_au, n_lu, n_av, n_lv);
+                n_au, n_av, n_lu, n_lv);
 
+    // nested-BIC search returns a list that
+    // contains (lambda, alpha, bic, selected vector)
     Rcpp::List u_result;
     Rcpp::List v_result;
+
+    // to facilitate warm-start
+    arma::vec oldu;
+    arma::vec oldv;
 
     for(int i = 0; i < n_au; i++){
         for(int j = 0; j < n_lu; j++){
             for(int k = 0; k < n_av; k++){
                 for(int m = 0; m < n_lv; m++){
 
-                    arma::vec bic_au = set_bic_grid(alpha_u, bicau, i);
-                    arma::vec bic_lu = set_bic_grid(lambda_u, biclu, j);
-                    arma::vec bic_av = set_bic_grid(alpha_v, bicav, k);
-                    arma::vec bic_lv = set_bic_grid(lambda_v, biclv, m);
+                    arma::vec bic_au_grid = set_bic_grid(alpha_u, bicau, i);
+                    arma::vec bic_lu_grid = set_bic_grid(lambda_u, biclu, j);
+                    arma::vec bic_av_grid = set_bic_grid(alpha_v, bicav, k);
+                    arma::vec bic_lv_grid = set_bic_grid(lambda_v, biclv, m);
+
+                    if((bicau == 0 && bic_au_grid.n_elem != 1)
+                        || (bicav == 0 && bic_av_grid.n_elem != 1)
+                        || (biclu == 0 && bic_lu_grid.n_elem != 1)
+                        || (biclv == 0 && bic_lv_grid.n_elem != 1) )
+                    {
+                            MoMALogger::error("Wrong BIC search grid!");
+                    }
 
                     tol = 1;
                     iter = 0;
-                    arma::vec oldu;
-                    arma::vec oldv;
+
                     while(tol > EPS && iter < MAX_ITER && iter < max_bic_iter){
                         iter++;
                         oldu = u;
@@ -292,11 +317,11 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
 
                         // choose lambda/alpha_u
                         MoMALogger::debug("Start u search.");
-                        u_result = bicsr_u.search(X*v,u,bic_au,bic_lu);
+                        u_result = bicsr_u.search(X*v,u,bic_au_grid,bic_lu_grid);
                         u = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
 
                         MoMALogger::debug("Start v search.");
-                        v_result = bicsr_v.search(X.t()*u,v,bic_av,bic_lv);
+                        v_result = bicsr_v.search(X.t()*u,v,bic_av_grid,bic_lv_grid);
                         v = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
 
                         tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
