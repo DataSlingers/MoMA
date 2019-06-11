@@ -10,6 +10,9 @@
 // Prox operators
 #include "moma_solver.h"
 
+// Prox operators
+#include "moma_solver_BICsearch.h"
+
 // Prototypes
 // moma_logging.cpp
 void moma_set_logger_level_cpp(int);
@@ -28,6 +31,13 @@ private:
     double lambda_v;
 
 public:
+
+    // Receiver a grid of parameters
+    // and perform greedy BIC search
+    BIC_searcher bicsr_u;
+    BIC_searcher bicsr_v;
+
+
     // Our own copy of the data matrix
     // Modified when finding rank-k svd
     arma::mat X;
@@ -96,6 +106,17 @@ public:
     // change penalty level
     int reset(double newlambda_u,double newlambda_v,
                 double newalpha_u,double newalpha_v);
+
+    Rcpp::List grid_BIC_mix( 
+        const arma::vec &alpha_u,
+        const arma::vec &alpha_v,
+        const arma::vec &lambda_u,
+        const arma::vec &lambda_v,
+        int bicau,
+        int bicav,
+        int biclu,
+        int biclv,
+        int max_bic_iter=5);
 };
 
 #endif

@@ -47,6 +47,10 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
             i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
      // const reference must be passed to initializer list
 {
+
+    bicsr_u.bind(&solver_u, &PR_solver::bic);
+    bicsr_v.bind(&solver_v, &PR_solver::bic);
+
     MoMALogger::info("Initializing MoMA object:")
     << " lambda_u " << lambda_u
     << " lambda_v " << lambda_v
@@ -213,4 +217,108 @@ int MoMA::reset(double newlambda_u,double newlambda_v,
     solver_u.reset(newlambda_u,newalpha_u);
     solver_v.reset(newlambda_v,newalpha_v);
     return 0;
+}
+
+arma::vec set_grid(arma::vec vec, int want_grid){
+    if (want_grid == 1){ 
+        return vec;
+    }
+    else if (want_grid == 0){
+        vec.resize(1);
+        vec(0) = -1;
+        return vec;
+    }
+}
+
+arma::vec set_bic_grid(const arma::vec &vec, int want_bic, int i){
+    if(want_bic == 1){
+        return vec;
+    }
+    else if (want_bic == 0){
+        return Rcpp::NumericVector::create(vec(i));
+    }
+}
+
+Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
+    const arma::vec &alpha_v,
+    const arma::vec &lambda_u,
+    const arma::vec &lambda_v,
+    int bicau,  // flags; = 0 means grid, = 01 means BIC search
+    int bicav,
+    int biclu,
+    int biclv,
+    int max_bic_iter){
+    
+    // If alpha_u is selected via grid search, then 
+    // grid_au = alpha_u, bic_au = [-1].
+    // If alpha_u is selected via nested BIC search,
+    // then grid_au = [-1], bic_au = alpha_u
+    arma::vec grid_lu = set_grid(lambda_u, !biclu);
+    arma::vec grid_lv = set_grid(lambda_v, !biclv);
+    arma::vec grid_au = set_grid(alpha_u, !bicau);
+    arma::vec grid_av = set_grid(alpha_v, !bicav);
+
+    int n_lu = grid_lu.n_elem;
+    int n_lv = grid_lv.n_elem;
+    int n_au = grid_au.n_elem;
+    int n_av = grid_av.n_elem;
+
+    
+    Rcpp::List my_list(n_lu * n_lv * n_au * n_av);
+    my_list.attr("dim") = Rcpp::NumericVector::create(
+                n_au, n_lu, n_av, n_lv);
+
+    Rcpp::List u_result;
+    Rcpp::List v_result;
+
+    for(int i = 0; i < n_au; i++){
+        for(int j = 0; j < n_lu; j++){
+            for(int k = 0; k < n_av; k++){
+                for(int m = 0; m < n_lv; m++){
+
+                    arma::vec bic_au = set_bic_grid(alpha_u, bicau, i);
+                    arma::vec bic_lu = set_bic_grid(lambda_u, biclu, j);
+                    arma::vec bic_av = set_bic_grid(alpha_v, bicav, k);
+                    arma::vec bic_lv = set_bic_grid(lambda_v, biclv, m);
+
+                    tol = 1;
+                    iter = 0;
+                    arma::vec oldu;
+                    arma::vec oldv;
+                    while(tol > EPS && iter < MAX_ITER && iter < max_bic_iter){
+                        iter++;
+                        oldu = u;
+                        oldv = v;
+
+                        // choose lambda/alpha_u
+                        MoMALogger::debug("Start u search.");
+                        u_result = bicsr_u.search(X*v,u,bic_au,bic_lu);
+                        u = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
+
+                        MoMALogger::debug("Start v search.");
+                        v_result = bicsr_v.search(X.t()*u,v,bic_av,bic_lv);
+                        v = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
+
+                        tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
+                        MoMALogger::message("Finish BIC search outer loop. (iter, tol) = (") 
+                                    << iter << "," << tol << "), "
+                                    << "(bic_u, bic_v) = (" 
+                                    << (double)u_result["bic"] << "," 
+                                    << (double)v_result["bic"] << ")";
+                    }
+                   
+                    my_list(n_lu * n_av * n_lv * i + 
+                                   n_av * n_lv * j + 
+                                          n_lv * k +
+                                                 m)
+                            = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result,
+                                Rcpp::Named("v") = v_result);
+                
+                }
+            }
+        }
+    }
+
+    return my_list;
 }
