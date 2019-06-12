@@ -31,7 +31,7 @@ Rcpp::List BIC_searcher::search(const arma::vec &y,   // min_{u} || y - u || + .
             // Put lambda_u in the inner loop to avoid reconstructing S many times
             pr_solver->reset(lambda_u(j),alpha_u(i));
             working_u     = pr_solver->solve(y, working_u);
-            working_bic_u = pr_solver->bic(y, working_u);
+            working_bic_u = cur_criteria(y, working_u);
             MoMALogger::debug("(curBIC, minBIC, lambda, alpha) = (") 
                         << working_bic_u << "," 
                         << minbic_u << "," 
