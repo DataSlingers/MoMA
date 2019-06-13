@@ -17,7 +17,7 @@ test_that("BIC search returns correct-sized grid", {
         alpha_u=alpha_u, alpha_v=alpha_v,
         Omega_u=second_diff_mat(3), Omega_v=second_diff_mat(4),
         lambda_u=lambda_u, lambda_v=lambda_v,
-        prox_arg_list_u=sparsity_to_proxarglist(lasso()), prox_arg_list_v=sparsity_to_proxarglist(empty()),
+        prox_arg_list_u=add_default_prox_args(lasso()), prox_arg_list_v=add_default_prox_args(empty()),
         EPS=1e-6, MAX_ITER=1e+4, EPS_inner=1e-6, MAX_ITER_inner=1e+4, solver="ISTA"
     )
 

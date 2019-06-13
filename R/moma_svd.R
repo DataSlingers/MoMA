@@ -15,7 +15,7 @@ MOMA_DEFAULT_PROX <- list(
                         prox_eps = 1e-10,
                         # trend filtering
                         l1tf_k = 1)
-sparsity_to_proxarglist <- function(sparsity_type){
+add_default_prox_args <- function(sparsity_type){
     # sparsity_type: prox arguments for u and v
 
     # To call a C function we have to specify
@@ -141,8 +141,8 @@ moma_svd <- function(
                 list(
                     Omega_u = check_omega(Omega_u,alpha_u,n),
                     Omega_v = check_omega(Omega_v,alpha_v,p),
-                    prox_arg_list_u = sparsity_to_proxarglist(u_sparsity),
-                    prox_arg_list_v = sparsity_to_proxarglist(v_sparsity)))
+                    prox_arg_list_u = add_default_prox_args(u_sparsity),
+                    prox_arg_list_v = add_default_prox_args(v_sparsity)))
 
     if(is_multiple_para){
         if(select == "gridsearch"){

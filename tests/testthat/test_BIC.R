@@ -17,7 +17,7 @@ test_that("Test for lasso BIC", {
         y, y_est,
         "ISTA",
         0, second_diff_mat(p),
-        0, sparsity_to_proxarglist(lasso()),
+        0, add_default_prox_args(lasso()),
         p), bic_lasso(y,y_est))
 })
 
