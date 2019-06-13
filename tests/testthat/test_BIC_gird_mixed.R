@@ -1,7 +1,7 @@
 context("Test BIC-grid-mixed search")
 
 
-test_that("Correct dimension", {
+test_that("BIC search returns correct-sized grid", {
     set.seed(123)
     X <- matrix(runif(12),3,4)
 

@@ -191,16 +191,12 @@ Rcpp::List testnestedBIC(
     int biclu,
     int biclv,
     int k = 1){
-    // We only allow changing two parameters
+
+
     int n_lu = lambda_u.n_elem;
     int n_lv = lambda_v.n_elem;
     int n_au = alpha_u.n_elem;
     int n_av = alpha_v.n_elem;
-
-    int n_more_than_one = int(n_lv > 1) + int(n_lu > 1) + int(n_au > 1) + int(n_av > 1);
-    // if(n_more_than_one > 2){
-    //     MoMALogger::error("We only allow changing two parameters.");
-    // }
 
     if(n_lv == 0 || n_lu == 0 || n_au == 0 || n_av == 0){
         MoMALogger::error("Please specify all four parameters.");

@@ -219,14 +219,14 @@ int MoMA::reset(double newlambda_u,double newlambda_v,
     return 0;
 }
 
-arma::vec set_grid(arma::vec vec, int want_grid){
+arma::vec set_greedy_grid(arma::vec grid, int want_grid){
     if (want_grid == 1){ 
-        return vec;
+        return grid;
     }
     else if (want_grid == 0){
-        vec.resize(1);
-        vec(0) = -1;
-        return vec;
+        grid.resize(1);
+        grid(0) = -1;
+        return grid;
     }
 }
 
@@ -253,10 +253,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     // grid_au = alpha_u, bic_au = [-1].
     // If alpha_u is selected via nested BIC search,
     // then grid_au = [-1], bic_au = alpha_u
-    arma::vec grid_lu = set_grid(lambda_u, !biclu);
-    arma::vec grid_lv = set_grid(lambda_v, !biclv);
-    arma::vec grid_au = set_grid(alpha_u, !bicau);
-    arma::vec grid_av = set_grid(alpha_v, !bicav);
+    arma::vec grid_lu = set_greedy_grid(lambda_u, !biclu);
+    arma::vec grid_lv = set_greedy_grid(lambda_v, !biclv);
+    arma::vec grid_au = set_greedy_grid(alpha_u, !bicau);
+    arma::vec grid_av = set_greedy_grid(alpha_v, !bicav);
 
     if((bicau == 1 && grid_au.n_elem != 1)
         || (bicav == 1 && grid_av.n_elem != 1)
@@ -310,6 +310,9 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                     tol = 1;
                     iter = 0;
 
+                    // We conduct 2 BIC searches over 2D grids here instead 
+                    // of 4 searches over 1D grids. It's consistent with 
+                    // Genevera's code
                     while(tol > EPS && iter < MAX_ITER && iter < max_bic_iter){
                         iter++;
                         oldu = u;
@@ -317,11 +320,11 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
 
                         // choose lambda/alpha_u
                         MoMALogger::debug("Start u search.");
-                        u_result = bicsr_u.search(X*v,u,bic_au_grid,bic_lu_grid);
+                        u_result = bicsr_u.search(X*v, u, bic_au_grid, bic_lu_grid);
                         u = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
 
                         MoMALogger::debug("Start v search.");
-                        v_result = bicsr_v.search(X.t()*u,v,bic_av_grid,bic_lv_grid);
+                        v_result = bicsr_v.search(X.t()*u, v, bic_av_grid, bic_lv_grid);
                         v = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
 
                         tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);

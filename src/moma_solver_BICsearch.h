@@ -10,12 +10,13 @@ class BIC_searcher
 {
 public:
 
-    typedef double(PR_solver:: *Criteria)(arma::vec y, const arma::vec &est);
+    typedef double(PR_solver:: *Criterion)(arma::vec y, const arma::vec &est);
     BIC_searcher(){};
 
-    void bind(PR_solver *object, Criteria method);
+    void bind(PR_solver *object, Criterion method);
 
-    double cur_criteria(arma::vec y, const arma::vec &est);
+    // current criterion
+    double cur_criterion(arma::vec y, const arma::vec &est);
 
     ~BIC_searcher(){
         // No need to delete pr_solver
@@ -29,7 +30,7 @@ public:
 
 private:
     PR_solver *pr_solver;
-    Criteria cri;
+    Criterion cri;
 };
 
 #endif

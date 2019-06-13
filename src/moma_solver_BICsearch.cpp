@@ -1,26 +1,28 @@
 #include "moma_solver_BICsearch.h"
 
-void BIC_searcher::bind(PR_solver *object, Criteria method)
+void BIC_searcher::bind(PR_solver *object, Criterion method)
 {
     pr_solver = object;
     cri = method;
 }
 
-double BIC_searcher::cur_criteria(arma::vec y, const arma::vec &est)
+double BIC_searcher::cur_criterion(arma::vec y, const arma::vec &est)
 {
     return (pr_solver->*cri)(y, est);
 }
 
 
-Rcpp::List BIC_searcher::search(const arma::vec &y,   // min_{u} || y - u || + ...penalty...
-                    const arma::vec &u,   // start point
-                    const arma::vec &alpha_u,
-                    const arma::vec &lambda_u
+
+Rcpp::List BIC_searcher::search(
+    const arma::vec &y,           // min_{u} || y - u || + ...penalty...
+    const arma::vec &initial_u,   // start point
+    const arma::vec &alpha_u,
+    const arma::vec &lambda_u
 )
 {
 
     arma::vec working_selected_u;
-    arma::vec working_u = u;
+    arma::vec working_u = initial_u;
     double working_bic_u;
     double minbic_u = MOMA_INFTY;
     double opt_alpha_u;
@@ -31,7 +33,7 @@ Rcpp::List BIC_searcher::search(const arma::vec &y,   // min_{u} || y - u || + .
             // Put lambda_u in the inner loop to avoid reconstructing S many times
             pr_solver->reset(lambda_u(j),alpha_u(i));
             working_u     = pr_solver->solve(y, working_u);
-            working_bic_u = cur_criteria(y, working_u);
+            working_bic_u = cur_criterion(y, working_u);
             MoMALogger::debug("(curBIC, minBIC, lambda, alpha) = (") 
                         << working_bic_u << "," 
                         << minbic_u << "," 
