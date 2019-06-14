@@ -10,8 +10,11 @@
 // Prox operators
 #include "moma_solver.h"
 
-// Prox operators
+// BIC searcher
 #include "moma_solver_BICsearch.h"
+
+// 4-D list
+#include "fourdlist.h"
 
 // Prototypes
 // moma_logging.cpp

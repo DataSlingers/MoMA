@@ -276,9 +276,7 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     int n_av = grid_av.n_elem;
 
     
-    Rcpp::List my_list(n_lu * n_lv * n_au * n_av);
-    my_list.attr("dim") = Rcpp::NumericVector::create(
-                n_au, n_av, n_lu, n_lv);
+    RcppFourDList four_d_list(n_au, n_lu, n_av, n_lv);
 
     // nested-BIC search returns a list that
     // contains (lambda, alpha, bic, selected vector)
@@ -335,18 +333,14 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                                     << (double)v_result["bic"] << ")";
                     }
                    
-                    my_list(n_lu * n_av * n_lv * i + 
-                                   n_av * n_lv * j + 
-                                          n_lv * k +
-                                                 m)
-                            = Rcpp::List::create(
+                    four_d_list.insert(Rcpp::List::create(
                                 Rcpp::Named("u") = u_result,
-                                Rcpp::Named("v") = v_result);
-                
+                                Rcpp::Named("v") = v_result), i, j, k, m);
+ 
                 }
             }
         }
     }
 
-    return my_list;
+    return four_d_list.get_list();
 }
