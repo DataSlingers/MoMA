@@ -243,25 +243,25 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     const arma::vec &alpha_v,
     const arma::vec &lambda_u,
     const arma::vec &lambda_v,
-    int bicau,  // flags; = 0 means grid, = 01 means BIC search
-    int bicav,
-    int biclu,
-    int biclv,
+    int bic_search_alpha_u,  // flags; = 0 means grid, = 01 means BIC search
+    int bic_search_alpha_v,
+    int bic_search_lambda_u,
+    int bic_search_lambda_v,
     int max_bic_iter){
     
     // If alpha_u is selected via grid search, then 
     // grid_au = alpha_u, bic_au = [-1].
     // If alpha_u is selected via nested BIC search,
     // then grid_au = [-1], bic_au = alpha_u
-    arma::vec grid_lu = set_greedy_grid(lambda_u, !biclu);
-    arma::vec grid_lv = set_greedy_grid(lambda_v, !biclv);
-    arma::vec grid_au = set_greedy_grid(alpha_u, !bicau);
-    arma::vec grid_av = set_greedy_grid(alpha_v, !bicav);
+    arma::vec grid_lu = set_greedy_grid(lambda_u, !bic_search_lambda_u);
+    arma::vec grid_lv = set_greedy_grid(lambda_v, !bic_search_lambda_v);
+    arma::vec grid_au = set_greedy_grid(alpha_u, !bic_search_alpha_u);
+    arma::vec grid_av = set_greedy_grid(alpha_v, !bic_search_alpha_v);
 
-    if((bicau == 1 && grid_au.n_elem != 1)
-        || (bicav == 1 && grid_av.n_elem != 1)
-        || (biclu == 1 && grid_lu.n_elem != 1)
-        || (biclv == 1 && grid_lv.n_elem != 1) )
+    if((bic_search_alpha_u == 1 && grid_au.n_elem != 1)
+        || (bic_search_alpha_v == 1 && grid_av.n_elem != 1)
+        || (bic_search_lambda_u == 1 && grid_lu.n_elem != 1)
+        || (bic_search_lambda_v == 1 && grid_lv.n_elem != 1) )
     {
         MoMALogger::error("Wrong grid-search grid!")
         << "grid_lu.n_elem=" << grid_lu.n_elem
@@ -292,15 +292,15 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
             for(int k = 0; k < n_av; k++){
                 for(int m = 0; m < n_lv; m++){
 
-                    arma::vec bic_au_grid = set_bic_grid(alpha_u, bicau, i);
-                    arma::vec bic_lu_grid = set_bic_grid(lambda_u, biclu, j);
-                    arma::vec bic_av_grid = set_bic_grid(alpha_v, bicav, k);
-                    arma::vec bic_lv_grid = set_bic_grid(lambda_v, biclv, m);
+                    arma::vec bic_au_grid = set_bic_grid(alpha_u, bic_search_alpha_u, i);
+                    arma::vec bic_lu_grid = set_bic_grid(lambda_u, bic_search_lambda_u, j);
+                    arma::vec bic_av_grid = set_bic_grid(alpha_v, bic_search_alpha_v, k);
+                    arma::vec bic_lv_grid = set_bic_grid(lambda_v, bic_search_lambda_v, m);
 
-                    if((bicau == 0 && bic_au_grid.n_elem != 1)
-                        || (bicav == 0 && bic_av_grid.n_elem != 1)
-                        || (biclu == 0 && bic_lu_grid.n_elem != 1)
-                        || (biclv == 0 && bic_lv_grid.n_elem != 1) )
+                    if((bic_search_alpha_u == 0 && bic_au_grid.n_elem != 1)
+                        || (bic_search_alpha_v == 0 && bic_av_grid.n_elem != 1)
+                        || (bic_search_lambda_u == 0 && bic_lu_grid.n_elem != 1)
+                        || (bic_search_lambda_v == 0 && bic_lv_grid.n_elem != 1) )
                     {
                             MoMALogger::error("Wrong BIC search grid!");
                     }

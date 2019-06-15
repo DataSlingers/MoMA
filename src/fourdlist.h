@@ -1,45 +1,45 @@
 # include "moma.h"
 
 class RcppFourDList{
-    int n_au;
-    int n_lu;
-    int n_av;
-    int n_lv;
-    Rcpp::List my_list;
+    int n_alpha_u;
+    int n_lambda_u;
+    int n_alpha_v;
+    int n_lambda_v;
+    Rcpp::List flattened_list;
 
 public:
     RcppFourDList(int au, int lu, int av, int lv):
-        n_au(au), n_lu(lu), n_av(av), n_lv(lv), 
-        my_list(n_au * n_av * n_lu * n_lv)
+        n_alpha_u(au), n_lambda_u(lu), n_alpha_v(av), n_lambda_v(lv), 
+        flattened_list(n_alpha_u * n_alpha_v * n_lambda_u * n_lambda_v)
     {
-            my_list.attr("dim") = Rcpp::NumericVector::create(
-                n_au, n_av, n_lu, n_lv);
+            flattened_list.attr("dim") = Rcpp::NumericVector::create(
+                n_alpha_u, n_alpha_v, n_lambda_u, n_lambda_v);
     };
  
-    int insert(Rcpp::List object, int au_i, int lu_i, int av_i, int lv_i){
-        // insert object in the au_i-th position along the au-axis
+    int insert(Rcpp::List object, int alpha_u_i, int lambda_u_i, int alpha_v_i, int lambda_v_i){
+        // insert object in the alpha_u_i-th position along the au-axis
         // and so on
         if(
-            au_i < 0 || au_i >= n_au ||
-            lu_i < 0 || lu_i >= n_lu ||
-            av_i < 0 || av_i >= n_av ||
-            lv_i < 0 || lv_i >= n_lv
+            alpha_u_i  < 0 || alpha_u_i >= n_alpha_u ||
+            lambda_u_i < 0 || lambda_u_i >= n_lambda_u ||
+            alpha_v_i  < 0 || alpha_v_i >= n_alpha_v ||
+            lambda_v_i < 0 || lambda_v_i >= n_lambda_v
         ){
             MoMALogger::error("Invalid index is passed to RcppFourDList::insert. ")
-                << "Dimension is (" << n_au << ", " 
-                << n_lu << ", " << n_av << ", "
-                << n_lv << "), (" 
-                << au_i << ", " << lu_i << ", " << av_i << ", " << lv_i << ")."
+                << "Dimension is (" << n_alpha_u << ", " 
+                << n_lambda_u << ", " << n_alpha_v << ", "
+                << n_lambda_v << "), (" << alpha_u_i << ", " 
+                << lambda_u_i << ", " << alpha_v_i << ", " << lambda_v_i << ")."
                 ;
         }
-        my_list(n_lu * n_av * n_lv * au_i + 
-                       n_av * n_lv * lu_i + 
-                              n_lv * av_i +
-                                     lv_i) = object;
+        flattened_list(n_lambda_u * n_alpha_v * n_lambda_v * alpha_u_i + 
+                                    n_alpha_v * n_lambda_v * lambda_u_i + 
+                                                n_lambda_v * alpha_v_i +
+                                                             lambda_v_i) = object;
         return 0;
     }
 
     Rcpp::List get_list(){
-        return my_list;
+        return flattened_list;
     }
 };

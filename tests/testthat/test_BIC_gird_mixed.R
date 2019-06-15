@@ -23,10 +23,10 @@ test_that("BIC search returns correct-sized grid: four grid requests", {
     # Case 1: four grid requests
     result <- do.call(testnestedBIC,
                       c(arg_list,
-                        list(bicau=0,
-                             bicav=0,
-                             biclu=0,
-                             biclv=0)))
+                        list(bic_search_alpha_u=0,
+                             bic_search_alpha_v=0,
+                             bic_search_lambda_u=0,
+                             bic_search_lambda_v=0)))
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     lv = sapply(result, function(x) x$v$lambda)
@@ -45,10 +45,10 @@ test_that("BIC search returns correct-sized grid: three grid requests", {
     # BIC on lambda_v
     result2 <- do.call(testnestedBIC,
                        c(arg_list,
-                         list(bicau=0,  # grid
-                              bicav=0,  # grid
-                              biclu=0,  # grid
-                              biclv=1)))
+                         list(bic_search_alpha_u=0,  # grid
+                              bic_search_alpha_v=0,  # grid
+                              bic_search_lambda_u=0,  # grid
+                              bic_search_lambda_v=1)))
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     av = sapply(result2, function(x) x$v$alpha)
@@ -62,10 +62,10 @@ test_that("BIC search returns correct-sized grid: three grid requests", {
     # BIC on alpha_u
     result2 <- do.call(testnestedBIC,
                        c(arg_list,
-                         list(bicau=1,
-                              bicav=0,  # grid
-                              biclu=0,  # grid
-                              biclv=0))) # grid
+                         list(bic_search_alpha_u=1,
+                              bic_search_alpha_v=0,  # grid
+                              bic_search_lambda_u=0,  # grid
+                              bic_search_lambda_v=0))) # grid
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     lv = sapply(result2, function(x) x$v$lambda)
@@ -81,10 +81,10 @@ test_that("BIC search returns correct-sized grid: two grid requests on u", {
     # Case 3: two grid requests, both on u side, and two BIC
     result3 <- do.call(testnestedBIC,
                        c(arg_list,
-                         list(bicau=0,
-                              biclu=0,
-                              bicav=1,    # grid search on alpha_v, lambda_v
-                              biclv=1)))
+                         list(bic_search_alpha_u=0,
+                              bic_search_lambda_u=0,
+                              bic_search_alpha_v=1,    # grid search on alpha_v, lambda_v
+                              bic_search_lambda_v=1)))
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     lv = sapply(result3, function(x) x$v$lambda)
@@ -100,10 +100,10 @@ test_that("BIC search returns correct-sized grid: two grid requests on different
     # Case 4: two grid requests, both on u side, and two BIC
     result4 <- do.call(testnestedBIC,
                        c(arg_list,
-                         list(bicau=1,
-                              biclu=0,  # grid
-                              bicav=1,
-                              biclv=0)))  # grid
+                         list(bic_search_alpha_u=1,
+                              bic_search_lambda_u=0,  # grid
+                              bic_search_alpha_v=1,
+                              bic_search_lambda_v=0)))  # grid
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     lv = sapply(result4, function(x) x$v$lambda)
@@ -119,10 +119,10 @@ test_that("BIC search returns correct-sized grid: one grid", {
     # Case 5: one grid requests, both on u side, and two BIC
     result4 <- do.call(testnestedBIC,
                        c(arg_list,
-                         list(bicau=1,
-                              biclu=1,
-                              bicav=1,
-                              biclv=0)))  # grid
+                         list(bic_search_alpha_u=1,
+                              bic_search_lambda_u=1,
+                              bic_search_alpha_v=1,
+                              bic_search_lambda_v=0)))  # grid
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     lv = sapply(result4, function(x) x$v$lambda)
@@ -138,10 +138,10 @@ test_that("BIC search returns correct-sized grid: all BIC search", {
     # Case 5: one grid requests, both on u side, and two BIC
     result4 <- do.call(testnestedBIC,
                        c(arg_list,
-                         list(bicau=1,
-                              biclu=1,
-                              bicav=1,
-                              biclv=1)))
+                         list(bic_search_alpha_u=1,
+                              bic_search_lambda_u=1,
+                              bic_search_alpha_v=1,
+                              bic_search_lambda_v=1)))
 
     # Loop order in C++ is (outmost) au, lu, av, lv (innermost)
     lv = sapply(result4, function(x) x$v$lambda)
