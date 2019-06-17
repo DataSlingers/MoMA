@@ -202,8 +202,6 @@ Rcpp::List testnestedBIC(
         MoMALogger::error("Please specify all four parameters.");
     }
 
-    int n_total = n_lambda_v * n_lambda_u * n_alpha_u * n_alpha_v;
-
     // NOTE: arguments should be listed
     // in the exact order of MoMA constructor
     MoMA problem(X,
