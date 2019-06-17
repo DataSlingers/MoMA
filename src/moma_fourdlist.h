@@ -29,7 +29,7 @@ public:
             MoMALogger::error("Invalid index is passed to RcppFourDList::insert. ")
                 << "Dimension is (" << n_alpha_u << ", " 
                 << n_lambda_u << ", " << n_alpha_v << ", "
-                << n_lambda_v << "), receice (" << alpha_u_i << ", " 
+                << n_lambda_v << "), received (" << alpha_u_i << ", " 
                 << lambda_u_i << ", " << alpha_v_i << ", " << lambda_v_i << ")."
                 ;
         }
