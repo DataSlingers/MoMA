@@ -165,3 +165,17 @@ test_that("BIC search returns correct-sized grid: all BIC search", {
 
     expect_equal(lv, rep(lv, 1, each=1))
 })
+
+test_that("testnestedBIC receivs a vector of length 0", {
+
+    arglist <- c(arg_list,
+                 list(bic_search_alpha_u=1,
+                      bic_search_lambda_u=1,
+                      bic_search_alpha_v=1,
+                      bic_search_lambda_v=1))
+
+    arglist <- modifyList(arglist,
+                          list(lambda_u=vector()))
+    expect_error(do.call(testnestedBIC, arglist),
+                 "Please specify all four parameters")
+})
