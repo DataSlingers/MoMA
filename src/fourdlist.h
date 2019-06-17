@@ -13,7 +13,7 @@ public:
         flattened_list(n_alpha_u * n_alpha_v * n_lambda_u * n_lambda_v)
     {
             flattened_list.attr("dim") = Rcpp::NumericVector::create(
-                n_alpha_u, n_alpha_v, n_lambda_u, n_lambda_v);
+                n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v);
     };
  
     int insert(Rcpp::List object, int alpha_u_i, int lambda_u_i, int alpha_v_i, int lambda_v_i){
