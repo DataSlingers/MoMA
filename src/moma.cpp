@@ -219,23 +219,21 @@ int MoMA::reset(double newlambda_u,double newlambda_v,
     return 0;
 }
 
-arma::vec set_greedy_grid(arma::vec grid, int want_grid){
+const arma::vec &set_greedy_grid(const arma::vec &grid, int want_grid){
     if (want_grid == 1){ 
         return grid;
     }
     else if (want_grid == 0){
-        grid.resize(1);
-        grid(0) = -1;
-        return grid;
+        return MOMA_EMPTY_GRID_OF_LENGTH1;
     }
 }
 
-arma::vec set_bic_grid(const arma::vec &vec, int want_bic, int i){
+arma::vec set_bic_grid(const arma::vec &grid, int want_bic, int i){
     if(want_bic == 1){
-        return vec;
+        return grid;
     }
     else if (want_bic == 0){
-        return Rcpp::NumericVector::create(vec(i));
+        return grid(i) * arma::ones<arma::vec> (1);
     }
 }
 
@@ -249,19 +247,21 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     int bic_search_lambda_v,
     int max_bic_iter){
     
-    // If alpha_u is selected via grid search, then 
-    // grid_au = alpha_u, bic_au = [-1].
+    // If alpha_u is selected via grid search, then the variable
+    // grid_au = alpha_u, bic_au_grid = [-1].
     // If alpha_u is selected via nested BIC search,
-    // then grid_au = [-1], bic_au = alpha_u
-    arma::vec grid_lu = set_greedy_grid(lambda_u, !bic_search_lambda_u);
-    arma::vec grid_lv = set_greedy_grid(lambda_v, !bic_search_lambda_v);
-    arma::vec grid_au = set_greedy_grid(alpha_u, !bic_search_alpha_u);
-    arma::vec grid_av = set_greedy_grid(alpha_v, !bic_search_alpha_v);
+    // then grid_au = [-1], bic_au_grid = alpha_u
+    const arma::vec &grid_lu = set_greedy_grid(lambda_u, !bic_search_lambda_u);
+    const arma::vec &grid_lv = set_greedy_grid(lambda_v, !bic_search_lambda_v);
+    const arma::vec &grid_au = set_greedy_grid(alpha_u, !bic_search_alpha_u);
+    const arma::vec &grid_av = set_greedy_grid(alpha_v, !bic_search_alpha_v);
 
-    if((bic_search_alpha_u == 1 && grid_au.n_elem != 1)
-        || (bic_search_alpha_v == 1 && grid_av.n_elem != 1)
-        || (bic_search_lambda_u == 1 && grid_lu.n_elem != 1)
-        || (bic_search_lambda_v == 1 && grid_lv.n_elem != 1) )
+    // Test that if a grid is set to be BIC-search grid, then
+    // the above code should set grid_xx to the vector [-1]
+    if((bic_search_alpha_u == 1 && (grid_au.n_elem != 1 || grid_au(0) != -1))
+        || (bic_search_alpha_v == 1 && (grid_av.n_elem != 1 || grid_av(0) != -1))
+        || (bic_search_lambda_u == 1 && (grid_lu.n_elem != 1 || grid_lu(0) != -1))
+        || (bic_search_lambda_v == 1 && (grid_lv.n_elem != 1 || grid_lv(0) != -1)) )
     {
         MoMALogger::error("Wrong grid-search grid!")
         << "grid_lu.n_elem=" << grid_lu.n_elem
