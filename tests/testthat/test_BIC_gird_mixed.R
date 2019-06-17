@@ -3,11 +3,11 @@ context("Test BIC-grid-mixed search")
 set.seed(123)
 X <- matrix(runif(12),3,4)
 
-n_au=7; n_av=5; n_lu=3; n_lv=2; # mutually prime
-alpha_u=seq(0.3,1,length.out = n_au)
-alpha_v=seq(0.3,1,length.out = n_av)
-lambda_u=seq(0.3,1,length.out = n_lu)
-lambda_v=seq(0.3,1,length.out = n_lv)
+n_alpha_u=7; n_alpha_v=5; n_lambda_u=3; n_lambda_v=2; # mutually prime
+alpha_u=seq(0.3,1,length.out = n_alpha_u)
+alpha_v=seq(0.3,1,length.out = n_alpha_v)
+lambda_u=seq(0.3,1,length.out = n_lambda_u)
+lambda_v=seq(0.3,1,length.out = n_lambda_v)
 
 
 arg_list <- list(
@@ -34,12 +34,12 @@ test_that("BIC search returns correct-sized grid: four grid requests", {
     lu = sapply(result, function(x) x$u$lambda)
     au = sapply(result, function(x) x$u$alpha)
 
-    expect_equal(dim(result), c(n_au,n_lu,n_av,n_lv))
+    expect_equal(dim(result), c(n_alpha_u,n_lambda_u,n_alpha_v,n_lambda_v))
 
-    expect_equal(lv, rep(lambda_v, n_au*n_lu*n_av, each=1))
-    expect_equal(av, rep(alpha_v,  n_au*n_lu,      each=n_lv))
-    expect_equal(lu, rep(lambda_u, n_au,           each=n_lv*n_av))
-    expect_equal(au, rep(alpha_u,  1,              each=n_lv*n_av*n_lu))
+    expect_equal(lv, rep(lambda_v, n_alpha_u*n_lambda_u*n_alpha_v, each=1))
+    expect_equal(av, rep(alpha_v,  n_alpha_u*n_lambda_u,      each=n_lambda_v))
+    expect_equal(lu, rep(lambda_u, n_alpha_u,           each=n_lambda_v*n_alpha_v))
+    expect_equal(au, rep(alpha_u,  1,              each=n_lambda_v*n_alpha_v*n_lambda_u))
 })
 
 
@@ -57,11 +57,11 @@ test_that("BIC search returns correct-sized grid: three grid requests", {
     lu = sapply(result2, function(x) x$u$lambda)
     au = sapply(result2, function(x) x$u$alpha)
 
-    expect_equal(dim(result2), c(n_au,n_lu,n_av,1))
+    expect_equal(dim(result2), c(n_alpha_u,n_lambda_u,n_alpha_v,1))
 
-    expect_equal(av, rep(alpha_v,  n_au*n_lu, each=1))
-    expect_equal(lu, rep(lambda_u, n_au,      each=n_av))
-    expect_equal(au, rep(alpha_u,  1,         each=n_lu*n_av))
+    expect_equal(av, rep(alpha_v,  n_alpha_u*n_lambda_u, each=1))
+    expect_equal(lu, rep(lambda_u, n_alpha_u,      each=n_alpha_v))
+    expect_equal(au, rep(alpha_u,  1,         each=n_lambda_u*n_alpha_v))
 
     # BIC on alpha_u
     result2 <- do.call(testnestedBIC,
@@ -76,11 +76,11 @@ test_that("BIC search returns correct-sized grid: three grid requests", {
     av = sapply(result2, function(x) x$v$alpha)
     lu = sapply(result2, function(x) x$u$lambda)
 
-    expect_equal(dim(result2), c(1,n_lu,n_av,n_lv))
+    expect_equal(dim(result2), c(1,n_lambda_u,n_alpha_v,n_lambda_v))
 
-    expect_equal(lv, rep(lambda_v, n_lu*n_av, each=1))
-    expect_equal(av, rep(alpha_v,  n_lu,      each=n_lv))
-    expect_equal(lu, rep(lambda_u, 1,         each=n_av*n_lv))
+    expect_equal(lv, rep(lambda_v, n_lambda_u*n_alpha_v, each=1))
+    expect_equal(av, rep(alpha_v,  n_lambda_u,      each=n_lambda_v))
+    expect_equal(lu, rep(lambda_u, 1,         each=n_alpha_v*n_lambda_v))
 })
 
 test_that("BIC search returns correct-sized grid: two grid requests on u", {
@@ -98,10 +98,10 @@ test_that("BIC search returns correct-sized grid: two grid requests on u", {
     lu = sapply(result3, function(x) x$u$lambda)
     au = sapply(result3, function(x) x$u$alpha)
 
-    expect_equal(dim(result3), c(n_au,n_lu,1,1))
+    expect_equal(dim(result3), c(n_alpha_u,n_lambda_u,1,1))
 
-    expect_equal(lu, rep(lambda_u, n_au,      each=1))
-    expect_equal(au, rep(alpha_u,  1,         each=n_lu))
+    expect_equal(lu, rep(lambda_u, n_alpha_u,      each=1))
+    expect_equal(au, rep(alpha_u,  1,         each=n_lambda_u))
 })
 
 test_that("BIC search returns correct-sized grid: two grid requests on different sides", {
@@ -119,10 +119,10 @@ test_that("BIC search returns correct-sized grid: two grid requests on different
     lu = sapply(result4, function(x) x$u$lambda)
     au = sapply(result4, function(x) x$u$alpha)
 
-    expect_equal(dim(result4), c(1,n_lu,1,n_lv))
+    expect_equal(dim(result4), c(1,n_lambda_u,1,n_lambda_v))
 
-    expect_equal(lv, rep(lambda_v, n_lu, each=1))
-    expect_equal(lu, rep(lambda_u, 1,    each=n_lv))
+    expect_equal(lv, rep(lambda_v, n_lambda_u, each=1))
+    expect_equal(lu, rep(lambda_u, 1,    each=n_lambda_v))
 })
 
 test_that("BIC search returns correct-sized grid: one grid", {
@@ -140,7 +140,7 @@ test_that("BIC search returns correct-sized grid: one grid", {
     lu = sapply(result4, function(x) x$u$lambda)
     au = sapply(result4, function(x) x$u$alpha)
 
-    expect_equal(dim(result4), c(1,1,1,n_lv))
+    expect_equal(dim(result4), c(1,1,1,n_lambda_v))
 
     expect_equal(lv, rep(lv, 1, each=1))
 })

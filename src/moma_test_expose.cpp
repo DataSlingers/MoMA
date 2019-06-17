@@ -193,16 +193,16 @@ Rcpp::List testnestedBIC(
     int k = 1){
 
 
-    int n_lu = lambda_u.n_elem;
-    int n_lv = lambda_v.n_elem;
-    int n_au = alpha_u.n_elem;
-    int n_av = alpha_v.n_elem;
+    int n_lambda_u = lambda_u.n_elem;
+    int n_lambda_v = lambda_v.n_elem;
+    int n_alpha_u = alpha_u.n_elem;
+    int n_alpha_v = alpha_v.n_elem;
 
-    if(n_lv == 0 || n_lu == 0 || n_au == 0 || n_av == 0){
+    if(n_lambda_v == 0 || n_lambda_u == 0 || n_alpha_u == 0 || n_alpha_v == 0){
         MoMALogger::error("Please specify all four parameters.");
     }
 
-    int n_total = n_lv * n_lu * n_au * n_av;
+    int n_total = n_lambda_v * n_lambda_u * n_alpha_u * n_alpha_v;
 
     // NOTE: arguments should be listed
     // in the exact order of MoMA constructor

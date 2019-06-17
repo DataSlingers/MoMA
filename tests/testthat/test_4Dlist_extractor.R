@@ -3,11 +3,11 @@ context("4D List")
 set.seed(123)
 X <- matrix(runif(12),3,4)
 
-n_au=7; n_av=5; n_lu=3; n_lv=2; # mutually prime
-alpha_u=seq(0.3,1,length.out = n_au)
-alpha_v=seq(0.3,1,length.out = n_av)
-lambda_u=seq(0.3,1,length.out = n_lu)
-lambda_v=seq(0.3,1,length.out = n_lv)
+n_alpha_u=7; n_alpha_v=5; n_lambda_u=3; n_lambda_v=2; # mutually prime
+alpha_u=seq(0.3,1,length.out = n_alpha_u)
+alpha_v=seq(0.3,1,length.out = n_alpha_v)
+lambda_u=seq(0.3,1,length.out = n_lambda_u)
+lambda_v=seq(0.3,1,length.out = n_lambda_v)
 
 
 arg_list <- list(
@@ -38,12 +38,12 @@ test_that("Passing wrong argument", {
 
 test_that("Access all elements", {
     # dim(result) = 7 3 5 2
-    # n_au=7; n_av=5; n_lu=3; n_lv=2; # mutually prime
+    # n_alpha_u=7; n_alpha_v=5; n_lambda_u=3; n_lambda_v=2; # mutually prime
     cnt = 1
-    for(i in 1:n_au){
-        for(j in 1:n_lu){
-            for(k in 1:n_av){
-                for(l in 1:n_lv){
+    for(i in 1:n_alpha_u){
+        for(j in 1:n_lambda_u){
+            for(k in 1:n_alpha_v){
+                for(l in 1:n_lambda_v){
                     expect_equal(get_4Dlist_elem(result,i,j,k,l)[[1]],
                                  result[[cnt]])
                     cnt = cnt + 1
@@ -55,33 +55,33 @@ test_that("Access all elements", {
 
 
 test_that("Error when accessing broundary", {
-    expect_no_error(get_4Dlist_elem(result,n_au,n_lu,n_av,n_lv))
+    expect_no_error(get_4Dlist_elem(result,n_alpha_u,n_lambda_u,n_alpha_v,n_lambda_v))
 
 
     # NOTE: R index starts from 1
-    expect_error(get_4Dlist_elem(result,n_au,n_lu,n_av,0),
+    expect_error(get_4Dlist_elem(result,n_alpha_u,n_lambda_u,n_alpha_v,0),
                  "Invalid index \\(7,3,5,0\\), dim = c\\(7, 3, 5, 2\\)")
 
-    expect_error(get_4Dlist_elem(result,n_au,n_lu,0,n_lv),
+    expect_error(get_4Dlist_elem(result,n_alpha_u,n_lambda_u,0,n_lambda_v),
                  "Invalid index \\(7,3,0,2\\), dim = c\\(7, 3, 5, 2\\)")
 
-    expect_error(get_4Dlist_elem(result,n_au,0,n_av,n_lv),
+    expect_error(get_4Dlist_elem(result,n_alpha_u,0,n_alpha_v,n_lambda_v),
                  "Invalid index \\(7,0,5,2\\), dim = c\\(7, 3, 5, 2\\)")
 
-    expect_error(get_4Dlist_elem(result,0,n_lu,n_av,n_lv),
+    expect_error(get_4Dlist_elem(result,0,n_lambda_u,n_alpha_v,n_lambda_v),
                  "Invalid index \\(0,3,5,2\\), dim = c\\(7, 3, 5, 2\\)")
 
 
-    expect_error(get_4Dlist_elem(result,n_au,n_lu,n_av,n_lv+1),
+    expect_error(get_4Dlist_elem(result,n_alpha_u,n_lambda_u,n_alpha_v,n_lambda_v+1),
                  "Invalid index \\(7,3,5,3\\), dim = c\\(7, 3, 5, 2\\)")
 
-    expect_error(get_4Dlist_elem(result,n_au,n_lu,n_av+1,n_lv),
+    expect_error(get_4Dlist_elem(result,n_alpha_u,n_lambda_u,n_alpha_v+1,n_lambda_v),
                  "Invalid index \\(7,3,6,2\\), dim = c\\(7, 3, 5, 2\\)")
 
-    expect_error(get_4Dlist_elem(result,n_au,n_lu+1,n_av,n_lv),
+    expect_error(get_4Dlist_elem(result,n_alpha_u,n_lambda_u+1,n_alpha_v,n_lambda_v),
                  "Invalid index \\(7,4,5,2\\), dim = c\\(7, 3, 5, 2\\)")
 
-    expect_error(get_4Dlist_elem(result,n_au+1,n_lu,n_av,n_lv),
+    expect_error(get_4Dlist_elem(result,n_alpha_u+1,n_lambda_u,n_alpha_v,n_lambda_v),
                  "Invalid index \\(8,3,5,2\\), dim = c\\(7, 3, 5, 2\\)")
 })
 

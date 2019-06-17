@@ -270,13 +270,13 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
         << ", grid_lv.n_elem" << grid_lv.n_elem;
     }
 
-    int n_lu = grid_lu.n_elem;
-    int n_lv = grid_lv.n_elem;
-    int n_au = grid_au.n_elem;
-    int n_av = grid_av.n_elem;
+    int n_lambda_u = grid_lu.n_elem;
+    int n_lambda_v = grid_lv.n_elem;
+    int n_alpha_u = grid_au.n_elem;
+    int n_alpha_v = grid_av.n_elem;
 
     
-    RcppFourDList four_d_list(n_au, n_lu, n_av, n_lv);
+    RcppFourDList four_d_list(n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v);
 
     // nested-BIC search returns a list that
     // contains (lambda, alpha, bic, selected vector)
@@ -287,10 +287,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     arma::vec oldu;
     arma::vec oldv;
 
-    for(int i = 0; i < n_au; i++){
-        for(int j = 0; j < n_lu; j++){
-            for(int k = 0; k < n_av; k++){
-                for(int m = 0; m < n_lv; m++){
+    for(int i = 0; i < n_alpha_u; i++){
+        for(int j = 0; j < n_lambda_u; j++){
+            for(int k = 0; k < n_alpha_v; k++){
+                for(int m = 0; m < n_lambda_v; m++){
 
                     arma::vec bic_au_grid = set_bic_grid(alpha_u, selection_criterion_alpha_u, i);
                     arma::vec bic_lu_grid = set_bic_grid(lambda_u, selection_criterion_lambda_u, j);
