@@ -115,10 +115,10 @@ public:
         const arma::vec &alpha_v,
         const arma::vec &lambda_u,
         const arma::vec &lambda_v,
-        int bicau,
-        int bicav,
-        int biclu,
-        int biclv,
+        int selection_criterion_alpha_u,  // flags; = 0 means grid, = 01 means BIC search
+        int selection_criterion_alpha_v,
+        int selection_criterion_lambda_u,
+        int selection_criterion_lambda_v,
         int max_bic_iter=5);
 };
 

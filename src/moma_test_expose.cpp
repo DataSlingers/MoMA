@@ -186,10 +186,10 @@ Rcpp::List testnestedBIC(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
-    int bic_search_alpha_u,  // flags; = 0 means grid, = 1 means BIC search
-    int bic_search_alpha_v,
-    int bic_search_lambda_u,
-    int bic_search_lambda_v,
+    int selection_criterion_alpha_u,  // flags; = 0 means grid, = 1 means BIC search
+    int selection_criterion_alpha_v,
+    int selection_criterion_lambda_u,
+    int selection_criterion_lambda_v,
     int k = 1){
 
 
@@ -224,6 +224,6 @@ Rcpp::List testnestedBIC(
               MAX_ITER_inner,
               solver);
     return problem.grid_BIC_mix(alpha_u,alpha_v,lambda_u,lambda_v,
-                        bic_search_alpha_u,bic_search_alpha_v,bic_search_lambda_u,bic_search_lambda_v);
+                        selection_criterion_alpha_u,selection_criterion_alpha_v,selection_criterion_lambda_u,selection_criterion_lambda_v);
     // return problem.select_nestedBIC(alpha_u,alpha_v,lambda_u,lambda_v,5);
 }

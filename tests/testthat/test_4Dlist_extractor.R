@@ -21,10 +21,10 @@ arg_list <- list(
 
 result <- do.call(testnestedBIC,
                   c(arg_list,
-                    list(bic_search_alpha_u=0,  #grid
-                         bic_search_alpha_v=0,  #grid
-                         bic_search_lambda_u=0, #grid
-                         bic_search_lambda_v=0)))  #grid
+                    list(selection_criterion_alpha_u=0,  #grid
+                         selection_criterion_alpha_v=0,  #grid
+                         selection_criterion_lambda_u=0, #grid
+                         selection_criterion_lambda_v=0)))  #grid
 
 test_that("Test 4D List attribute", {
     expect_true(inherits(result, "MoMA_4D_list"))
