@@ -8,8 +8,8 @@ class RcppFourDList{
     Rcpp::List flattened_list;
 
 public:
-    RcppFourDList(int au, int lu, int av, int lv):
-        n_alpha_u(au), n_lambda_u(lu), n_alpha_v(av), n_lambda_v(lv), 
+    RcppFourDList(int n_alpha_u, int n_lambda_u, int n_alpha_v, int n_lambda_v):
+        n_alpha_u(n_alpha_u), n_lambda_u(n_lambda_u), n_alpha_v(n_alpha_v), n_lambda_v(n_lambda_v), 
         flattened_list(n_alpha_u * n_alpha_v * n_lambda_u * n_lambda_v)
     {
             flattened_list.attr("dim") = Rcpp::NumericVector::create(
@@ -17,7 +17,7 @@ public:
     };
  
     int insert(Rcpp::List object, int alpha_u_i, int lambda_u_i, int alpha_v_i, int lambda_v_i){
-        // insert object in the alpha_u_i-th position along the au-axis
+        // insert object in the alpha_u_i-th position along the alpha_u-axis
         // and so on
         if(
             alpha_u_i  < 0 || alpha_u_i >= n_alpha_u ||
