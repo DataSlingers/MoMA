@@ -24,9 +24,9 @@ public:
     }
 
     Rcpp::List search(const arma::vec &y,   // min_{u} || y - u || + ...penalty...
-                        const arma::vec &u,   // start point
-                        const arma::vec &alpha_u,
-                        const arma::vec &lambda_u);
+                      const arma::vec &u,   // start point
+                      const arma::vec &alpha_u,
+                      const arma::vec &lambda_u);
 
 private:
     PR_solver *pr_solver;
