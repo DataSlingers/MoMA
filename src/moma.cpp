@@ -47,6 +47,10 @@ MoMA::MoMA(const arma::mat &i_X, // Pass X_ as a reference to avoid copy
             i_EPS_inner,i_MAX_ITER_inner,i_X.n_cols)
      // const reference must be passed to initializer list
 {
+
+    bicsr_u.bind(&solver_u, &PR_solver::bic);
+    bicsr_v.bind(&solver_v, &PR_solver::bic);
+
     MoMALogger::info("Initializing MoMA object:")
     << " lambda_u " << lambda_u
     << " lambda_v " << lambda_v
@@ -213,4 +217,130 @@ int MoMA::reset(double newlambda_u,double newlambda_v,
     solver_u.reset(newlambda_u,newalpha_u);
     solver_v.reset(newlambda_v,newalpha_v);
     return 0;
+}
+
+const arma::vec &set_greedy_grid(const arma::vec &grid, int want_grid){
+    if (want_grid == 1){ 
+        return grid;
+    }
+    else if (want_grid == 0){
+        return MOMA_EMPTY_GRID_OF_LENGTH1;
+    }
+}
+
+arma::vec set_bic_grid(const arma::vec &grid, int want_bic, int i){
+    if(want_bic == 1){
+        return grid;
+    }
+    else if (want_bic == 0){
+        return grid(i) * arma::ones<arma::vec> (1);
+    }
+}
+
+Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
+    const arma::vec &alpha_v,
+    const arma::vec &lambda_u,
+    const arma::vec &lambda_v,
+    int selection_criterion_alpha_u,  // flags; = 0 means grid, = 01 means BIC search
+    int selection_criterion_alpha_v,
+    int selection_criterion_lambda_u,
+    int selection_criterion_lambda_v,
+    int max_bic_iter){
+    
+    // If alpha_u is selected via grid search, then the variable
+    // grid_au = alpha_u, bic_au_grid = [-1].
+    // If alpha_u is selected via nested BIC search,
+    // then grid_au = [-1], bic_au_grid = alpha_u
+    const arma::vec &grid_lu = set_greedy_grid(lambda_u, !selection_criterion_lambda_u);
+    const arma::vec &grid_lv = set_greedy_grid(lambda_v, !selection_criterion_lambda_v);
+    const arma::vec &grid_au = set_greedy_grid(alpha_u, !selection_criterion_alpha_u);
+    const arma::vec &grid_av = set_greedy_grid(alpha_v, !selection_criterion_alpha_v);
+
+    // Test that if a grid is set to be BIC-search grid, then
+    // the above code should set grid_xx to the vector [-1]
+    if((selection_criterion_alpha_u == 1 && (grid_au.n_elem != 1 || grid_au(0) != -1))
+        || (selection_criterion_alpha_v == 1 && (grid_av.n_elem != 1 || grid_av(0) != -1))
+        || (selection_criterion_lambda_u == 1 && (grid_lu.n_elem != 1 || grid_lu(0) != -1))
+        || (selection_criterion_lambda_v == 1 && (grid_lv.n_elem != 1 || grid_lv(0) != -1)) )
+    {
+        MoMALogger::error("Wrong grid-search grid!")
+        << "grid_lu.n_elem=" << grid_lu.n_elem
+        << ", grid_av.n_elem=" << grid_av.n_elem
+        << ", grid_lu.n_elem" << grid_lu.n_elem
+        << ", grid_lv.n_elem" << grid_lv.n_elem;
+    }
+
+    int n_lambda_u = grid_lu.n_elem;
+    int n_lambda_v = grid_lv.n_elem;
+    int n_alpha_u = grid_au.n_elem;
+    int n_alpha_v = grid_av.n_elem;
+
+    
+    RcppFourDList four_d_list(n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v);
+
+    // nested-BIC search returns a list that
+    // contains (lambda, alpha, bic, selected vector)
+    Rcpp::List u_result;
+    Rcpp::List v_result;
+
+    // to facilitate warm-start
+    arma::vec oldu;
+    arma::vec oldv;
+
+    for(int i = 0; i < n_alpha_u; i++){
+        for(int j = 0; j < n_lambda_u; j++){
+            for(int k = 0; k < n_alpha_v; k++){
+                for(int m = 0; m < n_lambda_v; m++){
+
+                    arma::vec bic_au_grid = set_bic_grid(alpha_u, selection_criterion_alpha_u, i);
+                    arma::vec bic_lu_grid = set_bic_grid(lambda_u, selection_criterion_lambda_u, j);
+                    arma::vec bic_av_grid = set_bic_grid(alpha_v, selection_criterion_alpha_v, k);
+                    arma::vec bic_lv_grid = set_bic_grid(lambda_v, selection_criterion_lambda_v, m);
+
+                    if((selection_criterion_alpha_u == 0 && bic_au_grid.n_elem != 1)
+                        || (selection_criterion_alpha_v == 0 && bic_av_grid.n_elem != 1)
+                        || (selection_criterion_lambda_u == 0 && bic_lu_grid.n_elem != 1)
+                        || (selection_criterion_lambda_v == 0 && bic_lv_grid.n_elem != 1) )
+                    {
+                            MoMALogger::error("Wrong BIC search grid!");
+                    }
+
+                    tol = 1;
+                    iter = 0;
+
+                    // We conduct 2 BIC searches over 2D grids here instead 
+                    // of 4 searches over 1D grids. It's consistent with 
+                    // Genevera's code
+                    while(tol > EPS && iter < MAX_ITER && iter < max_bic_iter){
+                        iter++;
+                        oldu = u;
+                        oldv = v;
+
+                        // choose lambda/alpha_u
+                        MoMALogger::debug("Start u search.");
+                        u_result = bicsr_u.search(X*v, u, bic_au_grid, bic_lu_grid);
+                        u = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
+
+                        MoMALogger::debug("Start v search.");
+                        v_result = bicsr_v.search(X.t()*u, v, bic_av_grid, bic_lv_grid);
+                        v = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
+
+                        tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
+                        MoMALogger::message("Finish BIC search outer loop. (iter, tol) = (") 
+                                    << iter << "," << tol << "), "
+                                    << "(bic_u, bic_v) = (" 
+                                    << (double)u_result["bic"] << "," 
+                                    << (double)v_result["bic"] << ")";
+                    }
+                   
+                    four_d_list.insert(Rcpp::List::create(
+                                Rcpp::Named("u") = u_result,
+                                Rcpp::Named("v") = v_result), i, j, k, m);
+ 
+                }
+            }
+        }
+    }
+
+    return four_d_list.get_list();
 }

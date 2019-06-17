@@ -1,4 +1,6 @@
 # include "moma_prox.h"
+# include "moma_solver.h"
+# include "moma.h"
 
 // [[Rcpp::export]]
 arma::vec test_prox_lasso(const arma::vec &x, double l)
@@ -146,4 +148,80 @@ int test_df_grplasso(const arma::vec &x, const arma::vec &g)
 {
     GrpLasso a(g);
     return a.df(x);
+}
+
+// [[Rcpp::export]]
+double test_BIC( 
+        const arma::vec y, const arma::vec y_est,
+        const std::string &algorithm_string,
+        double i_alpha, const arma::mat &i_Omega,
+        double i_lambda, Rcpp::List prox_arg_list,
+        int dim,
+        double i_EPS=1e-6, int i_MAX_ITER=1e+3)
+{
+        
+    PR_solver solver(
+            algorithm_string,
+            i_alpha, i_Omega,
+            i_lambda, prox_arg_list,
+            i_EPS, i_MAX_ITER, dim);
+
+    return solver.bic(y, y_est);
+}
+
+// This function solves a squence of lambda's and alpha's
+// [[Rcpp::export]]
+Rcpp::List testnestedBIC(
+    const arma::mat &X,    // We should not change any variable in R, so const ref
+    const arma::vec &alpha_u,
+    const arma::vec &alpha_v,
+    const arma::mat &Omega_u, // Default values for these matrices should be set in R
+    const arma::mat &Omega_v,
+    const arma::vec &lambda_u,
+    const arma::vec &lambda_v,
+    const Rcpp::List &prox_arg_list_u,
+    const Rcpp::List &prox_arg_list_v,
+    double EPS,
+    long MAX_ITER,
+    double EPS_inner,
+    long MAX_ITER_inner,
+    std::string solver,
+    int selection_criterion_alpha_u,  // flags; = 0 means grid, = 1 means BIC search
+    int selection_criterion_alpha_v,
+    int selection_criterion_lambda_u,
+    int selection_criterion_lambda_v,
+    int k = 1){
+
+
+    int n_lambda_u = lambda_u.n_elem;
+    int n_lambda_v = lambda_v.n_elem;
+    int n_alpha_u = alpha_u.n_elem;
+    int n_alpha_v = alpha_v.n_elem;
+
+    if(n_lambda_v == 0 || n_lambda_u == 0 || n_alpha_u == 0 || n_alpha_v == 0){
+        MoMALogger::error("Please specify all four parameters.");
+    }
+
+    // NOTE: arguments should be listed
+    // in the exact order of MoMA constructor
+    MoMA problem(X,
+              /* sparsity */
+              lambda_u(0),
+              lambda_v(0),
+              prox_arg_list_u,
+              prox_arg_list_v,
+              /* smoothness */
+              alpha_u(0),
+              alpha_v(0),
+              Omega_u,
+              Omega_v,
+              /* algorithm parameters */
+              EPS,
+              MAX_ITER,
+              EPS_inner,
+              MAX_ITER_inner,
+              solver);
+    return problem.grid_BIC_mix(alpha_u,alpha_v,lambda_u,lambda_v,
+                        selection_criterion_alpha_u,selection_criterion_alpha_v,selection_criterion_lambda_u,selection_criterion_lambda_v);
+    // return problem.select_nestedBIC(alpha_u,alpha_v,lambda_u,lambda_v,5);
 }

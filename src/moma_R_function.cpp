@@ -40,12 +40,12 @@ Rcpp::List cpp_sfpca(
               MAX_ITER_inner,
               solver);
 
-    int n_lu = lambda_u.n_elem;
-    int n_lv = lambda_v.n_elem;
-    int n_au = alpha_u.n_elem;
-    int n_av = alpha_v.n_elem;
+    int n_lambda_u = lambda_u.n_elem;
+    int n_lambda_v = lambda_v.n_elem;
+    int n_alpha_u = alpha_u.n_elem;
+    int n_alpha_v = alpha_v.n_elem;
 
-    int n_more_than_one = int(n_lv > 1) + int(n_lu > 1) + int(n_au > 1) + int(n_av > 1);
+    int n_more_than_one = int(n_lambda_v > 1) + int(n_lambda_u > 1) + int(n_alpha_u > 1) + int(n_alpha_v > 1);
     if(n_more_than_one > 0){
         MoMALogger::error("We don't allow a range of parameters in finding a rank-k svd.");
     }
@@ -95,21 +95,21 @@ Rcpp::List cpp_sfpca_grid(
     int k = 1){
 
     // We only allow changing two parameters
-    int n_lu = lambda_u.n_elem;
-    int n_lv = lambda_v.n_elem;
-    int n_au = alpha_u.n_elem;
-    int n_av = alpha_v.n_elem;
+    int n_lambda_u = lambda_u.n_elem;
+    int n_lambda_v = lambda_v.n_elem;
+    int n_alpha_u = alpha_u.n_elem;
+    int n_alpha_v = alpha_v.n_elem;
 
-    int n_more_than_one = int(n_lv > 1) + int(n_lu > 1) + int(n_au > 1) + int(n_av > 1);
+    int n_more_than_one = int(n_lambda_v > 1) + int(n_lambda_u > 1) + int(n_alpha_u > 1) + int(n_alpha_v > 1);
     if(n_more_than_one > 2){
         MoMALogger::error("We only allow changing two parameters.");
     }
 
-    if(n_lv == 0 || n_lu == 0 || n_au == 0 || n_av == 0){
+    if(n_lambda_v == 0 || n_lambda_u == 0 || n_alpha_u == 0 || n_alpha_v == 0){
         MoMALogger::error("Please specify all four parameters.");
     }
 
-    int n_total = n_lv * n_lu * n_au * n_av;
+    int n_total = n_lambda_v * n_lambda_u * n_alpha_u * n_alpha_v;
 
     // NOTE: arguments should be listed
     // in the exact order of MoMA constructor
@@ -137,10 +137,10 @@ Rcpp::List cpp_sfpca_grid(
     arma::vec d(n_total);
 
     int problem_id = 0;
-    for(int i = 0; i < n_lu; i++){
-        for(int j = 0; j < n_lv; j++){
-            for(int k = 0; k < n_au; k++){
-                for(int m = 0; m < n_av; m++){
+    for(int i = 0; i < n_lambda_u; i++){
+        for(int j = 0; j < n_lambda_v; j++){
+            for(int k = 0; k < n_alpha_u; k++){
+                for(int m = 0; m < n_alpha_v; m++){
                     MoMALogger::info("Setting up model:")
                                 << " lambda_u " << lambda_u(i)
                                 << " lambda_v " << lambda_v(j)
@@ -194,21 +194,21 @@ Rcpp::List cpp_sfpca_nestedBIC(
     int k = 1){
 
     // We only allow changing two parameters
-    int n_lu = lambda_u.n_elem;
-    int n_lv = lambda_v.n_elem;
-    int n_au = alpha_u.n_elem;
-    int n_av = alpha_v.n_elem;
+    int n_lambda_u = lambda_u.n_elem;
+    int n_lambda_v = lambda_v.n_elem;
+    int n_alpha_u = alpha_u.n_elem;
+    int n_alpha_v = alpha_v.n_elem;
 
-    int n_more_than_one = int(n_lv > 1) + int(n_lu > 1) + int(n_au > 1) + int(n_av > 1);
+    int n_more_than_one = int(n_lambda_v > 1) + int(n_lambda_u > 1) + int(n_alpha_u > 1) + int(n_alpha_v > 1);
     if(n_more_than_one > 2){
         MoMALogger::error("We only allow changing two parameters.");
     }
 
-    if(n_lv == 0 || n_lu == 0 || n_au == 0 || n_av == 0){
+    if(n_lambda_v == 0 || n_lambda_u == 0 || n_alpha_u == 0 || n_alpha_v == 0){
         MoMALogger::error("Please specify all four parameters.");
     }
 
-    int n_total = n_lv * n_lu * n_au * n_av;
+    int n_total = n_lambda_v * n_lambda_u * n_alpha_u * n_alpha_v;
 
     // NOTE: arguments should be listed
     // in the exact order of MoMA constructor
