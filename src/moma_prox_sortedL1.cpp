@@ -26,7 +26,7 @@
 // http://statweb.stanford.edu/~candes/SortedL1/
 
 int evaluateProx(const arma::vec &y, const arma::vec &lambda, arma::vec &x, int n, const arma::uvec &order)
-{  
+{
     double d;
 
     arma::vec s(n);
@@ -34,38 +34,39 @@ int evaluateProx(const arma::vec &y, const arma::vec &lambda, arma::vec &x, int 
     arma::uvec idx_i(n);
     arma::uvec idx_j(n);
 
-    int  i,j,k;
+    int i, j, k;
 
     k = 0;
     for (i = 0; i < n; i++)
     {
         idx_i(k) = i;
         idx_j(k) = i;
-        s(k)     = y(i) - lambda(i);
-        w(k)     = s(k);
-        
-        while ((k > 0) && (w[k-1] <= w(k)))
-        {  
-            k --;
+        s(k) = y(i) - lambda(i);
+        w(k) = s(k);
+
+        while ((k > 0) && (w[k - 1] <= w(k)))
+        {
+            k--;
             idx_j(k) = i;
-            s(k)    += s[k+1];
-            w(k)     = s(k) / (i - idx_i(k) + 1);
+            s(k) += s[k + 1];
+            w(k) = s(k) / (i - idx_i(k) + 1);
         }
-        
+
         k++;
     }
-    
+
     for (j = 0; j < k; j++)
-    {  
-        d = w(j); 
-        if (d < 0){
+    {
+        d = w(j);
+        if (d < 0)
+        {
             d = 0;
-        } 
+        }
         for (i = idx_i(j); i <= idx_j(j); i++)
-        {  
+        {
             x[order(i)] = d;
         }
     }
-   
-   return 0;
+
+    return 0;
 }
