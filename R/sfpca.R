@@ -2,10 +2,11 @@ sfpca <- function(X,
                   # sparsity
                   P_v = "none",
                   P_u = "none",
-                  lambda_v = 0,  # a vector or scalar, same for lambda_u, alpha_u/v
+                  lambda_v = 0,
+                  # a vector or scalar, same for lambda_u, alpha_u/v
                   lambda_u = 0,
-                  gamma_v=3,
-                  gamma_u=3,
+                  gamma_v = 3,
+                  gamma_u = 3,
                   # non-negativity
                   nonneg_u = FALSE,
                   nonneg_v = FALSE,
@@ -13,7 +14,8 @@ sfpca <- function(X,
                   group_u = MOMA_EMPTYVEC,
                   group_v = MOMA_EMPTYVEC,
                   # sparse fused lasso
-                  lambda2_u = 0,    # penalty on the abs value of parameters
+                  lambda2_u = 0,
+                  # penalty on the abs value of parameters
                   lambda2_v = 0,
                   # unordered fusion
                   w_u = MOMA_EMPTYMAT,
@@ -38,8 +40,8 @@ sfpca <- function(X,
                   EPS_inner = 1e-10,
                   MAX_ITER_inner = 1e+5,
                   solver = "ista",
-                  k = 1){
-    if (!is.null(X) && !is.matrix(X)){
+                  k = 1) {
+    if (!is.null(X) && !is.matrix(X)) {
         moma_error("X must be a matrix.")
     }
     n <- dim(X)[1]
@@ -55,8 +57,14 @@ sfpca <- function(X,
     lambda_u <- as.vector(lambda_u)
     lambda_v <- as.vector(lambda_v)
 
-    Omega_u <- if(is.null(Omega_u)) diag(dim(X)[1]) else Omega_u
-    Omega_v <- if(is.null(Omega_v)) diag(dim(X)[2]) else Omega_v
+    Omega_u <- if (is.null(Omega_u))
+        diag(dim(X)[1])
+    else
+        Omega_u
+    Omega_v <- if (is.null(Omega_v))
+        diag(dim(X)[2])
+    else
+        Omega_v
 
     prox_arg_list_u <- list(
         w = w_u,
@@ -88,14 +96,23 @@ sfpca <- function(X,
         nonneg = nonneg_v,
         group = group_v
     )
-    return(cpp_sfpca(X = X,
-                     alpha_u = alpha_u,alpha_v = alpha_v,
-                     Omega_u = Omega_u,Omega_v = Omega_v,
-                     lambda_u = lambda_u,lambda_v = lambda_v,
-                     prox_arg_list_u = prox_arg_list_u,
-                     prox_arg_list_v = prox_arg_list_v,
-                     EPS = EPS,MAX_ITER = MAX_ITER,
-                     EPS_inner = EPS_inner,MAX_ITER_inner = MAX_ITER_inner,
-                     solver = solver,
-                     k = k))
+    return(
+        cpp_sfpca(
+            X = X,
+            alpha_u = alpha_u,
+            alpha_v = alpha_v,
+            Omega_u = Omega_u,
+            Omega_v = Omega_v,
+            lambda_u = lambda_u,
+            lambda_v = lambda_v,
+            prox_arg_list_u = prox_arg_list_u,
+            prox_arg_list_v = prox_arg_list_v,
+            EPS = EPS,
+            MAX_ITER = MAX_ITER,
+            EPS_inner = EPS_inner,
+            MAX_ITER_inner = MAX_ITER_inner,
+            solver = solver,
+            k = k
+        )
+    )
 }
