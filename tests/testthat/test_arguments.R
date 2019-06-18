@@ -33,7 +33,7 @@ test_that("Test for arguments names", {
     }
 })
 
-test_that("Prompt errors encountering inappropriate arguments", {
+test_that("Prompt errors for wrong prox arguments", {
     old_logger_level <- MoMA::moma_logger_level()
     MoMA::moma_logger_level("DEBUG")
     on.exit(MoMA::moma_logger_level(old_logger_level))
@@ -246,4 +246,47 @@ test_that("Data matrix must be complete", {
     X[1,4] <- NaN
     expect_error(moma_svd(X = X),
                   "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+})
+
+test_that("Negative penalty", {
+    old_logger_level <- MoMA::moma_logger_level()
+    MoMA::moma_logger_level("DEBUG")
+    on.exit(MoMA::moma_logger_level(old_logger_level))
+
+
+    # Negative penalty
+    set.seed(112)
+    X <- matrix(runif(12),3,4)
+    expect_error(moma_svd(X = X, lambda_u=c(0,1,2,3,4,-1)),
+                 paste0("All penalty levels (",
+                        sQuote("lambda_u"),", ",
+                        sQuote("lambda_v"), ", ",
+                        sQuote("alpha_u"), ", ",
+                        sQuote("alpha_v"),") must be non-negative numeric. "),fixed=TRUE)
+
+
+    expect_error(moma_svd(X = X, lambda_v=c(0,1,2,3,4,-1)),
+                 paste0("All penalty levels (",
+                        sQuote("lambda_u"),", ",
+                        sQuote("lambda_v"), ", ",
+                        sQuote("alpha_u"), ", ",
+                        sQuote("alpha_v"),") must be non-negative numeric. "),fixed=TRUE)
+
+
+    # Prompt error when passing a matrix
+    expect_error(moma_svd(X = X, lambda_v=matrix(1:12,3)),
+                 paste0("All penalty levels (",
+                        sQuote("lambda_u"),", ",
+                        sQuote("lambda_v"), ", ",
+                        sQuote("alpha_u"), ", ",
+                        sQuote("alpha_v"),") must be numeric."),fixed=TRUE)
+
+
+
+    expect_no_error(moma_svd(X = X, lambda_v=1,lambda_u=1),
+                 paste0("All penalty levels (",
+                        sQuote("lambda_u"),", ",
+                        sQuote("lambda_v"), ", ",
+                        sQuote("alpha_u"), ", ",
+                        sQuote("alpha_v"),") must be non-negative numeric."),fixed=TRUE)
 })

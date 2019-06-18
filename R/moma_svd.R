@@ -68,11 +68,23 @@ moma_svd <- function(
                     k = 1,                                                          # number of pairs of singular vecters
                     select = c("gridsearch","nestedBIC")){
 
+    if(!inherits(alpha_u,c("numeric","integer")) ||
+       !inherits(alpha_v,c("numeric","integer")) ||
+       !inherits(lambda_u,c("numeric","integer")) ||
+       !inherits(lambda_v,c("numeric","integer"))){
+            moma_error(paste0("All penalty levels (",
+                    sQuote("lambda_u"),", ",
+                    sQuote("lambda_v"),", ",
+                    sQuote("alpha_u"),", ",
+                    sQuote("alpha_v"),
+                    ") must be numeric."))
+       }
+
     select <- match.arg(select)
     all_para <- c(alpha_u,alpha_v,lambda_u,lambda_v)
 
     # verify all alphas and lambdas are positive numbers
-    if(sum(all_para < 0 || !is.finite(all_para)) > 0){
+    if(sum(all_para < 0) > 0 || sum(!is.finite(all_para)) > 0){
         moma_error("All penalty levels (",
                     sQuote("lambda_u"),", ",
                     sQuote("lambda_v"),", ",
@@ -89,7 +101,7 @@ moma_svd <- function(
 
     # update argument lists
     # GP loop argument
-    df_arg_list <- list(
+    algo_settings_list <- list(
                         X = X,
                         lambda_u = lambda_u,
                         lambda_v = lambda_v,
@@ -136,8 +148,8 @@ moma_svd <- function(
 
     # Pack all argument into a list
     # First we check the smoothness term argument.
-    df_arg_list <- c(
-                df_arg_list,
+    algo_settings_list <- c(
+                algo_settings_list,
                 list(
                     Omega_u = check_omega(Omega_u,alpha_u,n),
                     Omega_v = check_omega(Omega_v,alpha_v,p),
@@ -146,13 +158,13 @@ moma_svd <- function(
 
     if(is_multiple_para){
         if(select == "gridsearch"){
-            a <- do.call("cpp_sfpca_grid",df_arg_list)
+            a <- do.call("cpp_sfpca_grid",algo_settings_list)
             class(a) <- "moma_svd_grid"
             return(a)
         }
         else if(select == "nestedBIC"){
-            a <- do.call("cpp_sfpca_nestedBIC",df_arg_list)
-            class(a) <- "moma_svc_nestedBIC"
+            a <- do.call("cpp_sfpca_nestedBIC",algo_settings_list)
+            class(a) <- "moma_svd_nestedBIC"
             return(a)
         }
         else{
@@ -160,6 +172,6 @@ moma_svd <- function(
         }
     }
     else{
-        return(do.call("cpp_sfpca",df_arg_list))
+        return(do.call("cpp_sfpca",algo_settings_list))
     }
 }
