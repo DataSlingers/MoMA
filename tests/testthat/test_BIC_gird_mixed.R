@@ -187,7 +187,7 @@ test_that("BIC search returns correct-sized grid: one grid", {
 
 
 test_that("BIC search returns correct-sized grid: all BIC search", {
-    # Case 5: one grid requests, both on u side, and two BIC
+    # Case 6: one grid requests, both on u side, and two BIC
     result4 <- do.call(
         testnestedBIC,
         c(
