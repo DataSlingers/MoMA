@@ -41,44 +41,47 @@
 // "A dynamic programming algorithm for the fused lasso and l 0-segmentation."
 // Journal of Computational and Graphical Statistics 22.2 (2013): 246-260.
 
-struct MsgElt {
-  // the location of the knot
-  double x_;
-  // the sign variable that tells us
-  // whether this was a left or right end-point of the
-  // segment
-  bool sgn_;
-  // a delta which can be used to reconstruct the function
-  // if we move from the first knot to the last or from
-  // the last to the first
-  double lin_;
-  double quad_;
+struct MsgElt
+{
+    // the location of the knot
+    double x_;
+    // the sign variable that tells us
+    // whether this was a left or right end-point of the
+    // segment
+    bool sgn_;
+    // a delta which can be used to reconstruct the function
+    // if we move from the first knot to the last or from
+    // the last to the first
+    double lin_;
+    double quad_;
 };
 
-class Msg {
- public:
-  std::vector<MsgElt> buf_;
-  arma::vec back_pointers;
-  int start_idx_;
-  int len_;
+class Msg
+{
+  public:
+    std::vector<MsgElt> buf_;
+    arma::vec back_pointers;
+    int start_idx_;
+    int len_;
 
-  MsgElt init_knot_;
-  MsgElt end_knot_;
+    MsgElt init_knot_;
+    MsgElt end_knot_;
 
-  void InitMsg(int n, int init_sz, double lin, double quad, double lambda2);
-  void UpdMsg(double lambda2, double lin, double quad, int bp_idx);
-  void UpdMsgOpt(double lambda2, double lin, double quad, int bp_idx);
-  double Argmax(double *max_val);
+    void InitMsg(int n, int init_sz, double lin, double quad, double lambda2);
+    void UpdMsg(double lambda2, double lin, double quad, int bp_idx);
+    void UpdMsgOpt(double lambda2, double lin, double quad, int bp_idx);
+    double Argmax(double *max_val);
 
-  // This data structure supports prepend and append;
-  // To implement this, first allocate a long array,
-  // then start filling data in the middle and extend to both ends. Shift
-  // the space filled with data towards the center of the array periodically
-  void ShiftMsg(int check_freq);
-  arma::vec BackTrace(int seq_len, double last_msg_max);
+    // This data structure supports prepend and append;
+    // To implement this, first allocate a long array,
+    // then start filling data in the middle and extend to both ends. Shift
+    // the space filled with data towards the center of the array periodically
+    void ShiftMsg(int check_freq);
+    arma::vec BackTrace(int seq_len, double last_msg_max);
 };
 
-arma::vec myflsadp(const arma::vec &x, double lambda2,
+arma::vec myflsadp(const arma::vec &x,
+                   double lambda2,
                    int init_buf_sz = MOMA_FUSEDLASSODP_BUFFERSIZE);
 
 #endif  // MOMA_PROX_FLSADP
