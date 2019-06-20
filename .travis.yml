@@ -12,7 +12,7 @@ os:
 osx_image: xcode9
 
 packages:
-  clang-format
+  clang-format-5.0
 
 r_packages:
   - Rcpp
