@@ -30,4 +30,4 @@ else
 fi
 
 find ./src -type f -name '*.h' -o -name '*.cpp' \
-| xargs -I{} -P ${NPROC} ${CLANG_FORMAT} -i -style=Google {}
+| xargs -I{} -P ${NPROC} ${CLANG_FORMAT} -i -style=file {}
