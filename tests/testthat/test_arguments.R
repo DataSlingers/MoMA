@@ -9,15 +9,15 @@ test_that("Test for arguments names", {
     # Collect all the arguments
     test_args <- list()
 
-    for(fun in c(lasso,
-                 scad,
-                 mcp,
-                 fusedlasso,
-                 l1tf,
-                 slope
-                 )){
+    for (fun in c(
+        lasso,
+        scad,
+        mcp,
+        fusedlasso,
+        l1tf,
+        slope
+    )) {
         test_args <- c(test_args, names(fun()))
-
     }
 
     args <- names(grplasso(g = factor(rep(1:10))))
@@ -27,9 +27,9 @@ test_that("Test for arguments names", {
     test_args <- c(test_args, args)
 
     # Test
-    for(arg in test_args){
-        expect_true(paste0(arg,"_u") %in% correct_args)
-        expect_true(paste0(arg,"_v") %in% correct_args)
+    for (arg in test_args) {
+        expect_true(paste0(arg, "_u") %in% correct_args)
+        expect_true(paste0(arg, "_v") %in% correct_args)
     }
 })
 
@@ -40,45 +40,70 @@ test_that("Prompt errors for wrong prox arguments", {
 
 
     # Wrong non-convexity arguments
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          u_sparsity=scad(1),lambda_u = 3),
-                 paste0("Non-convexity parameter of SCAD (",sQuote("gamma"),") must be larger than 2."),fixed=TRUE)
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          u_sparsity=mcp(0.9),lambda_u = 3),
-                 paste0("Non-convexity parameter of MCP (",sQuote("gamma"),") must be larger than 1."),fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        u_sparsity = scad(1), lambda_u = 3
+    ),
+    paste0("Non-convexity parameter of SCAD (", sQuote("gamma"), ") must be larger than 2."),
+    fixed = TRUE
+    )
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        u_sparsity = mcp(0.9), lambda_u = 3
+    ),
+    paste0("Non-convexity parameter of MCP (", sQuote("gamma"), ") must be larger than 1."),
+    fixed = TRUE
+    )
 
 
     # Wrong grouping dimension in group lasso
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          u_sparsity=grplasso(factor(1)),lambda_u = 3),
-                 "Wrong dimension: length(group) != dim(x).",fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        u_sparsity = grplasso(factor(1)), lambda_u = 3
+    ),
+    "Wrong dimension: length(group) != dim(x).",
+    fixed = TRUE
+    )
     expect_error(grplasso(matrix(1)),
-                 "Please provide a vector as an indicator of grouping. (Called from grplasso)",fixed=TRUE)
+        "Please provide a vector as an indicator of grouping. (Called from grplasso)",
+        fixed = TRUE
+    )
 
 
     # Wrong weight matrix dimension in cluster penalty
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          u_sparsity=cluster(matrix(1)),lambda_u = 3),
-                 "Wrong dimension: dim(weight matrix) != dim(x).",fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        u_sparsity = cluster(matrix(1)), lambda_u = 3
+    ),
+    "Wrong dimension: dim(weight matrix) != dim(x).",
+    fixed = TRUE
+    )
 
 
     # Omega has wrong dimension
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          Omega_u = matrix(c(1,2),1,2),alpha_u=2),
-                 "Omega shoud be a square matrix: nrows = 1, ncols = 2 (Called from check_omega)",fixed=TRUE)
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          Omega_u = matrix(c(1),1),alpha_u=2),
-                 "Omega shoud be a compatible matrix. It should be of 3x3, but is actually 1x1 (Called from check_omega)",fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        Omega_u = matrix(c(1, 2), 1, 2), alpha_u = 2
+    ),
+    "Omega shoud be a square matrix: nrows = 1, ncols = 2 (Called from check_omega)",
+    fixed = TRUE
+    )
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        Omega_u = matrix(c(1), 1), alpha_u = 2
+    ),
+    "Omega shoud be a compatible matrix. It should be of 3x3, but is actually 1x1 (Called from check_omega)",
+    fixed = TRUE
+    )
 
 
     # Prompt errors when users require rank-k svd and cross validation
-    expect_error(moma_svd(matrix(runif(12),3,4),lambda_u=c(1,2,3),k=2),
-                 "We don't support a range of parameters in finding a rank-k svd (Called from moma_svd)",fixed=TRUE)
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                          lambda_u=c(1,2,3),
-                          lambda_v = seq(10),
-                          alpha_u = seq(10)),
-                 "We only allow changing two parameters.",fixed=TRUE)
+    expect_error(moma_svd(matrix(runif(12), 3, 4), lambda_u = c(1, 2, 3), k = 2),
+        "We don't support a range of parameters in finding a rank-k svd (Called from moma_svd)",
+        fixed = TRUE
+    )
+    expect_error(moma_svd(matrix(runif(12), 3, 4),
+        lambda_u = c(1, 2, 3),
+        lambda_v = seq(10),
+        alpha_u = seq(10)
+    ),
+    "We only allow changing two parameters.",
+    fixed = TRUE
+    )
 })
 
 
@@ -87,112 +112,192 @@ test_that("Correct prox match", {
     MoMA::moma_logger_level("DEBUG")
     on.exit(MoMA::moma_logger_level(old_logger_level))
 
-    expect_output(moma_svd(matrix(runif(12),3,4)),
-                  "Initializing null proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4)),
+        "Initializing null proximal operator object"
+    )
 
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=lasso(),lambda_u = 3),
-                  "Initializing Lasso proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = lasso(), lambda_u = 3
+        ),
+        "Initializing Lasso proximal operator object"
+    )
 
     # SLOPE
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=slope(),lambda_u = 3),
-                  "P_u SLOPE")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=slope(),lambda_u = 3),
-                  "Initializing SLOPE proximal operator object")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           v_sparsity=slope(),lambda_u = 3),
-                  "P_v SLOPE")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           v_sparsity=slope()),
-                  "Initializing SLOPE proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = slope(), lambda_u = 3
+        ),
+        "P_u SLOPE"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = slope(), lambda_u = 3
+        ),
+        "Initializing SLOPE proximal operator object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            v_sparsity = slope(), lambda_u = 3
+        ),
+        "P_v SLOPE"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            v_sparsity = slope()
+        ),
+        "Initializing SLOPE proximal operator object"
+    )
 
     # lasso
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=lasso(),lambda_u = 3),
-                  "Initializing Lasso proximal operator object")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=lasso(TRUE),lambda_u = 3),
-                  "Initializing non-negative Lasso proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = lasso(), lambda_u = 3
+        ),
+        "Initializing Lasso proximal operator object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = lasso(TRUE), lambda_u = 3
+        ),
+        "Initializing non-negative Lasso proximal operator object"
+    )
 
 
     # scad
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=scad(),lambda_u = 3),
-                  "Initializing SCAD proximal operator object")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=scad(non_negative=TRUE),lambda_u = 3),
-                  "Initializing non-negative SCAD proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = scad(), lambda_u = 3
+        ),
+        "Initializing SCAD proximal operator object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = scad(non_negative = TRUE), lambda_u = 3
+        ),
+        "Initializing non-negative SCAD proximal operator object"
+    )
 
 
     # mcp
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=mcp(),lambda_u = 3),
-                  "Initializing MCP proximal operator object")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=mcp(non_negative=TRUE),lambda_u = 3),
-                  "Initializing non-negative MCP proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = mcp(), lambda_u = 3
+        ),
+        "Initializing MCP proximal operator object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = mcp(non_negative = TRUE), lambda_u = 3
+        ),
+        "Initializing non-negative MCP proximal operator object"
+    )
 
 
     # group
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                          u_sparsity=grplasso(factor(seq(3))),lambda_u = 3),
-                 "Initializing group lasso proximal operator object")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=grplasso(factor(seq(3)),non_negative=TRUE),lambda_u = 3),
-                  "Initializing non-negative group lasso proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = grplasso(factor(seq(3))), lambda_u = 3
+        ),
+        "Initializing group lasso proximal operator object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = grplasso(factor(seq(3)), non_negative = TRUE), lambda_u = 3
+        ),
+        "Initializing non-negative group lasso proximal operator object"
+    )
 
 
     # L1 linear trend filtering
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=l1tf(),lambda_u = 3),
-                  "Initializing a L1 linear trend filtering proximal operator object of degree 1")
-    expect_output(moma_svd(matrix(runif(100),10,10),
-                           u_sparsity=l1tf(l1tf_k = 2),lambda_u = 3),
-                  "Initializing a L1 linear trend filtering proximal operator object of degree 2")
-    expect_error(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=l1tf(l1tf_k = 2),lambda_u = 3),
-                  "A difference matrix should have more columns.")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = l1tf(), lambda_u = 3
+        ),
+        "Initializing a L1 linear trend filtering proximal operator object of degree 1"
+    )
+    expect_output(
+        moma_svd(matrix(runif(100), 10, 10),
+            u_sparsity = l1tf(l1tf_k = 2), lambda_u = 3
+        ),
+        "Initializing a L1 linear trend filtering proximal operator object of degree 2"
+    )
+    expect_error(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = l1tf(l1tf_k = 2), lambda_u = 3
+        ),
+        "A difference matrix should have more columns."
+    )
 
     # sparse fused lasso
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=spfusedlasso(lambda2=3),lambda_u = 3),
-                  "Initializing a sparse fused lasso proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = spfusedlasso(lambda2 = 3), lambda_u = 3
+        ),
+        "Initializing a sparse fused lasso proximal operator object"
+    )
     # fused lasso
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=fusedlasso(),lambda_u = 3),
-                  "Initializing a ordered fusion lasso proximal operator object")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=fusedlasso(),lambda_u = 3),
-                  "P_u ORDEREDFUSED P_v NONE")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           v_sparsity=fusedlasso(),lambda_u = 3),
-                  "P_u NONE P_v ORDEREDFUSED")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = fusedlasso(), lambda_u = 3
+        ),
+        "Initializing a ordered fusion lasso proximal operator object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = fusedlasso(), lambda_u = 3
+        ),
+        "P_u ORDEREDFUSED P_v NONE"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            v_sparsity = fusedlasso(), lambda_u = 3
+        ),
+        "P_u NONE P_v ORDEREDFUSED"
+    )
 
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
-                  "P_u ORDEREDFUSEDDP P_v NONE")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=fusedlasso(algo="dp"),
-                           v_sparsity=fusedlasso(),
-                           lambda_u = 3),
-                  "P_u ORDEREDFUSEDDP P_v ORDEREDFUSED")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
-                  "P_u ORDEREDFUSEDDP P_v NONE")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = fusedlasso(algo = "dp"), lambda_u = 3
+        ),
+        "P_u ORDEREDFUSEDDP P_v NONE"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = fusedlasso(algo = "dp"),
+            v_sparsity = fusedlasso(),
+            lambda_u = 3
+        ),
+        "P_u ORDEREDFUSEDDP P_v ORDEREDFUSED"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = fusedlasso(algo = "dp"), lambda_u = 3
+        ),
+        "P_u ORDEREDFUSEDDP P_v NONE"
+    )
 
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
-                  "Initializing a ordered fusion lasso proximal operator object \\(DP\\)")
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           v_sparsity=fusedlasso(algo="dp"),lambda_u = 3),
-                  "Initializing a ordered fusion lasso proximal operator object \\(DP\\)")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = fusedlasso(algo = "dp"), lambda_u = 3
+        ),
+        "Initializing a ordered fusion lasso proximal operator object \\(DP\\)"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            v_sparsity = fusedlasso(algo = "dp"), lambda_u = 3
+        ),
+        "Initializing a ordered fusion lasso proximal operator object \\(DP\\)"
+    )
 
     # cluster penalty
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                          u_sparsity=cluster(diag(3)),lambda_u = 3),
-                 "Initializing a fusion lasso proximal operator object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = cluster(diag(3)), lambda_u = 3
+        ),
+        "Initializing a fusion lasso proximal operator object"
+    )
 })
 
 test_that("Correct algorithm match", {
@@ -200,29 +305,47 @@ test_that("Correct algorithm match", {
     MoMA::moma_logger_level("DEBUG")
 
 
-    expect_output(moma_svd(matrix(runif(12),3,4),solver = "ista"),
-                  "Initializing a ISTA solver")
-    expect_output(moma_svd(matrix(runif(12),3,4),solver = "fista"),
-                  "Initializing a FISTA solver")
-    expect_output(moma_svd(matrix(runif(12),3,4),solver = "onestepista"),
-                  "Initializing an one-step ISTA solver")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4), solver = "ista"),
+        "Initializing a ISTA solver"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4), solver = "fista"),
+        "Initializing a FISTA solver"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4), solver = "onestepista"),
+        "Initializing an one-step ISTA solver"
+    )
 
 
-    expect_output(moma_svd(matrix(runif(12),3,4),solver = "ista"),
-                  "Releasing a ISTA object")
-    expect_output(moma_svd(matrix(runif(12),3,4),solver = "fista"),
-                  "Releasing a FISTA object")
-    expect_output(moma_svd(matrix(runif(12),3,4),solver = "onestepista"),
-                  "Releasing a OneStepISTA object")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4), solver = "ista"),
+        "Releasing a ISTA object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4), solver = "fista"),
+        "Releasing a FISTA object"
+    )
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4), solver = "onestepista"),
+        "Releasing a OneStepISTA object"
+    )
 
 
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=cluster(diag(3),ADMM=TRUE),lambda_u = 3),
-                  "Running ADMM")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = cluster(diag(3), ADMM = TRUE), lambda_u = 3
+        ),
+        "Running ADMM"
+    )
 
-    expect_output(moma_svd(matrix(runif(12),3,4),
-                           u_sparsity=cluster(diag(3)),lambda_u = 3),
-                  "Running AMA")
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = cluster(diag(3)), lambda_u = 3
+        ),
+        "Running AMA"
+    )
 
     on.exit(MoMA::moma_logger_level(old_logger_level))
 })
@@ -232,20 +355,26 @@ test_that("Data matrix must be complete", {
     MoMA::moma_logger_level("DEBUG")
     on.exit(MoMA::moma_logger_level(old_logger_level))
 
-    X <- matrix(runif(12),3,4)
-    X[2,1] <- NA
+    X <- matrix(runif(12), 3, 4)
+    X[2, 1] <- NA
     expect_error(moma_svd(X = X),
-                  "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+        "X must not have NaN, NA, or Inf. (Called from moma_svd)",
+        fixed = TRUE
+    )
 
-    X = matrix(runif(12),3,4)
-    X[3,2] <- Inf
+    X <- matrix(runif(12), 3, 4)
+    X[3, 2] <- Inf
     expect_error(moma_svd(X = X),
-                  "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+        "X must not have NaN, NA, or Inf. (Called from moma_svd)",
+        fixed = TRUE
+    )
 
-    X = matrix(runif(12),3,4)
-    X[1,4] <- NaN
+    X <- matrix(runif(12), 3, 4)
+    X[1, 4] <- NaN
     expect_error(moma_svd(X = X),
-                  "X must not have NaN, NA, or Inf. (Called from moma_svd)",fixed=TRUE)
+        "X must not have NaN, NA, or Inf. (Called from moma_svd)",
+        fixed = TRUE
+    )
 })
 
 test_that("Negative penalty", {
@@ -256,37 +385,53 @@ test_that("Negative penalty", {
 
     # Negative penalty
     set.seed(112)
-    X <- matrix(runif(12),3,4)
-    expect_error(moma_svd(X = X, lambda_u=c(0,1,2,3,4,-1)),
-                 paste0("All penalty levels (",
-                        sQuote("lambda_u"),", ",
-                        sQuote("lambda_v"), ", ",
-                        sQuote("alpha_u"), ", ",
-                        sQuote("alpha_v"),") must be non-negative numeric. "),fixed=TRUE)
+    X <- matrix(runif(12), 3, 4)
+    expect_error(moma_svd(X = X, lambda_u = c(0, 1, 2, 3, 4, -1)),
+        paste0(
+            "All penalty levels (",
+            sQuote("lambda_u"), ", ",
+            sQuote("lambda_v"), ", ",
+            sQuote("alpha_u"), ", ",
+            sQuote("alpha_v"), ") must be non-negative numeric. "
+        ),
+        fixed = TRUE
+    )
 
 
-    expect_error(moma_svd(X = X, lambda_v=c(0,1,2,3,4,-1)),
-                 paste0("All penalty levels (",
-                        sQuote("lambda_u"),", ",
-                        sQuote("lambda_v"), ", ",
-                        sQuote("alpha_u"), ", ",
-                        sQuote("alpha_v"),") must be non-negative numeric. "),fixed=TRUE)
+    expect_error(moma_svd(X = X, lambda_v = c(0, 1, 2, 3, 4, -1)),
+        paste0(
+            "All penalty levels (",
+            sQuote("lambda_u"), ", ",
+            sQuote("lambda_v"), ", ",
+            sQuote("alpha_u"), ", ",
+            sQuote("alpha_v"), ") must be non-negative numeric. "
+        ),
+        fixed = TRUE
+    )
 
 
     # Prompt error when passing a matrix
-    expect_error(moma_svd(X = X, lambda_v=matrix(1:12,3)),
-                 paste0("All penalty levels (",
-                        sQuote("lambda_u"),", ",
-                        sQuote("lambda_v"), ", ",
-                        sQuote("alpha_u"), ", ",
-                        sQuote("alpha_v"),") must be numeric."),fixed=TRUE)
+    expect_error(moma_svd(X = X, lambda_v = matrix(1:12, 3)),
+        paste0(
+            "All penalty levels (",
+            sQuote("lambda_u"), ", ",
+            sQuote("lambda_v"), ", ",
+            sQuote("alpha_u"), ", ",
+            sQuote("alpha_v"), ") must be numeric."
+        ),
+        fixed = TRUE
+    )
 
 
 
-    expect_no_error(moma_svd(X = X, lambda_v=1,lambda_u=1),
-                 paste0("All penalty levels (",
-                        sQuote("lambda_u"),", ",
-                        sQuote("lambda_v"), ", ",
-                        sQuote("alpha_u"), ", ",
-                        sQuote("alpha_v"),") must be non-negative numeric."),fixed=TRUE)
+    expect_no_error(moma_svd(X = X, lambda_v = 1, lambda_u = 1),
+        paste0(
+            "All penalty levels (",
+            sQuote("lambda_u"), ", ",
+            sQuote("lambda_v"), ", ",
+            sQuote("alpha_u"), ", ",
+            sQuote("alpha_v"), ") must be non-negative numeric."
+        ),
+        fixed = TRUE
+    )
 })

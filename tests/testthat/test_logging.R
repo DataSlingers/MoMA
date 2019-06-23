@@ -62,16 +62,16 @@ test_that("Supressing messages works", {
 test_that("No extra newlines", {
     moma_logger_level("DEBUG")
 
-    e <- tryCatch(MoMA:::moma_error("MY ERROR"), error=identity)
+    e <- tryCatch(MoMA:::moma_error("MY ERROR"), error = identity)
     expect_equal(str_count(e$message, "\n"), 1)
 
-    e <- tryCatch(MoMA:::moma_warning("MY WARNING"), warning=identity)
+    e <- tryCatch(MoMA:::moma_warning("MY WARNING"), warning = identity)
     expect_equal(str_count(e$message, "\n"), 1)
 
-    e <- tryCatch(MoMA:::moma_message("MY MESSAGE"), message=identity)
+    e <- tryCatch(MoMA:::moma_message("MY MESSAGE"), message = identity)
     expect_equal(str_count(e$message, "\n"), 1)
 
-    e <- tryCatch(MoMA:::moma_error("MY ERROR\nON TWO LINES"), error=identity)
+    e <- tryCatch(MoMA:::moma_error("MY ERROR\nON TWO LINES"), error = identity)
     expect_equal(str_count(e$message, "\n"), 2)
 
     moma_logger_level("MESSAGE")
@@ -80,31 +80,41 @@ test_that("No extra newlines", {
 test_that("Function capture works at R level", {
     moma_logger_level("MESSAGE")
 
-    f <- function(x){MoMA:::moma_error("ERROR MESSAGE")}
+    f <- function(x) {
+        MoMA:::moma_error("ERROR MESSAGE")
+    }
 
-    e <- tryCatch(f(), error=identity)
+    e <- tryCatch(f(), error = identity)
     expect_str_contains(e$message, "ERROR MESSAGE")
     expect_str_contains(e$message, "(Called from f)")
     expect_true(is.null(e$call))
     expect_true(is.null(e$cppstack))
 
-    f <- function(x){MoMA:::moma_error("ERROR MESSAGE", call=FALSE)}
-    e <- tryCatch(f(), error=identity)
+    f <- function(x) {
+        MoMA:::moma_error("ERROR MESSAGE", call = FALSE)
+    }
+    e <- tryCatch(f(), error = identity)
 
     expect_false(grepl("\\(Called from f\\)", e$message))
 
-    f <- function(x){MoMA:::moma_error("ERROR MESSAGE", call="my func")}
-    e <- tryCatch(f(), error=identity)
+    f <- function(x) {
+        MoMA:::moma_error("ERROR MESSAGE", call = "my func")
+    }
+    e <- tryCatch(f(), error = identity)
 
     expect_true(grepl("\\(Called from my func\\)", e$message))
 
-    f <- function(x){MoMA:::moma_warning("WARNING MESSAGE", call=FALSE)}
-    e <- tryCatch(f(), warning=identity)
+    f <- function(x) {
+        MoMA:::moma_warning("WARNING MESSAGE", call = FALSE)
+    }
+    e <- tryCatch(f(), warning = identity)
 
     expect_false(grepl("\\(Called from f\\)", e$message))
 
-    f <- function(x){MoMA:::moma_warning("WARNING MESSAGE", call="my func")}
-    e <- tryCatch(f(), warning=identity)
+    f <- function(x) {
+        MoMA:::moma_warning("WARNING MESSAGE", call = "my func")
+    }
+    e <- tryCatch(f(), warning = identity)
 
     expect_true(grepl("\\(Called from my func\\)", e$message))
 })
