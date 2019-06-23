@@ -19,7 +19,7 @@ elif [[ ${OS} = "Darwin" ]] ; then
     NPROC=$(sysctl -n hw.physicalcpu)
 fi
 
-# macs does not have clang-foramt pre-installed
+# macos does not have clang-foramt pre-installed
 if [[ $OS = "Darwin" ]] ; then
     brew install clang-format
 fi
@@ -40,5 +40,15 @@ else
     exit 1
 fi
 
+# Format cpp/h files inplace.
+# If all files are well-formated, then there
+# should be no changes.
 find ./src -type f -name '*.h' -o -name '*.cpp' \
 | xargs -I{} -P ${NPROC} ${CLANG_FORMAT} -i -style=file {}
+
+# Format R files inplace.
+# If all files are well-formated, then there
+# should be no changes.
+Rscript -e "install.packages(\"styler\");\
+            library(\"styler\"); \
+            style_dir(transformers=tidyverse_style(indent_by=4), exclude_files=\"./R/RcppExports.R\");" 
