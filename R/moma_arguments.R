@@ -275,3 +275,16 @@ cluster <- function(w = NULL, ADMM = FALSE,
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }
+
+moma_pg_setting <- function(EPS = 1e-10, MAX_ITER = 1000,
+                            EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
+                            solver = c("ista", "fista", "onestepista"), ...) {
+    solver <- match.arg(solver)
+    arglist <- list(
+        EPS = EPS, MAX_ITER = MAX_ITER,
+        EPS_inner = EPS_inner, MAX_ITER_inner = MAX_ITER_inner,
+        solver = toupper(solver)
+    )
+    class(arglist) <- "moma_pg_setting"
+    return(arglist)
+}
