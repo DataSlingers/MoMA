@@ -325,29 +325,29 @@ test_that("Correct match for PG loop settings", {
 
 
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), solver = "ista"),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "ista")),
         "Initializing a ISTA solver"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), solver = "fista"),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "fista")),
         "Initializing a FISTA solver"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), solver = "onestepista"),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "onestepista")),
         "Initializing an one-step ISTA solver"
     )
 
 
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), solver = "ista"),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "ista")),
         "Releasing a ISTA object"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), solver = "fista"),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "fista")),
         "Releasing a FISTA object"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), solver = "onestepista"),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "onestepista")),
         "Releasing a OneStepISTA object"
     )
 

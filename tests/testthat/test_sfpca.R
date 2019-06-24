@@ -71,7 +71,7 @@ test_that("Closed-form solution when no sparsity imposed", {
                 # WARNING: One-step ISTA does not pass this test
                 res <- sfpca(X,
                     Omega_u = O_u, Omega_v = O_v, alpha_u = a_u, alpha_v = a_v,
-                    EPS = 1e-7, MAX_ITER = 1e+5, solve = solver
+                    EPS = 1e-7, MAX_ITER = 1e+5, solver = solver
                 )
 
                 # The sfpca solutions and the svd solutions are related by an `L` matrix
@@ -112,12 +112,12 @@ test_that("ISTA and FISTA should yield similar results,
                 ista <- sfpca(X,
                     Omega_u = O_u, Omega_v = O_v, alpha_u = sp, alpha_v = sp,
                     lambda_u = sm, lambda_v = sm, P_u = "LASSO", P_v = sptype,
-                    EPS = 1e-14, MAX_ITER = 1e+3, solve = "ISTA", EPS_inner = 1e-9
+                    EPS = 1e-14, MAX_ITER = 1e+3, solver = "ISTA", EPS_inner = 1e-9
                 )
                 fista <- sfpca(X,
                     Omega_u = O_u, Omega_v = O_v, alpha_u = sp, alpha_v = sp,
                     lambda_u = sm, lambda_v = sm, P_u = "LASSO", P_v = sptype,
-                    EPS = 1e-6, MAX_ITER = 1e+3, solve = "FISTA", EPS_inner = 1e-9
+                    EPS = 1e-6, MAX_ITER = 1e+3, solver = "FISTA", EPS_inner = 1e-9
                 )
 
                 # WARNING: We observe if zero appears in either v or u, ista and fista
