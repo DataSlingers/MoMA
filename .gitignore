@@ -45,3 +45,4 @@ figs/*
 # visualization plots
 tests/testthat/*.pdf
 .vscode/settings.json
+myformat.sh

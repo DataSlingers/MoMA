@@ -409,6 +409,17 @@ test_that("Negative penalty", {
         fixed = TRUE
     )
 
+    # Prompt error when penalty contains Infty
+    expect_error(moma_svd(X = X, lambda_v = c(1:3, Inf)),
+        paste0(
+            "All penalty levels (",
+            sQuote("lambda_u"), ", ",
+            sQuote("lambda_v"), ", ",
+            sQuote("alpha_u"), ", ",
+            sQuote("alpha_v"), ") must be non-negative numeric."
+        ),
+        fixed = TRUE
+    )
 
     # Prompt error when passing a matrix
     expect_error(moma_svd(X = X, lambda_v = matrix(1:12, 3)),

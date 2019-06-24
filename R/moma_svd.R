@@ -90,7 +90,7 @@ moma_svd <- function(
     all_para <- c(alpha_u, alpha_v, lambda_u, lambda_v)
 
     # verify all alphas and lambdas are positive numbers
-    if (sum(all_para < 0) > 0 || sum(!is.finite(all_para)) > 0) {
+    if (any(all_para < 0) || any(!is.finite(all_para))) {
         moma_error(
             "All penalty levels (",
             sQuote("lambda_u"), ", ",
@@ -128,7 +128,7 @@ moma_svd <- function(
     if (!is.matrix(X)) {
         moma_error("X must be a matrix.")
     }
-    if (sum(!is.finite(X)) >= 1) {
+    if (any(!is.finite(X))) {
         moma_error("X must not have NaN, NA, or Inf.")
     }
     n <- dim(X)[1]
