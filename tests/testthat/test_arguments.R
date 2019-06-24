@@ -26,10 +26,15 @@ test_that("Test for arguments names", {
     args <- names(cluster(w = matrix(1)))
     test_args <- c(test_args, args)
 
-    # Test
+    # Test prox argumetns
     for (arg in test_args) {
         expect_true(paste0(arg, "_u") %in% correct_args)
         expect_true(paste0(arg, "_v") %in% correct_args)
+    }
+
+    # Test PG loop arguments
+    for (arg in names(moma_pg_setting())) {
+        expect_true(arg %in% correct_args)
     }
 })
 
@@ -298,9 +303,23 @@ test_that("Correct prox match", {
         ),
         "Initializing a fusion lasso proximal operator object"
     )
+
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = cluster(diag(3), ADMM = TRUE), lambda_u = 3
+        ),
+        "Running ADMM"
+    )
+
+    expect_output(
+        moma_svd(matrix(runif(12), 3, 4),
+            u_sparsity = cluster(diag(3)), lambda_u = 3
+        ),
+        "Running AMA"
+    )
 })
 
-test_that("Correct algorithm match", {
+test_that("Correct match for PG loop settings", {
     old_logger_level <- MoMA::moma_logger_level()
     MoMA::moma_logger_level("DEBUG")
 
@@ -332,19 +351,23 @@ test_that("Correct algorithm match", {
         "Releasing a OneStepISTA object"
     )
 
-
+    # Test default PG loop setting
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4),
-            u_sparsity = cluster(diag(3), ADMM = TRUE), lambda_u = 3
-        ),
-        "Running ADMM"
+        moma_svd(matrix(runif(12), 3, 4)),
+        "EPS 1e-10 MAX_ITER 1000 EPS_inner 1e-10 MAX_ITER_inner 100000 solver ISTA"
     )
 
+    # Test pg_setting() passes correct values to C++ side
     expect_output(
         moma_svd(matrix(runif(12), 3, 4),
-            u_sparsity = cluster(diag(3)), lambda_u = 3
+            pg_setting = moma_pg_setting(
+                EPS = 1.212312e-5,
+                MAX_ITER = 1.2957e+7,
+                EPS_inner = 1.987e-6,
+                MAX_ITER_inner = 98728376
+            )
         ),
-        "Running AMA"
+        "EPS 1.21231e-05 MAX_ITER 12957000 EPS_inner 1.987e-06 MAX_ITER_inner 98728376"
     )
 
     on.exit(MoMA::moma_logger_level(old_logger_level))
