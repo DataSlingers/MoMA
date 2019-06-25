@@ -11,6 +11,18 @@ os:
 # Modified from github.com/jeroen/jsonlite
 osx_image: xcode9
 
+addons:
+  apt:
+    sources:
+      # PPA for clang 6.0
+      - llvm-toolchain-trusty-6.0
+      # PPA for clang-format 8
+      - llvm-toolchain-trusty
+      # PPA for a more recen libstdc++
+      - ubuntu-toolchain-r-test
+    packages:
+      - clang-format
+
 r_packages:
   - Rcpp
   - RcppArmadillo
@@ -20,6 +32,7 @@ r_packages:
   - covr
 
 before_install:
+  - bash script/format_check.sh || travis_terminate 1;
   - Rscript -e "source('build_steps.R'); before_install()"
 
 after_success:

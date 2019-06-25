@@ -1,11 +1,13 @@
 # Logging infrastructure for MoMA
 
 ## This must be kept consistent with src/moma_logging.h::MoMAoggerLevel
-LEVELS <- c(ERROR    = 40,
-            WARNING  = 30,
-            MESSAGE  = 20,
-            INFO     = 10,
-            DEBUG    = 00)
+LEVELS <- c(
+    ERROR = 40,
+    WARNING = 30,
+    MESSAGE = 20,
+    INFO = 10,
+    DEBUG = 00
+)
 
 
 #' MoMA Package Logging Functionality
@@ -34,19 +36,20 @@ LEVELS <- c(ERROR    = 40,
 #'     \code{moma_logger_level} function can be used to adjust the global
 #'     log level. The \code{INFO} and \code{DEBUG} levels can be quite verbose
 #'     and may significantly slow down the package.
-moma_logger_level <- function(level=c("ERROR",
-                                      "WARNING",
-                                      "MESSAGE",
-                                      "INFO",
-                                      "DEBUG")){
-
+moma_logger_level <- function(level = c(
+                                  "ERROR",
+                                  "WARNING",
+                                  "MESSAGE",
+                                  "INFO",
+                                  "DEBUG"
+                              )) {
     LEVELS_REV <- setNames(names(LEVELS), LEVELS)
 
     old_level <- LEVELS_REV[as.character(moma_get_logger_level_cpp())]
     names(old_level) <- NULL
 
-    if(!missing(level)){
-        level <- match.arg(level);
+    if (!missing(level)) {
+        level <- match.arg(level)
         moma_set_logger_level_cpp(LEVELS[level])
         return(invisible(old_level))
     }
@@ -54,47 +57,47 @@ moma_logger_level <- function(level=c("ERROR",
     old_level
 }
 
-moma_error <- function(..., call=TRUE){
-    msg <- paste(list(...), collapse="")
+moma_error <- function(..., call = TRUE) {
+    msg <- paste(list(...), collapse = "")
 
     ## Try to add R level calling info
-    if(identical(call, TRUE)){
+    if (identical(call, TRUE)) {
         tryCatch({
             msg <- paste0(msg, " (Called from ", as.character(as.list(sys.call(-1))[[1]]), ")")
-        }, error=function(e){})
-    } else if(is.character(call)){
+        }, error = function(e) {})
+    } else if (is.character(call)) {
         msg <- paste0(msg, " (Called from ", call, ")")
     }
 
     moma_log_cpp(LEVELS["ERROR"], msg)
 }
 
-moma_warning <- function(..., call=TRUE){
-    msg <- paste(list(...), collapse="")
+moma_warning <- function(..., call = TRUE) {
+    msg <- paste(list(...), collapse = "")
 
     ## Try to add R level calling info
-    if(identical(call, TRUE)){
+    if (identical(call, TRUE)) {
         tryCatch({
             msg <- paste0(msg, " (Called from ", as.character(as.list(sys.call(-1))[[1]]), ")")
-        }, error=function(e){})
-    } else if(is.character(call)){
+        }, error = function(e) {})
+    } else if (is.character(call)) {
         msg <- paste0(msg, " (Called from ", call, ")")
     }
 
     moma_log_cpp(LEVELS["WARNING"], msg)
 }
 
-moma_message <- function(...){
-    msg <- paste(list(...), collapse="")
+moma_message <- function(...) {
+    msg <- paste(list(...), collapse = "")
     moma_log_cpp(LEVELS["MESSAGE"], msg)
 }
 
-moma_info <- function(...){
-    msg <- paste(list(...), collapse="")
+moma_info <- function(...) {
+    msg <- paste(list(...), collapse = "")
     moma_log_cpp(LEVELS["INFO"], msg)
 }
 
-moma_debug <- function(...){
-    msg <- paste(list(...), collapse="")
+moma_debug <- function(...) {
+    msg <- paste(list(...), collapse = "")
     moma_log_cpp(LEVELS["DEBUG"], msg)
 }

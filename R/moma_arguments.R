@@ -1,9 +1,9 @@
 # Check whether `x` is a boolean value
-is_logical_scalar <- function(x){
+is_logical_scalar <- function(x) {
     return(is.logical(x) && (length(x) == 1) && !is.na(x))
 }
 
-empty <- function(){
+empty <- function() {
     arglist <- list()
     class(arglist) <- "moma_sparsity"
     return(arglist)
@@ -22,13 +22,12 @@ empty <- function(){
 #'
 #' @examples
 #' lasso(non_negative = FALSE)
-#'
 #' @export
-lasso <- function(non_negative = FALSE){
-    if(!is_logical_scalar(non_negative)){
+lasso <- function(non_negative = FALSE) {
+    if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    arglist <- list(nonneg = non_negative,P = "LASSO")
+    arglist <- list(nonneg = non_negative, P = "LASSO")
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }
@@ -50,16 +49,17 @@ lasso <- function(non_negative = FALSE){
 #'
 #' @examples
 #' mcp(gamma = 3, non_negative = FALSE)
-#'
 #' @export
-mcp <- function(gamma = 3, non_negative = FALSE){
-    if(!is_logical_scalar(non_negative)){
+mcp <- function(gamma = 3, non_negative = FALSE) {
+    if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    if(gamma <= 1){
-        moma_error("Non-convexity parameter of MCP (",
-                   sQuote("gamma"),
-                   ") must be larger than 1.")
+    if (gamma <= 1) {
+        moma_error(
+            "Non-convexity parameter of MCP (",
+            sQuote("gamma"),
+            ") must be larger than 1."
+        )
     }
     arglist <- list(gamma = gamma, nonneg = non_negative, P = "MCP")
     class(arglist) <- "moma_sparsity"
@@ -84,16 +84,17 @@ mcp <- function(gamma = 3, non_negative = FALSE){
 #'
 #' @examples
 #' scad(gamma = 3.7, non_negative = FALSE)
-#'
 #' @export
-scad <- function(gamma = 3.7, non_negative = FALSE){
-    if(!is_logical_scalar(non_negative)){
+scad <- function(gamma = 3.7, non_negative = FALSE) {
+    if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    if(gamma <= 2){
-        moma_error("Non-convexity parameter of SCAD (",
-                   sQuote("gamma"),
-                   ") must be larger than 2.")
+    if (gamma <= 2) {
+        moma_error(
+            "Non-convexity parameter of SCAD (",
+            sQuote("gamma"),
+            ") must be larger than 2."
+        )
     }
     arglist <- list(gamma = gamma, nonneg = non_negative, P = "SCAD")
     class(arglist) <- "moma_sparsity"
@@ -106,16 +107,15 @@ scad <- function(gamma = 3.7, non_negative = FALSE){
 #' \deqn{\lambda P (x) = \lambda \sum _ { i = 1 } ^ { n } \lambda _ { i } | x | _ { ( i ) } .}
 #' where \eqn{\lambda_i = \Phi ^ { - 1 } ( 1 - q _ { i } ) ,  q _ { i } = i \cdot q / 2 p, q = 0.05.}
 #' Here \eqn{q} is the false discovery rate (FDR).
-#' See Bogdan, Malgorzata, et al. "SLOPE - adaptive variable selection via convex optimization." 
+#' See Bogdan, Malgorzata, et al. "SLOPE - adaptive variable selection via convex optimization."
 #' The annals of applied statistics 9.3 (2015): 1103.
 #'
 #' @return a \code{moma_sparsity} object, which contains a list containing the string "SLOPE".
 #'
 #' @examples
 #' slope()
-#'
 #' @export
-slope <- function(){
+slope <- function() {
     arglist <- list(P = "SLOPE")
     class(arglist) <- "moma_sparsity"
     return(arglist)
@@ -138,14 +138,13 @@ slope <- function(){
 #'
 #' @examples
 #' # This sets every three adjacent parameters as a group.
-#' grplasso(g = rep(1:10,each = 3), non_negative = FALSE)
-#'
+#' grplasso(g = rep(1:10, each = 3), non_negative = FALSE)
 #' @export
-grplasso <- function(g, non_negative = FALSE){
-    if(!is_logical_scalar(non_negative)){
+grplasso <- function(g, non_negative = FALSE) {
+    if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
-    if(!(inherits(g,c("character","numeric","factor","integer")))){
+    if (!(inherits(g, c("character", "numeric", "factor", "integer")))) {
         moma_error("Please provide a vector as an indicator of grouping.")
     }
     arglist <- list(group = as.factor(g), P = "GRPLASSO", nonneg = non_negative)
@@ -173,9 +172,8 @@ grplasso <- function(g, non_negative = FALSE){
 #'
 #' @examples
 #' fusedlasso()
-#'
 #' @export
-fusedlasso <- function(algo=c("path","dp")){
+fusedlasso <- function(algo = c("path", "dp")) {
     # fused lasso
 
     # Two options for solving the proximal operator
@@ -183,7 +181,7 @@ fusedlasso <- function(algo=c("path","dp")){
     # "dp": dynamic programming
     # "path": solution path-based algorithm
     algo <- match.arg(algo)
-    prox_name = ifelse(algo=="path","ORDEREDFUSED","ORDEREDFUSEDDP")
+    prox_name <- ifelse(algo == "path", "ORDEREDFUSED", "ORDEREDFUSEDDP")
     arglist <- list(P = prox_name)
     class(arglist) <- "moma_sparsity"
     return(arglist)
@@ -212,12 +210,11 @@ fusedlasso <- function(algo=c("path","dp")){
 #' @return a \code{moma_sparsity} object, which is an empty list.
 #'
 #' @examples
-#' l1tf(l1tf_k=1)
-#'
+#' l1tf(l1tf_k = 1)
 #' @export
-l1tf <- function(l1tf_k=1){
+l1tf <- function(l1tf_k = 1) {
     # l1 linear trend filtering
-    arglist <- list(P = "L1TRENDFILTERING",l1tf_k = l1tf_k)
+    arglist <- list(P = "L1TRENDFILTERING", l1tf_k = l1tf_k)
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }
@@ -235,10 +232,9 @@ l1tf <- function(l1tf_k=1){
 #'
 #' @examples
 #' spfusedlasso(lambda2 = 2)
-#'
 #' @export
-spfusedlasso <- function(lambda2){
-    arglist <- list(P = "SPARSEFUSEDLASSO",lambda2 = lambda2)
+spfusedlasso <- function(lambda2) {
+    arglist <- list(P = "SPARSEFUSEDLASSO", lambda2 = lambda2)
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }
@@ -259,23 +255,23 @@ spfusedlasso <- function(lambda2){
 #' \code{ADMM}, \code{acc} and \code{eps}.
 #'
 #' @examples
-#' cluster(w = matrix(rep(1,9),3), ADMM = FALSE, acc = FALSE, eps = 1e-10)
-#'
+#' cluster(w = matrix(rep(1, 9), 3), ADMM = FALSE, acc = FALSE, eps = 1e-10)
 #' @export
-cluster <- function(w = NULL,ADMM = FALSE,
+cluster <- function(w = NULL, ADMM = FALSE,
                     acc = FALSE,
-                    eps = 1e-10){
+                    eps = 1e-10) {
     # fused lasso
-    if(!is.matrix(w) || is.null(w) || dim(w)[1] != dim(w)[2]){
+    if (!is.matrix(w) || is.null(w) || dim(w)[1] != dim(w)[2]) {
         moma_error("`w` should be a square matrix.")
     }
-    if(!isSymmetric(w)){
+    if (!isSymmetric(w)) {
         moma_warning("`w` is not symmetric. Only upper triangular half is used.")
     }
     arglist <- list(
-                w = w, ADMM = ADMM,
-                acc = acc, prox_eps = eps,
-                P = "UNORDEREDFUSION")
+        w = w, ADMM = ADMM,
+        acc = acc, prox_eps = eps,
+        P = "UNORDEREDFUSION"
+    )
     class(arglist) <- "moma_sparsity"
     return(arglist)
 }

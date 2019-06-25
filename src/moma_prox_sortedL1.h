@@ -23,5 +23,9 @@
 
 #include "moma_base.h"
 
-int evaluateProx(const arma::vec &y, const arma::vec &lambda, arma::vec &x, int n, const arma::uvec &order);
+int evaluateProx(const arma::vec &y,
+                 const arma::vec &lambda,
+                 arma::vec &x,
+                 int n,
+                 const arma::uvec &order);
 #endif  // MOMA_PROX_SORTEDL1
