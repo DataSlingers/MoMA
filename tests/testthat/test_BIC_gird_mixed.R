@@ -14,7 +14,7 @@ lambda_u <- seq(0.3, 1, length.out = n_lambda_u)
 lambda_v <- seq(0.3, 1, length.out = n_lambda_v)
 
 
-arg_list <- list(
+public_arg_list <- list(
     X,
     alpha_u = alpha_u, alpha_v = alpha_v,
     Omega_u = second_diff_mat(3), Omega_v = second_diff_mat(4),
@@ -28,7 +28,7 @@ test_that("BIC search returns correct-sized grid: four grid requests", {
     result <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 0, # grid
                 selection_criterion_alpha_v = 0, # grid
@@ -58,7 +58,7 @@ test_that("BIC search returns correct-sized grid: three grid requests", {
     result2 <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 0, # grid
                 selection_criterion_alpha_v = 0, # grid
@@ -83,7 +83,7 @@ test_that("BIC search returns correct-sized grid: three grid requests", {
     result2 <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 1,
                 selection_criterion_alpha_v = 0, # grid
@@ -110,7 +110,7 @@ test_that("BIC search returns correct-sized grid: two grid requests on u", {
     result3 <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 0, # grid
                 selection_criterion_lambda_u = 0, # grid
@@ -137,7 +137,7 @@ test_that("BIC search returns correct-sized grid: two grid requests on different
     result4 <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 1,
                 selection_criterion_lambda_u = 0, # grid
@@ -164,7 +164,7 @@ test_that("BIC search returns correct-sized grid: one grid", {
     result4 <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 1,
                 selection_criterion_lambda_u = 1,
@@ -191,7 +191,7 @@ test_that("BIC search returns correct-sized grid: all BIC search", {
     result4 <- do.call(
         testnestedBIC,
         c(
-            arg_list,
+            public_arg_list,
             list(
                 selection_criterion_alpha_u = 1,
                 selection_criterion_lambda_u = 1,
@@ -214,7 +214,7 @@ test_that("BIC search returns correct-sized grid: all BIC search", {
 
 test_that("testnestedBIC receivs a vector of length 0", {
     arglist <- c(
-        arg_list,
+        public_arg_list,
         list(
             selection_criterion_alpha_u = 1,
             selection_criterion_lambda_u = 1,
