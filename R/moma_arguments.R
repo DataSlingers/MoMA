@@ -312,7 +312,7 @@ cluster <- function(..., w = NULL, ADMM = FALSE,
     return(arglist)
 }
 
-moma_pg_setting <- function(..., EPS = 1e-10, MAX_ITER = 1000,
+moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
                             EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
                             solver = c("ista", "fista", "onestepista")) {
     if (length(list(...)) != 0) {
@@ -324,6 +324,6 @@ moma_pg_setting <- function(..., EPS = 1e-10, MAX_ITER = 1000,
         EPS_inner = EPS_inner, MAX_ITER_inner = MAX_ITER_inner,
         solver = toupper(solver)
     )
-    class(arglist) <- "moma_pg_setting"
+    class(arglist) <- "moma_pg_settings"
     return(arglist)
 }

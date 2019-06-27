@@ -33,7 +33,7 @@ test_that("Test for arguments names", {
     }
 
     # Test PG loop arguments
-    for (arg in names(moma_pg_setting())) {
+    for (arg in names(moma_pg_settings())) {
         expect_true(arg %in% correct_args)
     }
 })
@@ -412,29 +412,29 @@ test_that("Correct match for PG loop settings", {
 
 
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "ista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "ista")),
         "Initializing a ISTA solver"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "fista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "fista")),
         "Initializing a FISTA solver"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "onestepista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "onestepista")),
         "Initializing an one-step ISTA solver"
     )
 
 
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "ista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "ista")),
         "Releasing a ISTA object"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "fista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "fista")),
         "Releasing a FISTA object"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_setting(solver = "onestepista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "onestepista")),
         "Releasing a OneStepISTA object"
     )
 
@@ -448,7 +448,7 @@ test_that("Correct match for PG loop settings", {
     expect_output(
         moma_svd(
             matrix(runif(12), 3, 4),
-            pg_setting = moma_pg_setting(
+            pg_setting = moma_pg_settings(
                 EPS = 1.212312e-5,
                 MAX_ITER = 1.2957e+7,
                 EPS_inner = 1.987e-6,
@@ -629,8 +629,8 @@ test_that("Arguments must be specified by name", {
 
     # PG loop settings
     expect_error(
-        moma_pg_setting(1e-10),
+        moma_pg_settings(1e-10),
         "Please specify the correct argument by name"
     )
-    expect_no_error(moma_pg_setting(EPS = 1e-10))
+    expect_no_error(moma_pg_settings(EPS = 1e-10))
 })
