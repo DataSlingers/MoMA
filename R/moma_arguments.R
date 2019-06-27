@@ -313,8 +313,8 @@ cluster <- function(..., w = NULL, ADMM = FALSE,
 }
 
 moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
-                            EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
-                            solver = c("ista", "fista", "onestepista")) {
+                             EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
+                             solver = c("ista", "fista", "onestepista")) {
     if (length(list(...)) != 0) {
         moma_error("Please specify the correct argument by name.")
     }

@@ -458,7 +458,7 @@ test_that("Correct match for PG loop settings", {
         "EPS 1.21231e-05 MAX_ITER 12957000 EPS_inner 1.987e-06 MAX_ITER_inner 98728376"
     )
 
-     expect_error(
+    expect_error(
         moma_svd(
             matrix(runif(12), 3, 4),
             pg_setting = c(
