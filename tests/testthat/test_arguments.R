@@ -26,7 +26,7 @@ test_that("Test for arguments names", {
     args <- names(cluster(w = matrix(1)))
     test_args <- c(test_args, args)
 
-    # Test prox argumetns
+    # Test prox arguments
     for (arg in test_args) {
         expect_true(paste0(arg, "_u") %in% correct_args)
         expect_true(paste0(arg, "_v") %in% correct_args)
