@@ -15,6 +15,7 @@ empty <- function() {
 #' \deqn{\lambda \sum \| x_{i} \| ,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param non_negative a boolean value. Set \code{TRUE} to add non-negativity
 #' constraint.
 #'
@@ -23,7 +24,11 @@ empty <- function() {
 #' @examples
 #' lasso(non_negative = FALSE)
 #' @export
-lasso <- function(non_negative = FALSE) {
+lasso <- function(..., non_negative = FALSE) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
+
     if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
@@ -40,6 +45,7 @@ lasso <- function(non_negative = FALSE) {
 #' determined by \eqn{\gamma}. See Zhang, Cun-Hui. "Nearly unbiased variable
 #' selection under minimax concave penalty." The Annals of statistics 38.2 (2010): 894-942.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param gamma non-convexity. Must be larger than 1.
 #' @param non_negative a boolean value. Set to \code{TRUE} to add non-negativity
 #' constraint.
@@ -50,7 +56,11 @@ lasso <- function(non_negative = FALSE) {
 #' @examples
 #' mcp(gamma = 3, non_negative = FALSE)
 #' @export
-mcp <- function(gamma = 3, non_negative = FALSE) {
+mcp <- function(..., gamma = 3, non_negative = FALSE) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
+
     if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
@@ -75,6 +85,7 @@ mcp <- function(gamma = 3, non_negative = FALSE) {
 #'  via nonconcave penalized likelihood and its oracle properties." Journal of
 #'  the American statistical Association 96.456 (2001): 1348-1360.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param gamma non-convexity. Must be larger than 2.
 #' @param non_negative a boolean value. Set to \code{TRUE} to add non-negativity
 #' constraint.
@@ -85,7 +96,11 @@ mcp <- function(gamma = 3, non_negative = FALSE) {
 #' @examples
 #' scad(gamma = 3.7, non_negative = FALSE)
 #' @export
-scad <- function(gamma = 3.7, non_negative = FALSE) {
+scad <- function(..., gamma = 3.7, non_negative = FALSE) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
+
     if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
@@ -128,6 +143,7 @@ slope <- function() {
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{\|x_g\|} is
 #' the vector comprised of elements of \eqn{x} picked out by indeces set \eqn{g}.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param g a vector of integer or characters, or a factor itself. It gets transformed
 #' to factor eventually to indicate grouping.
 #' @param non_negative a boolean value. Set to \code{TRUE} to add non-negativity
@@ -140,7 +156,11 @@ slope <- function() {
 #' # This sets every three adjacent parameters as a group.
 #' grplasso(g = rep(1:10, each = 3), non_negative = FALSE)
 #' @export
-grplasso <- function(g, non_negative = FALSE) {
+grplasso <- function(..., g, non_negative = FALSE) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
+
     if (!is_logical_scalar(non_negative)) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
@@ -157,6 +177,7 @@ grplasso <- function(g, non_negative = FALSE) {
 #' Use this function to set the penalty function as fused lasso
 #' \deqn{\lambda \sum \| x_{i} - x_{i-1} \|,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#' @param ... Forces users to specify all arguments by name.
 #' @param algo a string being either "path" or "dp". Defaults to "path". Partial matching
 #' is supported. Two solving algorithms
 #' are provided. When "path" is chosen, the algorithm by
@@ -173,7 +194,10 @@ grplasso <- function(g, non_negative = FALSE) {
 #' @examples
 #' fusedlasso()
 #' @export
-fusedlasso <- function(algo = c("path", "dp")) {
+fusedlasso <- function(..., algo = c("path", "dp")) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
     # fused lasso
 
     # Two options for solving the proximal operator
@@ -203,6 +227,7 @@ fusedlasso <- function(algo = c("path", "dp")) {
 #' Tibshirani, Ryan J. "Adaptive piecewise polynomial estimation via trend
 #' filtering." The Annals of Statistics 42.1 (2014): 285-323.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param l1tf_k use (k+1)-difference matrix in trend filtering. Note \eqn{k = 0}
 #'          implies piecewise constant, \eqn{k=1} implies piecewise linear, \eqn{k=2}
 #'          piecewise quadratic etc.
@@ -212,7 +237,10 @@ fusedlasso <- function(algo = c("path", "dp")) {
 #' @examples
 #' l1tf(l1tf_k = 1)
 #' @export
-l1tf <- function(l1tf_k = 1) {
+l1tf <- function(..., l1tf_k = 1) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
     # l1 linear trend filtering
     arglist <- list(P = "L1TRENDFILTERING", l1tf_k = l1tf_k)
     class(arglist) <- "moma_sparsity"
@@ -226,6 +254,7 @@ l1tf <- function(l1tf_k = 1) {
 #' where \eqn{\lambda_} is set by \code{lambda_u/v} in the function \code{moma_svd}, and \eqn{\lambda_2}
 #' is specified in here.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param lambda2 the level of penalty on the absolute values of the coefficients
 #'
 #' @return a \code{moma_sparsity} object, which is a list containing the value of \code{lambda_2}.
@@ -233,7 +262,10 @@ l1tf <- function(l1tf_k = 1) {
 #' @examples
 #' spfusedlasso(lambda2 = 2)
 #' @export
-spfusedlasso <- function(lambda2) {
+spfusedlasso <- function(..., lambda2) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
     arglist <- list(P = "SPARSEFUSEDLASSO", lambda2 = lambda2)
     class(arglist) <- "moma_sparsity"
     return(arglist)
@@ -245,6 +277,7 @@ spfusedlasso <- function(lambda2) {
 #' \deqn{\lambda \sum w_{ij} \| x_{i} - x_{j} \|,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #'
+#' @param ... Forces users to specify all arguments by name.
 #' @param w a symmetric square matrix. \code{w[i][j]} is the \eqn{w_{ij}} described above.
 #' @param ADMM a boolean value. Set to \code{TRUE} to use ADMM, set to \code{FALSE} to use AMA.
 #' @param acc a boolean value. Set to \code{TRUE} to use the accelereated version of the algorithm.
@@ -257,9 +290,12 @@ spfusedlasso <- function(lambda2) {
 #' @examples
 #' cluster(w = matrix(rep(1, 9), 3), ADMM = FALSE, acc = FALSE, eps = 1e-10)
 #' @export
-cluster <- function(w = NULL, ADMM = FALSE,
+cluster <- function(..., w = NULL, ADMM = FALSE,
                     acc = FALSE,
                     eps = 1e-10) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
     # fused lasso
     if (!is.matrix(w) || is.null(w) || dim(w)[1] != dim(w)[2]) {
         moma_error("`w` should be a square matrix.")
@@ -276,9 +312,12 @@ cluster <- function(w = NULL, ADMM = FALSE,
     return(arglist)
 }
 
-moma_pg_setting <- function(EPS = 1e-10, MAX_ITER = 1000,
+moma_pg_setting <- function(..., EPS = 1e-10, MAX_ITER = 1000,
                             EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
-                            solver = c("ista", "fista", "onestepista"), ...) {
+                            solver = c("ista", "fista", "onestepista")) {
+    if (length(list(...)) != 0) {
+        moma_error("Please specify the correct argument by name.")
+    }
     solver <- match.arg(solver)
     arglist <- list(
         EPS = EPS, MAX_ITER = MAX_ITER,
