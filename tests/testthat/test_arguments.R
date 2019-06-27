@@ -458,6 +458,19 @@ test_that("Correct match for PG loop settings", {
         "EPS 1.21231e-05 MAX_ITER 12957000 EPS_inner 1.987e-06 MAX_ITER_inner 98728376"
     )
 
+     expect_error(
+        moma_svd(
+            matrix(runif(12), 3, 4),
+            pg_setting = c(
+                EPS = 1.212312e-5,
+                MAX_ITER = 1.2957e+7,
+                EPS_inner = 1.987e-6,
+                MAX_ITER_inner = 98728376
+            )
+        ),
+        paste0("pg_setting penalty should be of class ", sQuote("moma_pg_settings"))
+    )
+
     on.exit(MoMA::moma_logger_level(old_logger_level))
 })
 
