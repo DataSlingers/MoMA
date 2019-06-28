@@ -60,7 +60,9 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
     MoMALogger::info("Initializing MoMA object:")
         << " lambda_u " << lambda_u << " lambda_v " << lambda_v << " alpha_u " << alpha_u
         << " alpha_v " << alpha_v << " P_u " << Rcpp::as<std::string>(i_prox_arg_list_u["P"])
-        << " P_v " << Rcpp::as<std::string>(i_prox_arg_list_v["P"]);
+        << " P_v " << Rcpp::as<std::string>(i_prox_arg_list_v["P"]) << " EPS " << i_EPS
+        << " MAX_ITER " << i_MAX_ITER << " EPS_inner " << i_EPS_inner << " MAX_ITER_inner "
+        << i_MAX_ITER_inner << " solver " << i_solver;
     // Step 2: Initialize to leading singular vectors
     //
     //         MoMA is a regularized SVD, which is a non-convex (bi-convex)

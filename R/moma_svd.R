@@ -67,9 +67,7 @@ moma_svd <- function(
                      X,
                      u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
                      Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
-                     EPS = 1e-10, MAX_ITER = 1000,
-                     EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
-                     solver = "ista",
+                     pg_setting = moma_pg_settings(),
                      k = 1, # number of pairs of singular vecters
                      select = c("gridsearch", "nestedBIC")) {
     if (!inherits(alpha_u, c("numeric", "integer")) ||
@@ -116,12 +114,6 @@ moma_svd <- function(
         # smoothness
         alpha_u = alpha_u,
         alpha_v = alpha_v,
-        # algorithm parameters
-        EPS = EPS,
-        MAX_ITER = MAX_ITER,
-        EPS_inner = EPS_inner,
-        MAX_ITER_inner = MAX_ITER_inner,
-        solver = toupper(solver),
         k = k
     )
 
@@ -157,6 +149,15 @@ moma_svd <- function(
         )
     }
 
+    # PG loop settings
+    if (!inherits(pg_setting, "moma_pg_settings")) {
+        moma_error(
+            "pg_setting penalty should be of class ",
+            sQuote("moma_pg_settings"),
+            ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
+        )
+    }
+
     # Pack all argument into a list
     # First we check the smoothness term argument.
     algo_settings_list <- c(
@@ -166,7 +167,8 @@ moma_svd <- function(
             Omega_v = check_omega(Omega_v, alpha_v, p),
             prox_arg_list_u = add_default_prox_args(u_sparsity),
             prox_arg_list_v = add_default_prox_args(v_sparsity)
-        )
+        ),
+        pg_setting
     )
 
     if (is_multiple_para) {
