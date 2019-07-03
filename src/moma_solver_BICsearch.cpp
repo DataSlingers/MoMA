@@ -11,6 +11,11 @@ double BIC_searcher::cur_criterion(arma::vec y, const arma::vec &est)
     return (pr_solver->*cri)(y, est);
 }
 
+// Return a Rcpp::List:
+//   Rcpp::Named("lambda") = opt_lambda_u,
+//   Rcpp::Named("alpha")  = opt_alpha_u,
+//   Rcpp::Named("vector") = working_selected_u,
+//   Rcpp::Named("bic")    = minbic_u
 Rcpp::List BIC_searcher::search(const arma::vec &y,          // min_{u} || y - u || + ...penalty...
                                 const arma::vec &initial_u,  // start point
                                 const arma::vec &alpha_u,
@@ -24,10 +29,11 @@ Rcpp::List BIC_searcher::search(const arma::vec &y,          // min_{u} || y - u
     double opt_lambda_u;
     for (int i = 0; i < alpha_u.n_elem; i++)
     {
+        // Put lambda_u in the inner loop to avoid reconstructing S many times
         for (int j = 0; j < lambda_u.n_elem; j++)
         {
-            // Put lambda_u in the inner loop to avoid reconstructing S many times
             pr_solver->reset(lambda_u(j), alpha_u(i));
+            // working_u is the solution of the previous problem
             working_u     = pr_solver->solve(y, working_u);
             working_bic_u = cur_criterion(y, working_u);
             MoMALogger::debug("(curBIC, minBIC, lambda, alpha) = (")
@@ -42,8 +48,8 @@ Rcpp::List BIC_searcher::search(const arma::vec &y,          // min_{u} || y - u
             }
         }
     }
-    MoMALogger::message("BIC = ") << minbic_u << ", chosen (alpha,lambda) = (" << opt_alpha_u
-                                  << ", " << opt_lambda_u << ").";
+    MoMALogger::debug("Finish greedy BIC, chosen (minBIC, alpha, lambda) = (")
+        << minbic_u << ", " << opt_alpha_u << ", " << opt_lambda_u << ").";
 
     return Rcpp::List::create(
         Rcpp::Named("lambda") = opt_lambda_u, Rcpp::Named("alpha") = opt_alpha_u,
