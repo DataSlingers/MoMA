@@ -105,18 +105,6 @@ moma_svd <- function(
     lambda_u <- as.vector(lambda_u)
     lambda_v <- as.vector(lambda_v)
 
-    # update argument lists
-    # GP loop argument
-    algo_settings_list <- list(
-        X = X,
-        lambda_u = lambda_u,
-        lambda_v = lambda_v,
-        # smoothness
-        alpha_u = alpha_u,
-        alpha_v = alpha_v,
-        k = k
-    )
-
     if (!is.matrix(X)) {
         moma_error("X must be a matrix.")
     }
@@ -161,7 +149,16 @@ moma_svd <- function(
     # Pack all argument into a list
     # First we check the smoothness term argument.
     algo_settings_list <- c(
-        algo_settings_list,
+        list(
+            X = X,
+            lambda_u = lambda_u,
+            lambda_v = lambda_v,
+            # smoothness
+            alpha_u = alpha_u,
+            alpha_v = alpha_v,
+            rank = k
+        ),
+        # Penalties
         list(
             Omega_u = check_omega(Omega_u, alpha_u, n),
             Omega_v = check_omega(Omega_v, alpha_v, p),
@@ -173,12 +170,12 @@ moma_svd <- function(
 
     if (is_multiple_para) {
         if (select == "gridsearch") {
-            a <- do.call("cpp_sfpca_grid", algo_settings_list)
+            a <- do.call("cpp_moma_grid_search", algo_settings_list)
             class(a) <- "moma_svd_grid"
             return(a)
         }
         else if (select == "nestedBIC") {
-            a <- do.call("cpp_sfpca_nestedBIC", algo_settings_list)
+            a <- do.call("cpp_moma_criterion_search", algo_settings_list)
             class(a) <- "moma_svd_nestedBIC"
             return(a)
         }
@@ -187,6 +184,6 @@ moma_svd <- function(
         }
     }
     else {
-        return(do.call("cpp_sfpca", algo_settings_list))
+        return(do.call("cpp_moma_multi_rank", algo_settings_list))
     }
 }

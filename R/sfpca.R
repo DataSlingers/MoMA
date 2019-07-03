@@ -88,7 +88,7 @@ sfpca <- function(X,
         nonneg = nonneg_v,
         group = group_v
     )
-    return(cpp_sfpca(
+    return(cpp_moma_multi_rank(
         X = X,
         alpha_u = alpha_u, alpha_v = alpha_v,
         Omega_u = Omega_u, Omega_v = Omega_v,
@@ -98,6 +98,6 @@ sfpca <- function(X,
         EPS = EPS, MAX_ITER = MAX_ITER,
         EPS_inner = EPS_inner, MAX_ITER_inner = MAX_ITER_inner,
         solver = solver,
-        k = k
+        rank = k
     ))
 }
