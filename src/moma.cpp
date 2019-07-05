@@ -148,7 +148,8 @@ double MoMA::evaluate_loss()
         MoMALogger::error("Ellipse constraint is not met.");
     }
 
-    return 1;  // TODO
+    MoMALogger::error("MoMA::evaluate_loss it not implemented yet.");
+    return 0;  // TODO: Implement it.
 }
 
 int MoMA::initialize_uv()
