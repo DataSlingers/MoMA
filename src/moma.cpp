@@ -137,11 +137,13 @@ double MoMA::evaluate_loss()
     {
         MoMALogger::error("Please call MoMA::solve first before MoMA::evaluate_loss.");
     }
-    double u_ellipsi_constaint = arma::as_scalar(u.t() * u + alpha_u * u.t() * Omega_u * u);
-    double v_ellipsi_constaint = arma::as_scalar(v.t() * v + alpha_v * v.t() * Omega_v * v);
+    double u_ellipsoid_constraint = arma::as_scalar(u.t() * u + alpha_u * u.t() * Omega_u * u);
+    double v_ellipsoid_constraint = arma::as_scalar(v.t() * v + alpha_v * v.t() * Omega_v * v);
 
-    if ((u_ellipsi_constaint != 0 && u_ellipsi_constaint != 1.0) ||
-        (v_ellipsi_constaint != 0 && v_ellipsi_constaint != 1.0))
+    if ((std::abs(u_ellipsoid_constraint) > MOMA_FLOATPOINT_EPS &&
+         std::abs(u_ellipsoid_constraint - 1.0) > MOMA_FLOATPOINT_EPS) ||
+        (std::abs(v_ellipsoid_constraint) > MOMA_FLOATPOINT_EPS &&
+         std::abs(v_ellipsoid_constraint - 1.0) > MOMA_FLOATPOINT_EPS))
     {
         MoMALogger::error("Ellipse constraint is not met.");
     }
@@ -184,8 +186,10 @@ int MoMA::reset(double newlambda_u, double newlambda_v, double newalpha_u, doubl
 
     // NOTE: We must keep the alpha's and lambda's up-to-date
     // in both MoMA and solve_u/v
-    if (std::abs(alpha_u - newalpha_u) > EPS || std::abs(alpha_v - newalpha_v) > EPS ||
-        std::abs(lambda_v - newlambda_v) > EPS || std::abs(lambda_u - newlambda_u) > EPS)
+    if (std::abs(alpha_u - newalpha_u) > MOMA_FLOATPOINT_EPS ||
+        std::abs(alpha_v - newalpha_v) > MOMA_FLOATPOINT_EPS ||
+        std::abs(lambda_v - newlambda_v) > MOMA_FLOATPOINT_EPS ||
+        std::abs(lambda_u - newlambda_u) > MOMA_FLOATPOINT_EPS)
     {
         // update internal states of MoMA
         is_solved = false;
