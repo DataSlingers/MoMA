@@ -174,7 +174,7 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
 
     RcppFiveDList five_d_list(n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v, rank);
 
-    arma::mat original_X =
+    const arma::mat original_X =
         X;  // keep a copy of X, because MoMA::X will be contanminated during defaltion
     for (int i = 0; i < n_alpha_u; i++)
     {
