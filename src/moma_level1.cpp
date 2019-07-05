@@ -87,10 +87,10 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
         v_result = bicsr_v.search(X.t() * curu, curv, bic_av_grid, bic_lv_grid);
         curv     = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
 
-        double scale_u = norm(oldu) == 0.0 ? 1 : norm(oldu);
-        double scale_v = norm(oldv) == 0.0 ? 1 : norm(oldv);
+        double scale_u = arma::norm(oldu) == 0.0 ? 1 : arma::norm(oldu);
+        double scale_v = arma::norm(oldv) == 0.0 ? 1 : arma::norm(oldv);
 
-        tol = norm(oldu - u) / scale_u + norm(oldv - v) / scale_v;
+        tol = arma::norm(oldu - u) / scale_u + arma::norm(oldv - v) / scale_v;
         MoMALogger::debug("Finish nested greedy BIC search outer loop. (iter, tol) = (")
             << iter << "," << tol << "), "
             << "(bic_u, bic_v) = (" << (double)u_result["bic"] << "," << (double)v_result["bic"]

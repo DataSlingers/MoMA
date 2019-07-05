@@ -119,10 +119,10 @@ void MoMA::solve()
         u = solver_u.solve(X * v, u);
         v = solver_v.solve(X.t() * u, v);
 
-        double scale_u = norm(oldu) == 0.0 ? 1 : norm(oldu);
-        double scale_v = norm(oldv) == 0.0 ? 1 : norm(oldv);
+        double scale_u = arma::norm(oldu) == 0.0 ? 1 : arma::norm(oldu);
+        double scale_v = arma::norm(oldv) == 0.0 ? 1 : arma::norm(oldv);
 
-        tol = norm(oldu - u) / scale_u + norm(oldv - v) / scale_v;
+        tol = arma::norm(oldu - u) / scale_u + arma::norm(oldv - v) / scale_v;
         MoMALogger::debug("Real-time PG loop info:  (iter, tol) = (") << iter << ", " << tol << ")";
     }
 
