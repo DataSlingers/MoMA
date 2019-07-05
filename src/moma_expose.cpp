@@ -66,6 +66,10 @@ Rcpp::List cpp_moma_grid_search(
     std::string solver,
     int rank = 1)  // `rank` is not used
 {
+    if (rank != 1)
+    {
+        MoMALogger::error("Then `rank` argument in `cpp_moma_multi_rank` should not be specified.");
+    }
     // We only allow changing two parameters
     int n_lambda_u = lambda_u.n_elem;
     int n_lambda_v = lambda_v.n_elem;
@@ -117,6 +121,10 @@ Rcpp::List cpp_moma_criterion_search(
     std::string solver,
     int rank = 1)  // rank not used
 {
+    if (rank != 1)
+    {
+        MoMALogger::error("Then `rank` argument in `cpp_moma_multi_rank` should not be specified.");
+    }
     // We only allow changing two parameters
     int n_lambda_u = lambda_u.n_elem;
     int n_lambda_v = lambda_v.n_elem;
