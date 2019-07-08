@@ -52,6 +52,11 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
     double tol = 1;
     int iter   = 0;
 
+    int n_au = bic_au_grid.n_elem;
+    int n_av = bic_av_grid.n_elem;
+    int n_lu = bic_lu_grid.n_elem;
+    int n_lv = bic_lv_grid.n_elem;
+
     // u_/v_result is a list of the following contents
     // Rcpp::Named("lambda") = opt_lambda_u, the chosen lambda
     // Rcpp::Named("alpha") = opt_alpha_u, the chosen alpha
@@ -72,29 +77,42 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
     // We conduct 2 BIC searches over 2D grids here instead
     // of 4 searches over 1D grids. It's consistent with
     // Genevera's code.
-    while (tol > EPS_bic && iter < max_bic_iter)
+    if (n_au > 1 || n_av > 1 || n_lu > 1 || n_lv > 1)
     {
-        iter++;
-        oldu = curu;
-        oldv = curv;
+        while (tol > EPS_bic && iter < max_bic_iter)
+        {
+            iter++;
+            oldu = curu;
+            oldv = curv;
 
-        // choose lambda/alpha_u
-        MoMALogger::debug("Start u search.");
-        u_result = bicsr_u.search(X * curv, curu, bic_au_grid, bic_lu_grid);
-        curu     = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
+            // choose lambda/alpha_u
+            MoMALogger::debug("Start u search.");
+            u_result = bicsr_u.search(X * curv, curu, bic_au_grid, bic_lu_grid);
+            curu     = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
 
-        MoMALogger::debug("Start v search.");
-        v_result = bicsr_v.search(X.t() * curu, curv, bic_av_grid, bic_lv_grid);
-        curv     = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
+            MoMALogger::debug("Start v search.");
+            v_result = bicsr_v.search(X.t() * curu, curv, bic_av_grid, bic_lv_grid);
+            curv     = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
 
-        double scale_u = arma::norm(oldu) == 0.0 ? 1 : arma::norm(oldu);
-        double scale_v = arma::norm(oldv) == 0.0 ? 1 : arma::norm(oldv);
+            double scale_u = arma::norm(oldu) == 0.0 ? 1 : arma::norm(oldu);
+            double scale_v = arma::norm(oldv) == 0.0 ? 1 : arma::norm(oldv);
 
-        tol = arma::norm(oldu - u) / scale_u + arma::norm(oldv - v) / scale_v;
-        MoMALogger::debug("Finish nested greedy BIC search outer loop. (iter, tol) = (")
-            << iter << "," << tol << "), "
-            << "(bic_u, bic_v) = (" << (double)u_result["bic"] << "," << (double)v_result["bic"]
-            << ")";
+            tol = arma::norm(oldu - u) / scale_u + arma::norm(oldv - v) / scale_v;
+            MoMALogger::debug("Finish nested greedy BIC search outer loop. (iter, tol) = (")
+                << iter << "," << tol << "), "
+                << "(bic_u, bic_v) = (" << (double)u_result["bic"] << "," << (double)v_result["bic"]
+                << ")";
+        }
+    }
+    else
+    {
+        u_result = Rcpp::List::create(
+            Rcpp::Named("lambda") = bic_lu_grid(0), Rcpp::Named("alpha") = bic_au_grid(0),
+            Rcpp::Named("vector") = initial_u, Rcpp::Named("bic") = -MOMA_INFTY);
+        v_result = Rcpp::List::create(
+            Rcpp::Named("lambda") = bic_lv_grid(0), Rcpp::Named("alpha") = bic_av_grid(0),
+            Rcpp::Named("vector") = initial_v, Rcpp::Named("bic") = -MOMA_INFTY);
+        MoMALogger::debug("Deprecated BIC grid. Skip searching.");
     }
 
     // A final run on the selected parameter
@@ -112,6 +130,8 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
 
         u_result["vector"] = u;
         v_result["vector"] = v;
+
+        // NOTE: we do not update bic for the new u and v.
     }
 
     return Rcpp::List::create(Rcpp::Named("u_result") = u_result,
@@ -213,18 +233,19 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         Rcpp::List u_result = result["u_result"];
                         Rcpp::List v_result = result["v_result"];
 
+                        arma::vec curu = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
+                        arma::vec curv = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
+                        double d       = arma::as_scalar(curu.t() * X * curv);
+
                         five_d_list.insert(
                             Rcpp::List::create(Rcpp::Named("u") = u_result,
                                                Rcpp::Named("v") = v_result, Rcpp::Named("k") = pc,
-                                               Rcpp::Named("X") = X),
+                                               Rcpp::Named("X") = X, Rcpp::Named("d") = d),
                             i, j, k, m, pc);
 
                         // Deflate the matrix
                         if (pc < rank - 1)
                         {
-                            arma::vec curu = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
-                            arma::vec curv = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
-                            double d       = arma::as_scalar(curu.t() * X * curv);
                             deflate(d);
                         }
                     }

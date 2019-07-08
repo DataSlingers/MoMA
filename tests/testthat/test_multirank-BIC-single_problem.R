@@ -80,3 +80,27 @@ test_that("`cpp_multirank_BIC_grid_search` solves a single MoMA problem", {
     # all zeros
     expect_lte(zero_cnt / (n_lambda_u * n_lambda_v * n_alpha_u * n_alpha_v), 0.1)
 })
+
+test_that("`cpp_multirank_BIC_grid_search`: a naive case", {
+    arglist_x_w_penalty <- modifyList(
+        public_arglist_wo_penalty,
+        list(
+            X = matrix(1),
+            Omega_u = matrix(0),
+            Omega_v = matrix(0),
+            alpha_u = 0,
+            alpha_v = 0,
+            lambda_u = 0,
+            lambda_v = 0
+        )
+    )
+
+    result <- do.call(
+        cpp_multirank_BIC_grid_search,
+        arglist_x_w_penalty
+    )[[1]]
+
+    expect_equal(result$u$vector, as.matrix(1))
+    expect_equal(result$v$vector, as.matrix(1))
+    expect_equal(result$d, 1)
+})
