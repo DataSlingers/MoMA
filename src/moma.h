@@ -15,7 +15,7 @@
 #include "moma_solver_BICsearch.h"
 
 // 4-D list
-#include "moma_fourdlist.h"
+#include "moma_fivedlist.h"
 
 // Prototypes
 // moma_logging.cpp
@@ -33,22 +33,26 @@ class MoMA
     double alpha_v;
     double lambda_u;
     double lambda_v;
+    bool is_initialzied;  // only MoMA::initialze_uv() sets it to true
+    bool is_solved;       // only MoMA::solve() sets it true.
+    arma::mat X;          // TODO: move to private. It is not MoMA's duty to keep a copy of X
+
+    // they are used in MoMA::evaluate_loss
+    arma::mat Omega_u;
+    arma::mat Omega_v;
 
   public:
     // Receiver a grid of parameters
-    // and perform greedy BIC search
+    // and perform greedy BIC search. Initial points
+    // must be specified.
     BIC_searcher bicsr_u;
     BIC_searcher bicsr_v;
 
     // Our own copy of the data matrix
     // Modified when finding rank-k svd
-    arma::mat X;
     // user-specified precisions
     int MAX_ITER;
     double EPS;
-    // working precision and iterations
-    int iter;
-    double tol;
     // Results -- will be modified during iterations and copied back to R
     arma::vec u;
     arma::vec v;
@@ -75,8 +79,8 @@ class MoMA
           */
          double i_alpha_u,  // Smoothing levels
          double i_alpha_v,
-         const arma::mat &Omega_u,  // Smoothing matrices
-         const arma::mat &Omega_v,
+         const arma::mat &i_Omega_u,  // Smoothing matrices
+         const arma::mat &i_Omega_v,
 
          /*
           * Algorithm parameters:
@@ -91,21 +95,40 @@ class MoMA
     // penalized regressions
     void solve();
 
-    // do parameter selection using nested BIC
-    Rcpp::List select_nestedBIC(const arma::vec &alpha_u,
-                                const arma::vec &alpha_v,
-                                const arma::vec &lambda_u,
-                                const arma::vec &lambda_v,
-                                int max_bic_iter);
+    double evaluate_loss();
 
     // deflate u * v.t() out of X by the amount of d
+    // deflation happens in place, so MoMA::X is contaminated
     int deflate(double d);
 
+    int initialize_uv();
+
     // check convergence
-    int check_cnvrg();
+    int check_convergence(int iter, double tol);
 
     // change penalty level
     int reset(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v);
+    int set_X(arma::mat new_X);
+
+    // following functions are implemented in `moma_level1.cpp`
+    Rcpp::List criterion_search(const arma::vec &bic_au_grid,
+                                const arma::vec &bic_lu_grid,
+                                const arma::vec &bic_av_grid,
+                                const arma::vec &bic_lv_grid,
+                                arma::vec initial_u,
+                                arma::vec initial_v,
+                                double EPS_bic   = 1e-7,  // not very useful
+                                int max_bic_iter = 5,
+                                bool final_run   = true);
+
+    Rcpp::List multi_rank(int rank, arma::vec initial_u, arma::vec initial_v);
+
+    Rcpp::List grid_search(const arma::vec &alpha_u,
+                           const arma::vec &lambda_u,
+                           const arma::vec &alpha_v,
+                           const arma::vec &lambda_v,
+                           arma::vec initial_u,
+                           arma::vec initial_v);
 
     Rcpp::List grid_BIC_mix(const arma::vec &alpha_u,
                             const arma::vec &alpha_v,
@@ -116,7 +139,8 @@ class MoMA
                             int selection_criterion_alpha_v,
                             int selection_criterion_lambda_u,
                             int selection_criterion_lambda_v,
-                            int max_bic_iter = 5);
+                            int max_bic_iter = 5,
+                            int rank         = 1);
 };
 
 #endif

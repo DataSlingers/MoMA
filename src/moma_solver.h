@@ -43,10 +43,6 @@ class _PR_solver
     // user-specified precision and max iterations
     double EPS;
     int MAX_ITER;
-    // working precision and max iterations
-    double tol;
-    int iter;
-    int check_cnvrg();
 
   public:
     explicit _PR_solver(
@@ -66,6 +62,7 @@ class _PR_solver
     double bic(arma::vec y, const arma::vec &est);
     virtual ~_PR_solver()                                              = default;
     virtual arma::vec solve(arma::vec y, const arma::vec &start_point) = 0;
+    void check_convergence(int iter, double tol);
 };
 
 class ISTA : public _PR_solver

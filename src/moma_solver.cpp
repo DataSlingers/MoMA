@@ -21,13 +21,12 @@ arma::vec _PR_solver::normalize(const arma::vec &u)
     return res;
 }
 
-int _PR_solver::check_cnvrg()
+void _PR_solver::check_convergence(int iter, double tol)
 {
-    if (iter >= MAX_ITER)
+    if (iter >= MAX_ITER || tol > EPS)
     {
         MoMALogger::warning("No convergence in _PR_solver!");
     }
-    return 0;
 }
 
 _PR_solver::_PR_solver(double i_alpha,
@@ -54,8 +53,6 @@ _PR_solver::_PR_solver(double i_alpha,
     grad_step_size = 1 / L;
     prox_step_size = lambda / L;
     is_S_idmat     = (alpha == 0.0);
-    tol            = 1;
-    iter           = 0;
 }
 
 arma::vec _PR_solver::g(const arma::vec &v,
@@ -127,8 +124,8 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point)
         MoMALogger::error("Wrong dimension in PRsolver::solve:")
             << start_point.n_elem << ":" << S.n_cols;
     }
-    tol         = 1;
-    iter        = 0;
+    double tol  = 1;
+    int iter    = 0;
     arma::vec u = start_point;
     arma::vec oldu;  // store working result
 
@@ -158,7 +155,7 @@ arma::vec ISTA::solve(arma::vec y, const arma::vec &start_point)
 
     MoMALogger::debug("Finish solving PR: (total_iter, tol) = ")
         << "(" << iter << "," << tol << ")";
-    check_cnvrg();
+    check_convergence(iter, tol);
     return u;
 }
 
@@ -168,8 +165,8 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point)
     {
         MoMALogger::error("Wrong dimension in PRsolver::solve");
     }
-    tol            = 1;
-    iter           = 0;
+    double tol     = 1;
+    int iter       = 0;
     arma::vec u    = start_point;
     arma::vec newu = start_point;
     arma::vec oldu;  // store working result
@@ -201,7 +198,7 @@ arma::vec FISTA::solve(arma::vec y, const arma::vec &start_point)
     }
     u = normalize(u);
 
-    check_cnvrg();
+    check_convergence(iter, tol);
     MoMALogger::debug("Finish solving PR: (total_iter, tol) = ")
         << "(" << iter << "," << tol << ")";
     return u;
@@ -213,8 +210,8 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point)
     {
         MoMALogger::error("Wrong dimension in PRsolver::solve");
     }
-    tol         = 1;
-    iter        = 0;
+    double tol  = 1;
+    int iter    = 0;
     arma::vec u = start_point;
     arma::vec oldu;  // store working result
 
@@ -242,7 +239,7 @@ arma::vec OneStepISTA::solve(arma::vec y, const arma::vec &start_point)
         }
     }
 
-    check_cnvrg();
+    check_convergence(iter, tol);
     MoMALogger::debug("Finish solving PR: (total_iter, tol) = ")
         << "(" << iter << "," << tol << ")";
     return u;

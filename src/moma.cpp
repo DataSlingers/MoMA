@@ -16,8 +16,8 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
             */
            double i_alpha_u,  // Smoothing levels
            double i_alpha_v,
-           const arma::mat &Omega_u,  // Smoothing matrices
-           const arma::mat &Omega_v,
+           const arma::mat &i_Omega_u,  // Smoothing matrices
+           const arma::mat &i_Omega_v,
 
            /*
             * Algorithm parameters:
@@ -33,12 +33,14 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
       alpha_v(i_alpha_v),
       lambda_u(i_lambda_u),
       lambda_v(i_lambda_v),
-      X(i_X),  // make our copy of the data
+      X(i_X),  // no copy of the data
+      Omega_u(i_Omega_u),
+      Omega_v(i_Omega_v),
       MAX_ITER(i_MAX_ITER),
       EPS(i_EPS),
       solver_u(i_solver,
                alpha_u,
-               Omega_u,
+               i_Omega_u,
                lambda_u,
                i_prox_arg_list_u,
                i_EPS_inner,
@@ -46,7 +48,7 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
                i_X.n_rows),
       solver_v(i_solver,
                alpha_v,
-               Omega_v,
+               i_Omega_v,
                lambda_v,
                i_prox_arg_list_v,
                i_EPS_inner,
@@ -54,6 +56,11 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
                i_X.n_cols)
 // const reference must be passed to initializer list
 {
+    if (i_EPS >= 1 || i_EPS_inner >= 1)
+    {
+        MoMALogger::error("EPS or EPS_inner too large.");
+    }
+
     bicsr_u.bind(&solver_u, &PR_solver::bic);
     bicsr_v.bind(&solver_v, &PR_solver::bic);
 
@@ -73,36 +80,34 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
     //         lie near the SVD solution; for problems with significant
     //         regularization the problem becomes more well-behaved and less
     //         sensitive to initialization
-    arma::mat U;
-    arma::vec s;
-    arma::mat V;
-    arma::svd(U, s, V, X);
-    v = V.col(0);
-    u = U.col(0);
+    initialize_uv();
+    is_initialzied = true;
+    is_solved      = false;  // TODO: check if alphauv == 0
 };
 
 int MoMA::deflate(double d)
 {
-    MoMALogger::warning("Deflating.");
+    MoMALogger::debug("Deflating:\n")
+        << "\nX = \n"
+        << X << "u^T = " << u.t() << "v^T = " << v.t() << "d = u^TXv = " << d;
+
     if (d <= 0.0)
     {
         MoMALogger::error("Cannot deflate by non-positive factor.");
     }
     X = X - d * u * v.t();
     // Re-initialize u and v after deflation
-    arma::mat U;
-    arma::vec s;
-    arma::mat V;
-    arma::svd(U, s, V, X);
-    v = V.col(0);
-    u = U.col(0);
+    initialize_uv();
     return d;
 }
 
+// Dependence on MoMA's internal states: MoMA::X, MoMA::u, MoMA::v, MoMA::alpha_u/v,
+// MoMA::lambda_u/v
+// After calling MoMA::solve(), MoMA::u and MoMA::v become the solution to the penalized regression.
 void MoMA::solve()
 {
-    tol  = 1;
-    iter = 0;
+    double tol = 1;
+    int iter   = 0;
     arma::vec oldu;
     arma::vec oldv;
     while (tol > EPS && iter < MAX_ITER)
@@ -114,107 +119,58 @@ void MoMA::solve()
         u = solver_u.solve(X * v, u);
         v = solver_v.solve(X.t() * u, v);
 
-        tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
-        MoMALogger::debug("Outer loop No.") << iter << "--" << tol;
+        double scale_u = arma::norm(oldu) == 0.0 ? 1 : arma::norm(oldu);
+        double scale_v = arma::norm(oldv) == 0.0 ? 1 : arma::norm(oldv);
+
+        tol = arma::norm(oldu - u) / scale_u + arma::norm(oldv - v) / scale_v;
+        MoMALogger::debug("Real-time PG loop info:  (iter, tol) = (") << iter << ", " << tol << ")";
     }
 
-    MoMALogger::info("--Finish iter: ") << iter << "---";
-    check_cnvrg();
+    MoMALogger::info("Finish PG loop. Total iter = ") << iter;
+    check_convergence(iter, tol);
+    is_solved = true;
 }
 
-Rcpp::List MoMA::select_nestedBIC(const arma::vec &alpha_u,
-                                  const arma::vec &alpha_v,
-                                  const arma::vec &lambda_u,
-                                  const arma::vec &lambda_v,
-                                  int max_bic_iter = 5)
-{  // suggested in the sfpca_nested_bic.m
-
-    MoMALogger::info("Running nested BIC parameter selection.");
-    tol  = 1;
-    iter = 0;
-    arma::vec oldu;
-    arma::vec oldv;
-    arma::vec working_u = u;
-    arma::vec working_v = v;
-    double working_bic_u;
-    double working_bic_v;
-    double minbic_u;
-    double minbic_v;
-    double opt_alpha_u;
-    double opt_alpha_v;
-    double opt_lambda_u;
-    double opt_lambda_v;
-
-    while (tol > EPS && iter < MAX_ITER && iter < max_bic_iter)
-    {
-        iter++;
-        oldu     = u;
-        oldv     = v;
-        minbic_u = 1e+10;
-        minbic_v = 1e+10;
-
-        // choose lambda/alpha_u
-        for (int i = 0; i < alpha_u.n_elem; i++)
-        {
-            for (int j = 0; j < lambda_u.n_elem; j++)
-            {
-                // Put lambda_u in the inner loop to avoid reconstructing S many times
-                solver_u.reset(lambda_u(j), alpha_u(i));
-                working_u     = solver_u.solve(X * v, working_u);
-                working_bic_u = solver_u.bic(X * v, working_u);
-                MoMALogger::debug("(now,min,la,al) = (") << working_bic_u << "," << minbic_u << ","
-                                                         << lambda_u(j) << "," << alpha_u(i) << ")";
-                if (working_bic_u < minbic_u)
-                {
-                    minbic_u     = working_bic_u;
-                    u            = working_u;
-                    opt_lambda_u = lambda_u(j);
-                    opt_alpha_u  = alpha_u(i);
-                }
-            }
-        }
-        MoMALogger::message("Search No.") << iter << ", BIC(u) = " << minbic_u << ", (al,lam) = ("
-                                          << opt_alpha_u << ", " << opt_lambda_u << ").";
-        // choose lambda/alpha_v
-        for (int i = 0; i < alpha_v.n_elem; i++)
-        {
-            for (int j = 0; j < lambda_v.n_elem; j++)
-            {
-                // Put lambda_v in the inner loop to avoid reconstructing S many times
-                solver_v.reset(lambda_v(j), alpha_v(i));
-                working_v     = solver_v.solve(X.t() * u, working_v);
-                working_bic_v = solver_v.bic(X.t() * u, working_v);
-                MoMALogger::debug("(now,min) = (") << working_bic_v << "," << minbic_v << ","
-                                                   << lambda_v(j) << "," << alpha_v(i) << ")";
-                if (working_bic_v < minbic_v)
-                {
-                    minbic_v     = working_bic_v;
-                    v            = working_v;
-                    opt_lambda_v = lambda_v(j);
-                    opt_alpha_v  = alpha_v(i);
-                }
-            }
-        }
-        MoMALogger::message("Search No.") << iter << ", BIC(v) = " << minbic_v << ", (al,lam) = ("
-                                          << opt_alpha_v << ", " << opt_lambda_v << ").";
-
-        tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
-        MoMALogger::debug("Outer loop No.") << iter << "--" << tol;
-    }
-
-    // A final run on the chosen set of parameters
-    reset(opt_lambda_u, opt_lambda_v, opt_alpha_u, opt_alpha_v);
-    solve();
-    return Rcpp::List::create(
-        Rcpp::Named("lambda_u") = opt_lambda_u, Rcpp::Named("lambda_v") = opt_lambda_v,
-        Rcpp::Named("alpha_u") = opt_alpha_u, Rcpp::Named("alpha_v") = opt_alpha_v,
-        Rcpp::Named("u") = u, Rcpp::Named("v") = v,
-        Rcpp::Named("d") = arma::as_scalar(u.t() * X * v));
-}
-
-int MoMA::check_cnvrg()
+double MoMA::evaluate_loss()
 {
-    if (iter >= MAX_ITER)
+    if (!is_solved)
+    {
+        MoMALogger::error("Please call MoMA::solve first before MoMA::evaluate_loss.");
+    }
+    double u_ellipsoid_constraint = arma::as_scalar(u.t() * u + alpha_u * u.t() * Omega_u * u);
+    double v_ellipsoid_constraint = arma::as_scalar(v.t() * v + alpha_v * v.t() * Omega_v * v);
+
+    if ((std::abs(u_ellipsoid_constraint) > MOMA_FLOATPOINT_EPS &&
+         std::abs(u_ellipsoid_constraint - 1.0) > MOMA_FLOATPOINT_EPS) ||
+        (std::abs(v_ellipsoid_constraint) > MOMA_FLOATPOINT_EPS &&
+         std::abs(v_ellipsoid_constraint - 1.0) > MOMA_FLOATPOINT_EPS))
+    {
+        MoMALogger::error("Ellipse constraint is not met.");
+    }
+
+    MoMALogger::error("MoMA::evaluate_loss it not implemented yet.");
+    return 0;  // TODO: Implement it.
+}
+
+int MoMA::initialize_uv()
+{
+    // TODO: we can set MoMA::u and MoMA::v to
+    // the solution of pSVD with only smoothness constraints.
+
+    // Set MoMA::v, MoMA::u as leading SVs of X
+    arma::mat U;
+    arma::vec s;
+    arma::mat V;
+    arma::svd(U, s, V, X);
+    v              = V.col(0);
+    u              = U.col(0);
+    is_initialzied = true;
+    return 0;
+}
+
+int MoMA::check_convergence(int iter, double tol)
+{
+    if (iter >= MAX_ITER || tol > EPS)
     {
         MoMALogger::warning("No convergence in MoMA!")
             << " lambda_u " << lambda_u << " lambda_v " << lambda_v << " alpha_u " << alpha_u
@@ -223,141 +179,33 @@ int MoMA::check_cnvrg()
     return 0;
 }
 
+// Note it does not change MoMA::u and MoMA::v
 int MoMA::reset(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v)
 {
     solver_u.reset(newlambda_u, newalpha_u);
     solver_v.reset(newlambda_v, newalpha_v);
+
+    // NOTE: We must keep the alpha's and lambda's up-to-date
+    // in both MoMA and solve_u/v
+    if (std::abs(alpha_u - newalpha_u) > MOMA_FLOATPOINT_EPS ||
+        std::abs(alpha_v - newalpha_v) > MOMA_FLOATPOINT_EPS ||
+        std::abs(lambda_v - newlambda_v) > MOMA_FLOATPOINT_EPS ||
+        std::abs(lambda_u - newlambda_u) > MOMA_FLOATPOINT_EPS)
+    {
+        // update internal states of MoMA
+        is_solved = false;
+        alpha_u   = newalpha_u;
+        alpha_v   = newalpha_v;
+        lambda_u  = newlambda_u;
+        lambda_v  = newlambda_v;
+    }
+
     return 0;
 }
 
-const arma::vec &set_greedy_grid(const arma::vec &grid, int want_grid)
+int MoMA::set_X(arma::mat new_X)
 {
-    if (want_grid == 1)
-    {
-        return grid;
-    }
-    else if (want_grid == 0)
-    {
-        return MOMA_EMPTY_GRID_OF_LENGTH1;
-    }
-}
-
-arma::vec set_bic_grid(const arma::vec &grid, int want_bic, int i)
-{
-    if (want_bic == 1)
-    {
-        return grid;
-    }
-    else if (want_bic == 0)
-    {
-        return grid(i) * arma::ones<arma::vec>(1);
-    }
-}
-
-Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
-                              const arma::vec &alpha_v,
-                              const arma::vec &lambda_u,
-                              const arma::vec &lambda_v,
-                              int selection_criterion_alpha_u,  // flags; = 0 means grid, =
-                                                                // 01 means BIC search
-                              int selection_criterion_alpha_v,
-                              int selection_criterion_lambda_u,
-                              int selection_criterion_lambda_v,
-                              int max_bic_iter)
-{
-    // If alpha_u is selected via grid search, then the variable
-    // grid_au = alpha_u, bic_au_grid = [-1].
-    // If alpha_u is selected via nested BIC search,
-    // then grid_au = [-1], bic_au_grid = alpha_u
-    const arma::vec &grid_lu = set_greedy_grid(lambda_u, !selection_criterion_lambda_u);
-    const arma::vec &grid_lv = set_greedy_grid(lambda_v, !selection_criterion_lambda_v);
-    const arma::vec &grid_au = set_greedy_grid(alpha_u, !selection_criterion_alpha_u);
-    const arma::vec &grid_av = set_greedy_grid(alpha_v, !selection_criterion_alpha_v);
-
-    // Test that if a grid is set to be BIC-search grid, then
-    // the above code should set grid_xx to the vector [-1]
-    if ((selection_criterion_alpha_u == 1 && (grid_au.n_elem != 1 || grid_au(0) != -1)) ||
-        (selection_criterion_alpha_v == 1 && (grid_av.n_elem != 1 || grid_av(0) != -1)) ||
-        (selection_criterion_lambda_u == 1 && (grid_lu.n_elem != 1 || grid_lu(0) != -1)) ||
-        (selection_criterion_lambda_v == 1 && (grid_lv.n_elem != 1 || grid_lv(0) != -1)))
-    {
-        MoMALogger::error("Wrong grid-search grid!")
-            << "grid_lu.n_elem=" << grid_lu.n_elem << ", grid_av.n_elem=" << grid_av.n_elem
-            << ", grid_lu.n_elem" << grid_lu.n_elem << ", grid_lv.n_elem" << grid_lv.n_elem;
-    }
-
-    int n_lambda_u = grid_lu.n_elem;
-    int n_lambda_v = grid_lv.n_elem;
-    int n_alpha_u  = grid_au.n_elem;
-    int n_alpha_v  = grid_av.n_elem;
-
-    RcppFourDList four_d_list(n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v);
-
-    // nested-BIC search returns a list that
-    // contains (lambda, alpha, bic, selected vector)
-    Rcpp::List u_result;
-    Rcpp::List v_result;
-
-    // to facilitate warm-start
-    arma::vec oldu;
-    arma::vec oldv;
-
-    for (int i = 0; i < n_alpha_u; i++)
-    {
-        for (int j = 0; j < n_lambda_u; j++)
-        {
-            for (int k = 0; k < n_alpha_v; k++)
-            {
-                for (int m = 0; m < n_lambda_v; m++)
-                {
-                    arma::vec bic_au_grid = set_bic_grid(alpha_u, selection_criterion_alpha_u, i);
-                    arma::vec bic_lu_grid = set_bic_grid(lambda_u, selection_criterion_lambda_u, j);
-                    arma::vec bic_av_grid = set_bic_grid(alpha_v, selection_criterion_alpha_v, k);
-                    arma::vec bic_lv_grid = set_bic_grid(lambda_v, selection_criterion_lambda_v, m);
-
-                    if ((selection_criterion_alpha_u == 0 && bic_au_grid.n_elem != 1) ||
-                        (selection_criterion_alpha_v == 0 && bic_av_grid.n_elem != 1) ||
-                        (selection_criterion_lambda_u == 0 && bic_lu_grid.n_elem != 1) ||
-                        (selection_criterion_lambda_v == 0 && bic_lv_grid.n_elem != 1))
-                    {
-                        MoMALogger::error("Wrong BIC search grid!");
-                    }
-
-                    tol  = 1;
-                    iter = 0;
-
-                    // We conduct 2 BIC searches over 2D grids here instead
-                    // of 4 searches over 1D grids. It's consistent with
-                    // Genevera's code
-                    while (tol > EPS && iter < MAX_ITER && iter < max_bic_iter)
-                    {
-                        iter++;
-                        oldu = u;
-                        oldv = v;
-
-                        // choose lambda/alpha_u
-                        MoMALogger::debug("Start u search.");
-                        u_result = bicsr_u.search(X * v, u, bic_au_grid, bic_lu_grid);
-                        u        = Rcpp::as<Rcpp::NumericVector>(u_result["vector"]);
-
-                        MoMALogger::debug("Start v search.");
-                        v_result = bicsr_v.search(X.t() * u, v, bic_av_grid, bic_lv_grid);
-                        v        = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
-
-                        tol = norm(oldu - u) / norm(oldu) + norm(oldv - v) / norm(oldv);
-                        MoMALogger::message("Finish BIC search outer loop. (iter, tol) = (")
-                            << iter << "," << tol << "), "
-                            << "(bic_u, bic_v) = (" << (double)u_result["bic"] << ","
-                            << (double)v_result["bic"] << ")";
-                    }
-
-                    four_d_list.insert(Rcpp::List::create(Rcpp::Named("u") = u_result,
-                                                          Rcpp::Named("v") = v_result),
-                                       i, j, k, m);
-                }
-            }
-        }
-    }
-
-    return four_d_list.get_list();
+    X = new_X;
+    initialize_uv();
+    return 0;
 }

@@ -1,9 +1,12 @@
 #include "moma.h"
 
-// This function finds rank-k svd
+// This files expose four member functions of MoMA
+// 1. MoMA::multi_rank (see function `cpp_moma_multi_rank`)
+// 2. MoMA::grid_search (see function `cpp_moma_grid_search`)
+// 3. MoMA::criterion_search (see function `cpp_moma_criterion_search`)
 
 // [[Rcpp::export]]
-Rcpp::List cpp_sfpca(
+Rcpp::List cpp_moma_multi_rank(
     const arma::mat &X,  // We should not change any variable in R, so const ref
     const arma::vec &alpha_u,
     const arma::vec &alpha_v,
@@ -18,7 +21,7 @@ Rcpp::List cpp_sfpca(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
-    int k = 1)
+    int rank = 1)
 {
     // WARNING: arguments should be listed
     // in the exact order of MoMA constructor
@@ -41,33 +44,12 @@ Rcpp::List cpp_sfpca(
     {
         MoMALogger::error("We don't allow a range of parameters in finding a rank-k svd.");
     }
-    // store results
-    arma::mat U(X.n_rows, k);
-    arma::mat V(X.n_cols, k);
-    arma::vec d(k);
-
-    // find k PCs
-    for (int i = 0; i < k; i++)
-    {
-        problem.solve();
-        U.col(i) = problem.u;
-        V.col(i) = problem.v;
-        d(i)     = arma::as_scalar(problem.u.t() * problem.X * problem.v);
-        // deflate X
-        if (i < k - 1)
-        {
-            problem.deflate(d(i));
-        }
-    }
-    return Rcpp::List::create(Rcpp::Named("lambda_u") = lambda_u,
-                              Rcpp::Named("lambda_v") = lambda_v, Rcpp::Named("alpha_u") = alpha_u,
-                              Rcpp::Named("alpha_v") = alpha_v, Rcpp::Named("u") = U,
-                              Rcpp::Named("v") = V, Rcpp::Named("d") = d);
+    return problem.multi_rank(rank, problem.u, problem.v);
 }
 
 // This function solves a squence of lambda's and alpha's
 // [[Rcpp::export]]
-Rcpp::List cpp_sfpca_grid(
+Rcpp::List cpp_moma_grid_search(
     const arma::mat &X,  // We should not change any variable in R, so const ref
     const arma::vec &alpha_u,
     const arma::vec &alpha_v,
@@ -82,8 +64,12 @@ Rcpp::List cpp_sfpca_grid(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
-    int k = 1)
+    int rank = 1)  // `rank` is not used
 {
+    if (rank != 1)
+    {
+        MoMALogger::error("Then `rank` argument in `cpp_moma_multi_rank` should not be specified.");
+    }
     // We only allow changing two parameters
     int n_lambda_u = lambda_u.n_elem;
     int n_lambda_v = lambda_v.n_elem;
@@ -102,8 +88,6 @@ Rcpp::List cpp_sfpca_grid(
         MoMALogger::error("Please specify all four parameters.");
     }
 
-    int n_total = n_lambda_v * n_lambda_u * n_alpha_u * n_alpha_v;
-
     // NOTE: arguments should be listed
     // in the exact order of MoMA constructor
     MoMA problem(X,
@@ -115,50 +99,12 @@ Rcpp::List cpp_sfpca_grid(
                  EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver);
 
     // store results
-    arma::mat U(X.n_rows, n_total);
-    arma::mat V(X.n_cols, n_total);
-    arma::vec d(n_total);
-
-    int problem_id = 0;
-    for (int i = 0; i < n_lambda_u; i++)
-    {
-        for (int j = 0; j < n_lambda_v; j++)
-        {
-            for (int k = 0; k < n_alpha_u; k++)
-            {
-                for (int m = 0; m < n_alpha_v; m++)
-                {
-                    MoMALogger::info("Setting up model:")
-                        << " lambda_u " << lambda_u(i) << " lambda_v " << lambda_v(j) << " alpha_u "
-                        << alpha_u(k) << " alpha_v " << alpha_v(m);
-
-                    problem.reset(lambda_u(i), lambda_v(j), alpha_u(k), alpha_v(m));
-
-                    // `solve` method use the result from last
-                    // iteration as starting point
-                    problem.solve();
-                    U.col(problem_id) = problem.u;
-                    V.col(problem_id) = problem.v;
-                    d(problem_id)     = arma::as_scalar(problem.u.t() * problem.X * problem.v);
-
-                    problem_id++;
-                }
-            }
-        }
-    }
-    if (problem_id != n_total)
-    {
-        MoMALogger::error("Internal error: solution not found for all grid points.");
-    }
-    return Rcpp::List::create(Rcpp::Named("lambda_u") = lambda_u,
-                              Rcpp::Named("lambda_v") = lambda_v, Rcpp::Named("alpha_u") = alpha_u,
-                              Rcpp::Named("alpha_v") = alpha_v, Rcpp::Named("u") = U,
-                              Rcpp::Named("v") = V, Rcpp::Named("d") = d);
+    return problem.grid_search(alpha_u, lambda_u, alpha_v, lambda_v, problem.u, problem.v);
 }
 
 // This function solves a squence of lambda's and alpha's
 // [[Rcpp::export]]
-Rcpp::List cpp_sfpca_nestedBIC(
+Rcpp::List cpp_moma_criterion_search(
     const arma::mat &X,  // We should not change any variable in R, so const ref
     const arma::vec &alpha_u,
     const arma::vec &alpha_v,
@@ -173,8 +119,12 @@ Rcpp::List cpp_sfpca_nestedBIC(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
-    int k = 1)
+    int rank = 1)  // rank not used
 {
+    if (rank != 1)
+    {
+        MoMALogger::error("Then `rank` argument in `cpp_moma_multi_rank` should not be specified.");
+    }
     // We only allow changing two parameters
     int n_lambda_u = lambda_u.n_elem;
     int n_lambda_v = lambda_v.n_elem;
@@ -193,7 +143,53 @@ Rcpp::List cpp_sfpca_nestedBIC(
         MoMALogger::error("Please specify all four parameters.");
     }
 
-    int n_total = n_lambda_v * n_lambda_u * n_alpha_u * n_alpha_v;
+    // NOTE: arguments should be listed
+    // in the exact order of MoMA constructor
+    MoMA problem(X,
+                 /* sparsity */
+                 lambda_u(0), lambda_v(0), prox_arg_list_u, prox_arg_list_v,
+                 /* smoothness */
+                 alpha_u(0), alpha_v(0), Omega_u, Omega_v,
+                 /* algorithm parameters */
+                 EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver);
+
+    return problem.criterion_search(alpha_u, lambda_u, alpha_v, lambda_v, problem.u, problem.v,
+                                    EPS);
+}
+
+// This function solves a squence of lambda's and alpha's
+// [[Rcpp::export]]
+Rcpp::List cpp_multirank_BIC_grid_search(
+    const arma::mat &X,  // We should not change any variable in R, so const ref
+    const arma::vec &alpha_u,
+    const arma::vec &alpha_v,
+    const arma::mat &Omega_u,  // Default values for these matrices should be set in R
+    const arma::mat &Omega_v,
+    const arma::vec &lambda_u,
+    const arma::vec &lambda_v,
+    const Rcpp::List &prox_arg_list_u,
+    const Rcpp::List &prox_arg_list_v,
+    double EPS,
+    long MAX_ITER,
+    double EPS_inner,
+    long MAX_ITER_inner,
+    std::string solver,
+    int selection_criterion_alpha_u  = 0,  // 0 means grid, 1 means BIC search
+    int selection_criterion_alpha_v  = 0,
+    int selection_criterion_lambda_u = 0,
+    int selection_criterion_lambda_v = 0,
+    int max_bic_iter                 = 5,
+    int rank                         = 1)
+{
+    int n_lambda_u = lambda_u.n_elem;
+    int n_lambda_v = lambda_v.n_elem;
+    int n_alpha_u  = alpha_u.n_elem;
+    int n_alpha_v  = alpha_v.n_elem;
+
+    if (n_lambda_v == 0 || n_lambda_u == 0 || n_alpha_u == 0 || n_alpha_v == 0)
+    {
+        MoMALogger::error("Please specify all four parameters.");
+    }
 
     // NOTE: arguments should be listed
     // in the exact order of MoMA constructor
@@ -205,5 +201,7 @@ Rcpp::List cpp_sfpca_nestedBIC(
                  /* algorithm parameters */
                  EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver);
 
-    return problem.select_nestedBIC(alpha_u, alpha_v, lambda_u, lambda_v, 5);
+    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, selection_criterion_alpha_u,
+                                selection_criterion_alpha_v, selection_criterion_lambda_u,
+                                selection_criterion_lambda_v, max_bic_iter, rank);
 }

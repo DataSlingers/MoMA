@@ -18,5 +18,6 @@
 #define MOMA_EIGENVALUE_REGULARIZATION 0.01
 static constexpr double MOMA_INFTY                = std::numeric_limits<double>::infinity();
 static const arma::vec MOMA_EMPTY_GRID_OF_LENGTH1 = -arma::ones<arma::vec>(1);
+static const double MOMA_FLOATPOINT_EPS           = 1e-8;
 #define MOMA_FUSEDLASSODP_BUFFERSIZE 5000
 #endif

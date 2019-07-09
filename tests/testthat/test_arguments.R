@@ -143,6 +143,22 @@ test_that("Prompt errors for wrong prox arguments", {
         "We only allow changing two parameters.",
         fixed = TRUE
     )
+
+    expect_no_error(
+        moma_svd(
+            matrix(runif(12), 3, 4),
+            lambda_u = c(1, 2, 3),
+            lambda_v = seq(10), select = "grid"
+        )
+    )
+
+    expect_no_error(
+        moma_svd(
+            matrix(runif(12), 3, 4),
+            lambda_u = c(1, 2, 3),
+            lambda_v = seq(10), select = "nested"
+        )
+    )
 })
 
 
