@@ -3,7 +3,7 @@
 #include "moma.h"
 
 // auxiliary functions for MoMA::grid_BIC_mix
-const arma::vec &set_greedy_grid(const arma::vec &grid, int want_grid)
+const arma::vec &construct_grid_for_search(const arma::vec &grid, int want_grid)
 {
     if (want_grid == 1)
     {
@@ -15,7 +15,7 @@ const arma::vec &set_greedy_grid(const arma::vec &grid, int want_grid)
     }
 }
 
-arma::vec set_bic_grid(const arma::vec &grid, int want_bic, int i)
+arma::vec construct_grid_no_search(const arma::vec &grid, int want_bic, int i)
 {
     if (want_bic == 1)
     {
@@ -150,10 +150,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     // grid_au = alpha_u, bic_au_grid = [-1].
     // If alpha_u is selected via nested BIC search,
     // then grid_au = [-1], bic_au_grid = alpha_u
-    const arma::vec &grid_lu = set_greedy_grid(lambda_u, !selection_criterion_lambda_u);
-    const arma::vec &grid_lv = set_greedy_grid(lambda_v, !selection_criterion_lambda_v);
-    const arma::vec &grid_au = set_greedy_grid(alpha_u, !selection_criterion_alpha_u);
-    const arma::vec &grid_av = set_greedy_grid(alpha_v, !selection_criterion_alpha_v);
+    const arma::vec &grid_lu = construct_grid_for_search(lambda_u, !selection_criterion_lambda_u);
+    const arma::vec &grid_lv = construct_grid_for_search(lambda_v, !selection_criterion_lambda_v);
+    const arma::vec &grid_au = construct_grid_for_search(alpha_u, !selection_criterion_alpha_u);
+    const arma::vec &grid_av = construct_grid_for_search(alpha_v, !selection_criterion_alpha_v);
 
     // Test that if a grid is set to be BIC-search grid, then
     // the above code should set grid_xx to the vector [-1]
@@ -184,10 +184,14 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
             {
                 for (int m = 0; m < n_lambda_v; m++)
                 {
-                    arma::vec bic_au_grid = set_bic_grid(alpha_u, selection_criterion_alpha_u, i);
-                    arma::vec bic_lu_grid = set_bic_grid(lambda_u, selection_criterion_lambda_u, j);
-                    arma::vec bic_av_grid = set_bic_grid(alpha_v, selection_criterion_alpha_v, k);
-                    arma::vec bic_lv_grid = set_bic_grid(lambda_v, selection_criterion_lambda_v, m);
+                    arma::vec bic_au_grid =
+                        construct_grid_no_search(alpha_u, selection_criterion_alpha_u, i);
+                    arma::vec bic_lu_grid =
+                        construct_grid_no_search(lambda_u, selection_criterion_lambda_u, j);
+                    arma::vec bic_av_grid =
+                        construct_grid_no_search(alpha_v, selection_criterion_alpha_v, k);
+                    arma::vec bic_lv_grid =
+                        construct_grid_no_search(lambda_v, selection_criterion_lambda_v, m);
 
                     if ((selection_criterion_alpha_u == 0 && bic_au_grid.n_elem != 1) ||
                         (selection_criterion_alpha_v == 0 && bic_av_grid.n_elem != 1) ||
