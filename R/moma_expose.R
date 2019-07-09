@@ -31,6 +31,13 @@ add_default_prox_args <- function(sparsity_type) {
 
 # This function checks the validity of Omega and alpha
 check_omega <- function(Omega, alpha, n) {
+
+    # check if Omega is a matrix
+    if (!is.matrix(Omega) && !is.null(Omega)) {
+        moma_error("Omage_u/v is not a matrix.")
+    }
+
+    # store them as sparse matrices using the package Matrix
     if (length(alpha) == 1 && alpha == 0) {
         # discard the Omega matrix specified by users
         Omega <- diag(n)
@@ -41,6 +48,9 @@ check_omega <- function(Omega, alpha, n) {
         Omega <- second_diff_mat(n)
     }
     else {
+        # At this point, users have specified an Omega and
+        # non-zero penalty levels explicitly
+
         # Check validity of Omega if users speicify both alpha and Omega
         if (dim(Omega)[1] != dim(Omega)[2]) {
             moma_error(
