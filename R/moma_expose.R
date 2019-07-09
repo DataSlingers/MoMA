@@ -37,7 +37,7 @@ check_omega <- function(Omega, alpha, n) {
         moma_error("Omage_u/v is not a matrix.")
     }
 
-    # store them as sparse matrices using the package Matrix
+    # TODO: store them as sparse matrices using the package Matrix
     if (length(alpha) == 1 && alpha == 0) {
         # discard the Omega matrix specified by users
         Omega <- diag(n)
