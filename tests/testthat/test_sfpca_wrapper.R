@@ -151,7 +151,9 @@ test_that("SFPCA object: left-project fucntion", {
 
 
 
-test_that("SFPCA object: moma_spca", {
+
+
+test_that("SFPCA object wrappers: moma_spca", {
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
@@ -232,7 +234,7 @@ test_that("SFPCA object: moma_spca", {
 })
 
 
-test_that("SFPCA object: moma_twspca", {
+test_that("SFPCA object wrappers: moma_twspca", {
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
@@ -330,7 +332,7 @@ test_that("SFPCA object: moma_twspca", {
 })
 
 
-test_that("SFPCA object: moma_fpca", {
+test_that("SFPCA object wrappers: moma_fpca", {
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
@@ -425,7 +427,7 @@ test_that("SFPCA object: moma_fpca", {
 })
 
 
-test_that("SFPCA object: moma_twfpca", {
+test_that("SFPCA object wrappers: moma_twfpca", {
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
