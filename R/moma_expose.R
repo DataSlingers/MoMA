@@ -34,7 +34,7 @@ check_omega <- function(Omega, alpha, n) {
 
     # check if Omega is a matrix
     if (!is.matrix(Omega) && !is.null(Omega)) {
-        moma_error("Omage_u/v is not a matrix.")
+        moma_error("Omega_u/v is not a matrix.")
     }
 
     # TODO: store them as sparse matrices using the package Matrix

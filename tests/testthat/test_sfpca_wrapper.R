@@ -345,7 +345,7 @@ test_that("SFPCA object wrappers: moma_fpca", {
             alpha_u = seq(0, 2, 0.2), Omega_u = lasso(),
             selection_scheme_str = "g"
         ),
-        "Omage_u/v is not a matrix."
+        "Omega_u/v is not a matrix."
     )
 
     # test when no penalty matrix is provided
