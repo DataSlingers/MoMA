@@ -1,3 +1,16 @@
+#' SFPCA R6 object
+#'
+#' An R6 object for performing SFPCA and parameter selection
+#'
+#' During initialziation of an \code{SFPCA} object, \code{R}
+#' calls the \code{C++}-side function, \code{cpp_multirank_BIC_grid_search}, and
+#' wraps the results returned. The \code{SFPCA} object also records penalty levels
+#' and selection schemes of tuning parameters. Several helper
+#' methods are provivded to facilitate access to results.
+#' @seealso \code{\link[MoMA:moma_sfpca]{moma_sfpca}},
+#'  \code{\link[MoMA:moma_spca]{moma_spca}}, moma_fpca, moma_twspca, moma_twfpca
+#' @return nothing; modifies \code{person}
+#' @export
 SFPCA <- R6::R6Class("SFPCA", list(
     center = NULL,
     scale = NULL,
@@ -260,6 +273,41 @@ SFPCA <- R6::R6Class("SFPCA", list(
     }
 ))
 
+#' Perform two-way sparse and functional PCA
+#'
+#' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns.
+#' @param center a logical value indicating whether the variables should be shifted to be zero centered.
+#' Defaults to \code{TRUE}.
+#' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
+#' Defaults to \code{FALSE}.
+#' @param u_sparsity,v_sparsity an object of class inheriting from "\code{moma_sparsity}". Most conveniently
+#' specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
+#' penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
+#' specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
+#' @param lambda_u,lambda_v a numeric vector or a number that specifies the penalty level of sparsity.
+#' Note that for \code{moma_spca}, these two parameter must not be
+#' specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
+#' @param Omega_u,Omega_v a positive definite matrix that encourages smoothness.  Note that for \code{moma_fpca}, these two parameter must not be
+#' specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
+#' @param alpha_u,alpha_v v a numeric vector or a number that specifies the penalty level of smoothness.
+#' Note that for \code{moma_fpca}, these two parameter must not be
+#' specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
+#' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
+#' specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
+#' used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
+#' @param selection_scheme_str a one-letter, two-letter or four-letter string that specifies selection schemes for tuning
+#' parameters, containing only "b" and "g". "b" stands for greedy nested BIC selection, and "g"
+#' stands for exhaustive grid search. For \code{moma_sfpca}, it is a four-letter string, and selection schemes for the tuning parameters,
+#' alpha_u, alpha_v, lambda_u and lambda_v are specified by the four letters of the string, respectively. For
+#' \code{moma_spca} and \code{moma_fpca}, it is a one-leter string that specifies the selection scheme
+#' for the paramter of interest. For \code{moma_twspca}, it is a two-letter string, and
+#' selection schemes for lambda_u and lambda_v are specified by the two letters respectively. For
+#' \code{moma_twfpca}, it is a two-letter string, and selection schemes for alpha_u and alpha_v
+#' are specified by the two letters respectively.
+#' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
+#' in nested greedy BIC selection scheme.
+#' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
+#' @export
 moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
                        u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
@@ -285,6 +333,11 @@ moma_sfpca <- function(X, ...,
     ))
 }
 
+#' Perform one-way sparse PCA
+#'
+#' \code{moma_spca} is a wrapper around R6 object \code{SFPCA}
+#' @export
+#' @describeIn moma_sfpca a function for one-way sparse PCA
 moma_spca <- function(X, ...,
                       center = TRUE, scale = FALSE,
                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
@@ -334,6 +387,12 @@ moma_spca <- function(X, ...,
     # moma_error("Not implemented: SPCA")
 }
 
+
+#' Perform two-way sparse PCA
+#'
+#' \code{moma_twspca} is a wrapper around R6 object \code{SFPCA}
+#' @export
+#' @describeIn moma_sfpca a function for two-way sparse PCA
 moma_twspca <- function(X, ...,
                         center = TRUE, scale = FALSE,
                         u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
@@ -376,6 +435,11 @@ moma_twspca <- function(X, ...,
     ))
 }
 
+#' Perform one-way functional PCA
+#'
+#' \code{moma_fpca} is a wrapper around R6 object \code{SFPCA}
+#' @export
+#' @describeIn moma_sfpca a function for one-way functional PCA
 moma_fpca <- function(X, ...,
                       center = TRUE, scale = FALSE,
                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0,
@@ -424,6 +488,11 @@ moma_fpca <- function(X, ...,
     ))
 }
 
+#' Perform two-way functional PCA
+#'
+#' \code{moma_twfpca} is a wrapper around R6 object \code{SFPCA}
+#' @export
+#' @describeIn moma_sfpca a function for two-way functional PCA
 moma_twfpca <- function(X, ...,
                         center = TRUE, scale = FALSE,
                         Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0,
