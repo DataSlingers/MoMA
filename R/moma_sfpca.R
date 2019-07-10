@@ -307,6 +307,8 @@ SFPCA <- R6::R6Class("SFPCA", list(
 #' Perform two-way sparse and functional PCA
 #'
 #' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns.
+#' @param X data matrix.
+#' @param ... force users to specify arguments by names
 #' @param center a logical value indicating whether the variables should be shifted to be zero centered.
 #' Defaults to \code{TRUE}.
 #' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
