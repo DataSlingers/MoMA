@@ -1,15 +1,46 @@
-#' SFPCA R6 object
+#' \code{SFPCA} \code{R6} object
 #'
-#' An R6 object for performing SFPCA and parameter selection
+#' An \code{R6} object for performing SFPCA and parameter selection
 #'
 #' During initialziation of an \code{SFPCA} object, \code{R}
 #' calls the \code{C++}-side function, \code{cpp_multirank_BIC_grid_search}, and
 #' wraps the results returned. The \code{SFPCA} object also records penalty levels
 #' and selection schemes of tuning parameters. Several helper
 #' methods are provivded to facilitate access to results.
-#' @seealso \code{\link[MoMA:moma_sfpca]{moma_sfpca}},
-#'  \code{\link[MoMA:moma_spca]{moma_spca}}, moma_fpca, moma_twspca, moma_twfpca
-#' @return nothing; modifies \code{person}
+#' Initialization is delegated to \code{\link{moma_sfpca}}.
+#' @seealso \code{\link{moma_sfpca}},
+#' \code{\link{moma_spca}},
+#' \code{\link{moma_fpca}},
+#' \code{\link{moma_twspca}},
+#' \code{\link{moma_twfpca}}
+#'
+#' @section Members:
+#'
+#' \describe{
+#'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
+#' The numeric centering and scalings used (if any) of the data matrix.}
+#'   \item{\code{grid_result}}{a 5-D list containing the results evaluated on the paramter grid.}
+#'   \item{\code{selection_scheme_list}}{a list with elements \code{selection_criterion_alpha_u},
+#'            \code{selection_criterion_alpha_v},
+#'            \code{selection_criterion_lambda_u},
+#'            \code{selection_criterion_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
+#' and 1 stands for BIC search. TODO: descibe the mixed selection procedure.}
+#' }
+#' @section Methods:
+#'
+#' \describe{
+#'   \item{\code{get_mat}}{Arguments: \code{alpha_u}, \code{alpha_v}, \code{lambda_u}, \code{lambda_v}
+#' are the indices of the parameters in the paramter grid, which is specified during initialization.
+#'
+#' Obtain the right and left sigular penalized vectors, which are packed into matrices \code{U} and \code{V}.}
+#'   \item{\code{print}}{Display tuning parameters and selection schemes.}
+#'   \item{\code{left_project}}{Arguments: \code{newX}, a matrix (un-centered and un-scaled) of
+#' the same number of columns as the original data matrix.
+#'
+#' Project the new data into the space spaned by the
+#' penalized left singular vectors, after scaling and centering as needed.}
+#' }
+#' @return an \code{SFPCA} R6 object.
 #' @export
 SFPCA <- R6::R6Class("SFPCA", list(
     center = NULL,
