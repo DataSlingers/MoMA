@@ -201,6 +201,18 @@ test_that("SFPCA object wrappers: moma_spca", {
     )
 
 
+    expect_error(a <- moma_spca(X, lambda_u = c()),
+        paste0(
+            "All penalty levels (",
+            sQuote("lambda_u"), ", ",
+            sQuote("lambda_v"), ", ",
+            sQuote("alpha_u"), ", ",
+            sQuote("alpha_v"),
+            ") must be numeric."
+        ),
+        fixed = TRUE
+    )
+
     a <- moma_spca(X)
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
