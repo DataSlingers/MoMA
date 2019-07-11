@@ -153,7 +153,7 @@ SFPCA <- R6::R6Class("SFPCA", list(
             selection_criterion_lambda_v = 0
         )
         for (i in 1:4) {
-            selection_scheme_list[[i]] <- ifelse(strsplit(selection_scheme_str, split = "")[[1]][i] == "g", 0, 1)
+            selection_scheme_list[[i]] <- ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
         }
         self$selection_scheme_list <- selection_scheme_list
 
