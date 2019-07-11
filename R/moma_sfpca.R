@@ -291,7 +291,7 @@ SFPCA <- R6::R6Class("SFPCA", list(
             moma_error("`newX` is incompatible with orignal data.")
         }
 
-        PV <- solve((t(V) %*% V), t(V))
+        PV <- solve(crossprod(V), t(V))
         scaled_data <- scale(newX, self$center, self$scale)
         result <- scaled_data %*% t(PV)
         colnames(result) <- paste0("PC", seq_len(self$rank))
