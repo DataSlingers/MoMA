@@ -29,7 +29,7 @@
 #' @section Methods:
 #'
 #' \describe{
-#'   \item{\code{get_mat}}{Arguments: \code{alpha_u}, \code{alpha_v}, \code{lambda_u}, \code{lambda_v}
+#'   \item{\code{get_mat_by_index}}{Arguments: \code{alpha_u}, \code{alpha_v}, \code{lambda_u}, \code{lambda_v}
 #' are the indices of the parameters in the paramter grid, which is specified during initialization.
 #'
 #' Obtain the right and left sigular penalized vectors, which are packed into matrices \code{U} and \code{V}.}
@@ -199,12 +199,13 @@ SFPCA <- R6::R6Class("SFPCA", list(
         )
     },
 
-    get_mat = function(alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+    get_mat_by_index = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+        chkDots(...)
         # Sanity check: if a parameter has been chosen by BIC, then
         # the index for that parameter should not be specified.
         parameter <- c(alpha_u, alpha_v, lambda_u, lambda_v)
         if (any(parameter != 1 & self$selection_scheme_list != 0)) {
-            moma_error("Invalid index in SFPCA::get_mat. Do not specify indexes of parameters chosen by BIC.")
+            moma_error("Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters chosen by BIC.")
         }
 
 
@@ -271,9 +272,9 @@ SFPCA <- R6::R6Class("SFPCA", list(
         # check indexes
         parameter <- c(alpha_u, alpha_v, lambda_u, lambda_v)
         if (any(parameter != 1 & self$selection_scheme_list != 0)) {
-            moma_error("Invalid index in SFPCA::get_mat. Do not specify indexes of parameters chosen by BIC.")
+            moma_error("Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters chosen by BIC.")
         }
-        V <- self$get_mat(
+        V <- self$get_mat_by_index(
             alpha_u = alpha_u,
             alpha_v = alpha_v,
             lambda_u = lambda_u,

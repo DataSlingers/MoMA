@@ -55,7 +55,13 @@ test_that("SFPCA object: as SVD", {
     a <- SFPCA$new(X, rank = 3, center = FALSE, scale = FALSE)
 
 
-    mysvd <- a$get_mat(1, 1, 1, 1)
+    mysvd <- a$get_mat_by_index(
+        alpha_u = 1,
+        alpah_v = 1,
+        lambda_u = 1,
+        lambda_v = 1
+    )
+
     svda <- svd(X, nu = 3, nv = 3)
 
     expect_equal(abs(mysvd$U), abs(svda$u), check.attributes = FALSE) # use `abs` to avoid sign difference
@@ -68,14 +74,24 @@ test_that("SFPCA object: as SVD", {
     dimnames(X) <- list(rown, coln)
 
     a <- SFPCA$new(X, rank = 3, center = FALSE, scale = FALSE)
-    mysvd <- a$get_mat(1, 1, 1, 1)
+    mysvd <- a$get_mat_by_index(
+        alpha_u = 1,
+        alpah_v = 1,
+        lambda_u = 1,
+        lambda_v = 1
+    )
 
     expect_equal(rownames(mysvd$U), rown)
     expect_equal(rownames(mysvd$V), coln)
 
 
     # test default arguments
-    expect_equal(a$get_mat(), a$get_mat(1, 1, 1, 1))
+    expect_equal(a$get_mat_by_index(), a$get_mat_by_index(
+        alpha_u = 1,
+        alpah_v = 1,
+        lambda_u = 1,
+        lambda_v = 1
+    ))
 
     # test selection with BIC seach and grid search
     a <- SFPCA$new(X,
@@ -86,8 +102,13 @@ test_that("SFPCA object: as SVD", {
 
     expect_equal(dim(a$grid_result), c(1, 1, 1, 1, 3))
     expect_error(
-        a$get_mat(2, 1, 1, 1),
-        "Invalid index in SFPCA::get_mat. Do not specify indexes of parameters chosen by BIC."
+        a$get_mat_by_index(
+            alpha_u = 2,
+            alpah_v = 1,
+            lambda_u = 1,
+            lambda_v = 1
+        ),
+        "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters chosen by BIC."
     )
 })
 
