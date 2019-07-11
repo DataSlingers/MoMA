@@ -49,6 +49,27 @@ test_that("SFPCA object: correct arguments", {
 
 
 test_that("SFPCA object: as SVD", {
+    X <- matrix(runif(12), 4, 3)
+    expect_error(
+        SFPCA$new(X, rank = "3.1", center = FALSE, scale = FALSE),
+        "rank should be a legit positive integer"
+    )
+    expect_error(
+        SFPCA$new(X, rank = 0, center = FALSE, scale = FALSE),
+        "rank should be a legit positive integer"
+    )
+    expect_error(
+        SFPCA$new(X, rank = -1.1, center = FALSE, scale = FALSE),
+        "rank should be a legit positive integer"
+    )
+    expect_error(
+        SFPCA$new(X, rank = -1, center = FALSE, scale = FALSE),
+        "rank should be a legit positive integer"
+    )
+    expect_error(
+        SFPCA$new(X, rank = 3.1, center = FALSE, scale = FALSE),
+        "rank should be a legit positive integer"
+    )
 
     # test no penalty case
     X <- matrix(runif(12), 4, 3)

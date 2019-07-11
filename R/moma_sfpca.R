@@ -158,7 +158,9 @@ SFPCA <- R6::R6Class("SFPCA", list(
         self$selection_scheme_list <- selection_scheme_list
 
         # Step 1.7: check rank
-        if (!inherits(rank, "numeric") || rank <= 0
+        is.wholenumber <-
+            function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
+        if (!inherits(rank, "numeric") || !is.wholenumber(rank) || rank <= 0
         || rank > min(p, n)) {
             moma_error("rank should be a legit positive integer.")
         }
