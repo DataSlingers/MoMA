@@ -191,7 +191,9 @@ test_that("SFPCA object: left-project fucntion", {
     )
 })
 
+test_that("SFPCA object: interpolate", {
 
+})
 
 
 

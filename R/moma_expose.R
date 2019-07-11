@@ -28,6 +28,8 @@ add_default_prox_args <- function(sparsity_type) {
     return(modifyList(MOMA_DEFAULT_PROX, sparsity_type))
 }
 
+is.wholenumber <-
+    function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
 
 # This function checks the validity of Omega and alpha
 check_omega <- function(Omega, alpha, n) {

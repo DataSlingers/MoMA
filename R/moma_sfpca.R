@@ -56,6 +56,7 @@ SFPCA <- R6::R6Class("SFPCA", list(
     lambda_u = NULL,
     lambda_v = NULL,
     selection_scheme_list = NULL,
+    pg_setting = NULL,
     n = NULL,
     p = NULL,
     X = NULL,
@@ -128,6 +129,7 @@ SFPCA <- R6::R6Class("SFPCA", list(
                 ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
             )
         }
+        self$pg_setting <- pg_setting
 
         # Step 1.5: smoothness
         Omega_u <- check_omega(Omega_u, alpha_u, n)
@@ -205,6 +207,21 @@ SFPCA <- R6::R6Class("SFPCA", list(
         chkDots(...)
         # Sanity check: if a parameter has been chosen by BIC, then
         # the index for that parameter should not be specified.
+
+        if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
+            any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
+            moma_error("Non-scalar input in SFPCA::get_mat_by_index.")
+        }
+
+        if (!all(
+            is.wholenumber(alpha_u),
+            is.wholenumber(alpha_v),
+            is.wholenumber(lambda_u),
+            is.wholenumber(lambda_v)
+        )) {
+            moma_error("SFPCA::get_mat_by_index takes integer indices.")
+        }
+
         parameter <- c(alpha_u, alpha_v, lambda_u, lambda_v)
         if (any(parameter != 1 & self$selection_scheme_list != 0)) {
             moma_error("Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters chosen by BIC.")
@@ -242,6 +259,40 @@ SFPCA <- R6::R6Class("SFPCA", list(
         dimnames(U) <-
             list(rown, paste0("PC", seq_len(rank)))
         return(list(U = U, V = V))
+    },
+
+    interpolate = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, exact = FALSE) {
+        chkDots(...)
+
+        if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
+            any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
+            moma_error("Non-scalar input in SFPCA::interpolate.")
+        }
+
+        if (is.unsorted(alpha_u) ||
+            is.unsorted(alpha_v) ||
+            is.unsorted(lambda_u) ||
+            is.unsorted(lambda_v)) {
+            moma_error("Penalty levels not sorted!")
+        }
+
+        if (exact) {
+            # call moma_svd
+            a <- moma_svd(
+                X = self$X,
+                u_sparsity = self$u_sparsity, v_sparsity = self$v_sparsity,
+                lambda_u = lambda_u, lambda_v = lambda_v,
+                Omega_u = self$Omega_u, Omega_v = self$Omega_v,
+                pg_setting = self$pg_setting,
+                k = self$rank,
+            )
+            return(list(U = a$u, V = a$v))
+        }
+        else {
+            # interpolate
+            a <- 1
+            moma_error("interpolate option not implemented.")
+        }
     },
 
     print = function() {
