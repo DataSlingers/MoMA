@@ -242,11 +242,13 @@ SFPCA <- R6::R6Class("SFPCA",
             # Sanity check: if a parameter has been chosen by BIC, then
             # the index for that parameter should not be specified.
 
+            # they should be of length 1
             if (any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1 ||
                 !all(is.wholenumber(alpha_u), is.wholenumber(alpha_v), is.wholenumber(lambda_u), is.wholenumber(lambda_v)))) {
                 moma_error("Non-integer input in SFPCA::get_mat_by_index.")
             }
 
+            # indices should be integers
             if (!all(
                 is.wholenumber(alpha_u),
                 is.wholenumber(alpha_v),
