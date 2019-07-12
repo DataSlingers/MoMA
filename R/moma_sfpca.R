@@ -168,9 +168,10 @@ SFPCA <- R6::R6Class("SFPCA",
                 selection_criterion_lambda_v = 0
             )
             fixed_list <- list(
-                # three senarios when the followings can be true
-                # 1. it is selected by BIC
-                # 2. it is a fixed scalar
+                # "Fixed" parameters are those
+                # i) that are chosen by BIC, or ",
+                # ii) that are not specified during initialization of the SFCPA object, or "
+                # iii) that are scalars during initialization of the SFCPA object."
                 is_alpha_u_fixed = FALSE,
                 is_alpha_v_fixed = FALSE,
                 is_lambda_u_fixed = FALSE,
@@ -310,6 +311,11 @@ SFPCA <- R6::R6Class("SFPCA",
                 moma_error("R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used.")
             }
 
+            if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
+                any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
+                moma_error("Non-scalar input in SFPCA::interpolate.")
+            }
+
             missing_list <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
 
             if (exact) {
@@ -327,26 +333,15 @@ SFPCA <- R6::R6Class("SFPCA",
                     Omega_u = self$Omega_u, Omega_v = self$Omega_v,
                     alpha_u = alpha_u, alpha_v = alpha_v,
                     pg_setting = self$pg_setting,
-                    k = self$rank,
+                    k = self$rank
                 )
                 return(list(U = a$u, V = a$v))
             }
 
-            if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
-                any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
-                moma_error("Non-scalar input in SFPCA::interpolate.")
-            }
-
-
-            # If users specify a "fixed" parameter, give errors.
-            # "Fixed" parameters are those
-            # i) that are chosen by BIC, or ",
-            # ii) that are not specified during initialization of the SFCPA object, or "
-            # iii) that are scalars during initialization of the SFCPA object."
             if (any(self$fixed_list == TRUE & missing_list != TRUE)) {
                 moma_error(
                     paste0(
-                        "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
+                        "Invalid index in SFPCA::interpolate. Do not specify indexes of parameters ",
                         "i) that are chosen by BIC, or ",
                         "ii) that are not specified during initialization of the SFCPA object, or ",
                         "iii) that are scalars during initialization of the SFCPA object."
@@ -354,11 +349,115 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
+            if (is.unsorted(self$alpha_u) ||
+                is.unsorted(self$alpha_v) ||
+                is.unsorted(self$lambda_u) ||
+                is.unsorted(self$lambda_v)) {
+                moma_error("Penalty levels not sorted!")
+            }
 
+            # a bool: want to interpolate on u side?
+            inter_u <- !missing(alpha_u) && !missing(lambda_u) &&
+                !self$fixed_list$is_alpha_u_fixed &&
+                !self$fixed_list$is_lambda_u_fixed &&
+                self$fixed_list$is_alpha_v_fixed &&
+                self$fixed_list$is_lambda_v_fixed
+
+            inter_v <- !missing(alpha_v) && !missing(lambda_v) &&
+                self$fixed_list$is_alpha_u_fixed &&
+                self$fixed_list$is_lambda_u_fixed &&
+                !self$fixed_list$is_alpha_v_fixed &&
+                !self$fixed_list$is_lambda_v_fixed
+
+            if (!xor(inter_u, inter_v)) {
+                moma_error("SFPCA::interpolate only supports one-sided interpolation.")
+            }
+
+            if (inter_v) {
+
+                # test that it is in the known range
+                if (alpha_v >= max(self$alpha_v) || alpha_v <= min(self$alpha_v)) {
+                    moma_error("Invalid range: alpha_v.")
+                }
+                # find the cloest alpha
+                alpha_v_i <- which.min(abs(self$alpha_v - alpha_v))
+
+
+                # find the bin where lambda lies in
+                if (lambda_v >= max(self$lambda_v) || lambda_v <= min(self$lambda_v)) {
+                    moma_error("Invalid range: lambda_v.")
+                }
+                lambda_v_i_lo <- findInterval(lambda_v, self$lambda_v)
+                lambda_v_i_hi <- lambda_v_i_lo + 1
+
+
+                if (lambda_v_i_hi > length(self$lambda_v)) {
+                    moma_error("SFPCA::interpolate, error in findInterval")
+                }
+
+                result_lo <- private$private_get_mat_by_index(
+                    alpha_u = 1,
+                    alpha_v = alpha_v_i,
+                    lambda_u = 1,
+                    lambda_v = lambda_v_i_lo
+                )
+
+                result_hi <- private$private_get_mat_by_index(
+                    alpha_u = 1,
+                    alpha_v = alpha_v_i,
+                    lambda_u = 1,
+                    lambda_v = lambda_v_i_hi
+                )
+
+                U <- 0.5 * (result_lo$U + result_hi$U)
+                V <- 0.5 * (result_lo$V + result_hi$V)
+
+                # newSv <- diag(self$p) + alpha_v * self$Omega_v
+                # newSu <- diag(self$n) + alpha_u * self$Omega_u
+
+                # LvT <- chol(newSv)
+                # LuT <- chol(newSu) # L^T L = newS, L is a lower triagular matrix
+
+                return(list(U = U, V = V))
+            }
+            else if (inter_u) {
+                if (alpha_u >= max(self$alpha_u) || alpha_u <= min(self$alpha_u)) {
+                    moma_error("Invalid range: alpha_u.")
+                }
+                # find the cloest alpha
+                alpha_u_i <- which.min(abs(self$alpha_u - alpha_u))
+
+
+                # find the bin where lambda lies in
+                if (lambda_u >= max(self$lambda_u) || lambda_u <= min(self$lambda_u)) {
+                    moma_error("Invalid range: lambda_u.")
+                }
+                lambda_u_i_lo <- findInterval(lambda_u, self$lambda_u)
+                lambda_u_i_hi <- lambda_u_i_lo + 1
+
+                if (lambda_u_i_hi > length(self$lambda_u)) {
+                    moma_error("SFPCA::interpolate, error in findInterval.")
+                }
+
+                result_lo <- private$private_get_mat_by_index(
+                    alpha_v = 1,
+                    alpha_u = alpha_u_i,
+                    lambda_v = 1,
+                    lambda_u = lambda_u_i_lo
+                )
+
+                result_hi <- private$private_get_mat_by_index(
+                    alpha_v = 1,
+                    alpha_u = alpha_u_i,
+                    lambda_v = 1,
+                    lambda_u = lambda_u_i_hi
+                )
+
+                U <- 0.5 * (result_lo$U + result_hi$U)
+                V <- 0.5 * (result_lo$V + result_hi$V)
+            }
             else {
-                # interpolate
-                a <- 1
-                moma_error("interpolate option not implemented.")
+                moma_error("UNKNOWN.")
             }
         },
 

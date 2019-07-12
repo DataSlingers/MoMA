@@ -687,7 +687,7 @@ test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", 
     )
 })
 
-test_that("SFPCA object: interpolate", {
+test_that("SFPCA object: interpolate, exact mode", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
@@ -732,4 +732,63 @@ test_that("SFPCA object: interpolate", {
     )
     expect_equal(internal_call$U, dir_call$u)
     expect_equal(internal_call$V, dir_call$v)
+})
+
+
+test_that("SFPCA object: interpolate, inexact mode", {
+    set.seed(113)
+    X <- matrix(runif(17 * 8), 17, 8) * 10
+
+    # interpolation on v side
+    a <- moma_sfpca(X,
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        alpha_v = seq(0.1, 1, 0.15), alpha_u = 0.32,
+        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+    )
+    expect_no_error(
+        a$interpolate(alpha_v = 0.23, lambda_v = 0.121)
+    )
+
+    # error becasue both alpha_v and lambda_v should be specified
+    expect_error(
+        a$interpolate(alpha_v = 0.23),
+        "SFPCA::interpolate only supports one-sided interpolation."
+    )
+
+    # error becasue alpha_u is a scalar during initialization
+    expect_error(
+        a$interpolate(alpha_u = 0.2323),
+        paste0(
+            "Invalid index in SFPCA::interpolate. Do not specify indexes of parameters ",
+            "i) that are chosen by BIC, or ",
+            "ii) that are not specified during initialization of the SFCPA object, or ",
+            "iii) that are scalars during initialization of the SFCPA object."
+        )
+    )
+
+    # error becasue both alpha_u should not be specified
+    expect_error(
+        a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1),
+        paste0(
+            "Invalid index in SFPCA::interpolate. Do not specify indexes of parameters ",
+            "i) that are chosen by BIC, or ",
+            "ii) that are not specified during initialization of the SFCPA object, or ",
+            "iii) that are scalars during initialization of the SFCPA object."
+        )
+    )
+
+    # unsorted alpha_v
+    a <- moma_sfpca(X,
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        alpha_v = c(seq(0.1, 1, 0.15), 0.02),
+        alpha_u = 0.32,
+        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+    )
+
+    expect_error(
+        a$interpolate(alpha_v = 0.23, lambda_v = 0.121),
+        "Penalty levels not sorted"
+    )
 })
