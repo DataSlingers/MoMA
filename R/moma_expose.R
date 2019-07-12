@@ -47,7 +47,7 @@ check_omega <- function(Omega, alpha, n) {
     else if (is.null(Omega)) {
         # The user wants smooth penalty
         # but does not specify Omega matrix
-        Omega <- second_diff_mat(n)
+        Omega <- second_diff_mat(n) # TODO: should not overwrite
     }
     else {
         # At this point, users have specified an Omega and
@@ -67,6 +67,7 @@ check_omega <- function(Omega, alpha, n) {
                 ", but is actually ", dim(Omega)[1], "x", dim(Omega)[1]
             )
         }
+        # TODO: check definiteness and symmetry of Omega
     }
     return(Omega)
 }

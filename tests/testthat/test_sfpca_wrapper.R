@@ -76,12 +76,7 @@ test_that("SFPCA object: as SVD", {
     a <- SFPCA$new(X, rank = 3, center = FALSE, scale = FALSE)
 
 
-    mysvd <- a$get_mat_by_index(
-        alpha_u = 1,
-        alpah_v = 1,
-        lambda_u = 1,
-        lambda_v = 1
-    )
+    mysvd <- a$get_mat_by_index()
 
     svda <- svd(X, nu = 3, nv = 3)
 
@@ -95,24 +90,14 @@ test_that("SFPCA object: as SVD", {
     dimnames(X) <- list(rown, coln)
 
     a <- SFPCA$new(X, rank = 3, center = FALSE, scale = FALSE)
-    mysvd <- a$get_mat_by_index(
-        alpha_u = 1,
-        alpah_v = 1,
-        lambda_u = 1,
-        lambda_v = 1
-    )
+    mysvd <- a$get_mat_by_index()
 
     expect_equal(rownames(mysvd$U), rown)
     expect_equal(rownames(mysvd$V), coln)
 
 
     # test default arguments
-    expect_equal(a$get_mat_by_index(), a$get_mat_by_index(
-        alpha_u = 1,
-        alpah_v = 1,
-        lambda_u = 1,
-        lambda_v = 1
-    ))
+    expect_equal(a$get_mat_by_index(), a$get_mat_by_index())
 
     # test selection with BIC seach and grid search
     a <- SFPCA$new(X,
@@ -122,15 +107,6 @@ test_that("SFPCA object: as SVD", {
     expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
 
     expect_equal(dim(a$grid_result), c(1, 1, 1, 1, 3))
-    expect_error(
-        a$get_mat_by_index(
-            alpha_u = 2,
-            alpah_v = 1,
-            lambda_u = 1,
-            lambda_v = 1
-        ),
-        "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters chosen by BIC."
-    )
 })
 
 test_that("SFPCA object: print fucntion", {
@@ -173,6 +149,7 @@ test_that("SFPCA object: left-project fucntion", {
         lambda_v = c(6),
         selection_scheme_str = "bbbb"
     )
+    SFPCA$debug("left_project")
     expect_error(
         a$left_project(matrix(0, 4, 1)),
         "`newX` is incompatible with orignal data."
@@ -191,8 +168,98 @@ test_that("SFPCA object: left-project fucntion", {
     )
 })
 
-test_that("SFPCA object: interpolate", {
+test_that("SFPCA object: `fixed_list` functions as expected", {
+    set.seed(113)
+    X <- matrix(runif(17 * 8), 17, 8) * 10
 
+    invaid_indices_error <-
+        paste0(
+            "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
+            "i) that are chosen by BIC, or ",
+            "ii) that are not specified during initialization of the SFCPA object, or ",
+            "iii) that are scalars during initialization of the SFCPA object."
+        )
+
+    # case 1:
+    # parameters that did not appear in initialization
+    # should not appear in SFPCA::get_mat_by_index at all
+    a <- moma_sfpca(X)
+    expect_no_error(
+        a$get_mat_by_index()
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_u = 1),
+        invaid_indices_error
+    )
+    expect_warning(
+        a$get_mat_by_index(alphau = 1),
+        paste0("extra argument ", sQuote("alphau"), " will be disregarded")
+    )
+
+
+    # case 2:
+    # parameters that were scalars in initialization
+    # should not appear in SFPCA::get_mat_by_index either
+    a <- moma_sfpca(X, alpha_u = 1)
+    expect_no_error(
+        a$get_mat_by_index()
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_u = 1),
+        invaid_indices_error
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_v = 2),
+        invaid_indices_error
+    )
+    expect_error(
+        a$get_mat_by_index(lambda_u = 1),
+        invaid_indices_error
+    )
+
+
+    # case 2:
+    # parameters that were selected by BIC
+    # should not appear in SFPCA::get_mat_by_index either
+    a <- moma_sfpca(X,
+        alpha_u = c(1, 2),
+        alpha_v = c(1, 2, 3), # selected by BIC
+        selection_scheme_str = "gbgg"
+    )
+    expect_no_error(
+        a$get_mat_by_index()
+    )
+    expect_no_error(
+        a$get_mat_by_index(alpha_u = 2)
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_v = 0),
+        invaid_indices_error
+    )
+    expect_error(
+        a$get_mat_by_index(lambda_u = 0),
+        invaid_indices_error
+    )
+
+    a <- moma_sfpca(X, alpha_u = c(1, 2))
+    expect_no_error(
+        a$get_mat_by_index()
+    )
+    expect_no_error(
+        a$get_mat_by_index(alpha_u = 2)
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_u = 2, alpha_v = 0),
+        invaid_indices_error
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_v = 0),
+        invaid_indices_error
+    )
+    expect_error(
+        a$get_mat_by_index(lambda_u = 0),
+        invaid_indices_error
+    )
 })
 
 
@@ -592,4 +659,30 @@ test_that("SFPCA object wrappers: moma_twfpca", {
         selection_scheme_str = "bg"
     )
     expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
+})
+
+test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", {
+    set.seed(113)
+    X <- matrix(runif(17 * 8), 17, 8) * 10
+
+    a <- moma_sfpca(X,
+        alpha_u = c(1, 2), alpha_v = c(1.1, 2.1),
+        lambda_u = c(1.3, 2.3), lambda_v = c(1.4, 2.4)
+    )
+
+    expect_no_error(
+        a$get_mat_by_index(alpha_u = 2)
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_u = 2.1),
+        "Non-integer input in SFPCA::get_mat_by_index"
+    )
+
+    expect_no_error(
+        a$left_project(X)
+    )
+    expect_error(
+        a$left_project(X, alpha_u = 2.1),
+        "Non-integer input in SFPCA::left_project"
+    )
 })
