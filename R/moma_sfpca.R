@@ -302,23 +302,47 @@ SFPCA <- R6::R6Class("SFPCA",
             return(list(U = U, V = V))
         },
 
-        interpolate = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, exact = FALSE) {
+        interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
             chkDots(...)
 
+
+            if (any(self$selection_scheme_list != 0)) {
+                moma_error("R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used.")
+            }
+
+            missing_list <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+
+            if (exact) {
+                # TODO: for moma_spca, moma_twspca etc., this can be relaxed
+                if (any(missing_list == TRUE)) {
+                    moma_error("SFPCA::interpolate does not support exact mode unless all parameters are specified.")
+                }
+
+                a <- moma_svd(
+                    X = self$X,
+                    # smoothness
+                    u_sparsity = self$u_sparsity, v_sparsity = self$v_sparsity,
+                    lambda_u = lambda_u, lambda_v = lambda_v,
+                    # sparsity
+                    Omega_u = self$Omega_u, Omega_v = self$Omega_v,
+                    alpha_u = alpha_u, alpha_v = alpha_v,
+                    pg_setting = self$pg_setting,
+                    k = self$rank,
+                )
+                return(list(U = a$u, V = a$v))
+            }
 
             if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
                 any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
                 moma_error("Non-scalar input in SFPCA::interpolate.")
             }
 
-            if (is.unsorted(alpha_u) ||
-                is.unsorted(alpha_v) ||
-                is.unsorted(lambda_u) ||
-                is.unsorted(lambda_v)) {
-                moma_error("Penalty levels not sorted!")
-            }
 
-            missing_list <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+            # If users specify a "fixed" parameter, give errors.
+            # "Fixed" parameters are those
+            # i) that are chosen by BIC, or ",
+            # ii) that are not specified during initialization of the SFCPA object, or "
+            # iii) that are scalars during initialization of the SFCPA object."
             if (any(self$fixed_list == TRUE & missing_list != TRUE)) {
                 moma_error(
                     paste0(
@@ -330,21 +354,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
-            # 1 replace the defualt with internal values
-            # 2 for those that has ranges but is not specified, pick the first one
-            if (exact) {
-                # call moma_svd
-                a <- moma_svd(
-                    X = self$X,
-                    u_sparsity = self$u_sparsity, v_sparsity = self$v_sparsity,
-                    lambda_u = lambda_u, lambda_v = lambda_v,
-                    Omega_u = self$Omega_u, Omega_v = self$Omega_v,
-                    alpha_u = self$alpha_u, alpha_v = self$alpha,
-                    pg_setting = self$pg_setting,
-                    k = self$rank,
-                )
-                return(list(U = a$u, V = a$v))
-            }
+
             else {
                 # interpolate
                 a <- 1

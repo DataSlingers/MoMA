@@ -686,3 +686,50 @@ test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", 
         "Non-integer input in SFPCA::left_project"
     )
 })
+
+test_that("SFPCA object: interpolate", {
+    set.seed(113)
+    X <- matrix(runif(17 * 8), 17, 8) * 10
+
+    a <- moma_sfpca(X,
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        lambda_u = c(1, 2), lambda_v = c(1, 2),
+        alpha_u = c(1, 2), alpha_v = c(1, 2),
+        Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8),
+        selection_scheme_str = "gggb"
+    )
+    expect_error(
+        a$interpolate(),
+        "R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used."
+    )
+
+    a <- moma_sfpca(X,
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        lambda_u = 1.2, lambda_v = 1,
+        alpha_u = 0.7, alpha_v = 0.3,
+        Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8)
+    )
+    expect_error(
+        a$interpolate(
+            alpha_u = 1, exact = TRUE
+        ),
+        "SFPCA::interpolate does not support exact mode unless all parameters are specified."
+    )
+
+    SFPCA$debug("interpolate")
+    internal_call <- a$interpolate(
+        alpha_u = 1, alpha_v = 1,
+        lambda_v = 1, lambda_u = 1,
+        exact = TRUE
+    )
+
+    dir_call <- moma_svd(
+        scale(X, center = a$center, scale = a$scale),
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        alpha_u = 1, alpha_v = 1,
+        lambda_v = 1, lambda_u = 1,
+        Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8)
+    )
+    expect_equal(internal_call$U, dir_call$u)
+    expect_equal(internal_call$V, dir_call$v)
+})
