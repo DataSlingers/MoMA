@@ -46,6 +46,8 @@ SFPCA <- R6::R6Class("SFPCA",
     private = list(
         check_input_index = TRUE,
         private_get_mat_by_index = function(alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+            # private functions can be called only by
+            # internal functions
             private$check_input_index <- FALSE
             res <- self$get_mat_by_index(
                 alpha_u, alpha_v, lambda_u, lambda_v
@@ -169,9 +171,9 @@ SFPCA <- R6::R6Class("SFPCA",
             )
             fixed_list <- list(
                 # "Fixed" parameters are those
-                # i) that are chosen by BIC, or ",
-                # ii) that are not specified during initialization of the SFCPA object, or "
-                # iii) that are scalars during initialization of the SFCPA object."
+                # i) that are chosen by BIC, or
+                # ii) that are not specified during initialization of the SFCPA object, or
+                # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
                 is_alpha_u_fixed = FALSE,
                 is_alpha_v_fixed = FALSE,
                 is_lambda_u_fixed = FALSE,
@@ -239,8 +241,6 @@ SFPCA <- R6::R6Class("SFPCA",
             if (private$check_input_index) {
                 chkDots(...)
             }
-            # Sanity check: if a parameter has been chosen by BIC, then
-            # the index for that parameter should not be specified.
 
             # they should be of length 1
             if (any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1 ||
@@ -258,9 +258,16 @@ SFPCA <- R6::R6Class("SFPCA",
                 moma_error("SFPCA::get_mat_by_index takes integer indices.")
             }
 
+            # A "fixed" parameter should not be specified
+            # at all (this is a bit stringent, can be improved later).
+            # "Fixed" parameters are those
+            # i) that are chosen by BIC, or
+            # ii) that are not specified during initialization of the SFCPA object, or
+            # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
             if (private$check_input_index) {
-                missing_list <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-                if (any(self$fixed_list == TRUE & missing_list != TRUE)) {
+                is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+                is_fixed <- self$fixed_list
+                if (any(is_fixed == TRUE & is_missing == FALSE)) {
                     moma_error(
                         paste0(
                             "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
@@ -308,23 +315,52 @@ SFPCA <- R6::R6Class("SFPCA",
         interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
             chkDots(...)
 
-
+            # If BIC scheme has been used for any parameters, exit.
             if (any(self$selection_scheme_list != 0)) {
                 moma_error("R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used.")
             }
 
+            # Reject inputs like alpha_u = "1" or "alpha_u" = c(1,2,3)
             if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
                 any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
                 moma_error("Non-scalar input in SFPCA::interpolate.")
             }
 
-            missing_list <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+
+            # Parameters that are specified explictly is not "fixed".
+            # Parameters that are "fixed" must not be specified.
+            is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+            is_fixed <- self$fixed_list == TRUE
+            param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
+            if (any(is_missing == FALSE & is_fixed == TRUE)) {
+                output_para <- is_missing == FALSE & is_fixed == TRUE
+                moma_error(
+                    paste0(
+                        "Invalid index in SFPCA::interpolate: ",
+                        paste(param_str_list[output_para], collapse = ","),
+                        ". Do not specify indexes of parameters ",
+                        "i) that are chosen by BIC, or ",
+                        "ii) that are not specified during initialization of the SFCPA object, or ",
+                        "iii) that are scalars during initialization of the SFCPA object."
+                    )
+                )
+            }
+            if (any(is_missing == TRUE & is_fixed == FALSE)) {
+                output_para <- is_missing == TRUE & is_fixed == FALSE
+                moma_error(
+                    paste0(
+                        "Please spesify the following argument(s): ",
+                        paste(param_str_list[output_para], collapse = ","),
+                        "."
+                    )
+                )
+            }
 
             if (exact) {
-                # TODO: for moma_spca, moma_twspca etc., this can be relaxed
-                if (any(missing_list == TRUE)) {
-                    moma_error("SFPCA::interpolate does not support exact mode unless all parameters are specified.")
-                }
+                alpha_u <- ifelse(self$fixed_list$is_alpha_u_fixed, self$alpha_u, alpha_u)
+                alpha_v <- ifelse(self$fixed_list$is_alpha_v_fixed, self$alpha_v, alpha_v)
+                lambda_u <- ifelse(self$fixed_list$is_lambda_u_fixed, self$lambda_u, lambda_u)
+                lambda_v <- ifelse(self$fixed_list$is_lambda_v_fixed, self$lambda_v, lambda_v)
 
                 a <- moma_svd(
                     X = self$X,
@@ -340,17 +376,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 return(list(U = a$u, V = a$v))
             }
 
-            if (any(self$fixed_list == TRUE & missing_list != TRUE)) {
-                moma_error(
-                    paste0(
-                        "Invalid index in SFPCA::interpolate. Do not specify indexes of parameters ",
-                        "i) that are chosen by BIC, or ",
-                        "ii) that are not specified during initialization of the SFCPA object, or ",
-                        "iii) that are scalars during initialization of the SFCPA object."
-                    )
-                )
-            }
-
+            # Function `findInterval` requires sorted breakpoints
             if (is.unsorted(self$alpha_u) ||
                 is.unsorted(self$alpha_v) ||
                 is.unsorted(self$lambda_u) ||
@@ -371,7 +397,8 @@ SFPCA <- R6::R6Class("SFPCA",
                 !self$fixed_list$is_alpha_v_fixed &&
                 !self$fixed_list$is_lambda_v_fixed
 
-            if (!xor(inter_u, inter_v)) {
+            # If both of them are ture or false at the same time, exit.
+            if (inter_u == inter_v) {
                 moma_error("SFPCA::interpolate only supports one-sided interpolation.")
             }
 
@@ -381,9 +408,9 @@ SFPCA <- R6::R6Class("SFPCA",
                 if (alpha_v >= max(self$alpha_v) || alpha_v <= min(self$alpha_v)) {
                     moma_error("Invalid range: alpha_v.")
                 }
+
                 # find the cloest alpha
                 alpha_v_i <- which.min(abs(self$alpha_v - alpha_v))
-
 
                 # find the bin where lambda lies in
                 if (lambda_v >= max(self$lambda_v) || lambda_v <= min(self$lambda_v)) {
@@ -391,9 +418,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 }
                 lambda_v_i_lo <- findInterval(lambda_v, self$lambda_v)
                 lambda_v_i_hi <- lambda_v_i_lo + 1
-
-
-                if (lambda_v_i_hi > length(self$lambda_v)) {
+                if (lambda_v_i_hi > length(self$lambda_v) || lambda_v_i_lo <= 0) {
                     moma_error("SFPCA::interpolate, error in findInterval")
                 }
 
@@ -403,7 +428,6 @@ SFPCA <- R6::R6Class("SFPCA",
                     lambda_u = 1,
                     lambda_v = lambda_v_i_lo
                 )
-
                 result_hi <- private$private_get_mat_by_index(
                     alpha_u = 1,
                     alpha_v = alpha_v_i,
@@ -436,8 +460,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 }
                 lambda_u_i_lo <- findInterval(lambda_u, self$lambda_u)
                 lambda_u_i_hi <- lambda_u_i_lo + 1
-
-                if (lambda_u_i_hi > length(self$lambda_u)) {
+                if (lambda_u_i_hi > length(self$lambda_u) || lambda_u_i_lo <= 0) {
                     moma_error("SFPCA::interpolate, error in findInterval.")
                 }
 
@@ -447,7 +470,6 @@ SFPCA <- R6::R6Class("SFPCA",
                     lambda_v = 1,
                     lambda_u = lambda_u_i_lo
                 )
-
                 result_hi <- private$private_get_mat_by_index(
                     alpha_v = 1,
                     alpha_u = alpha_u_i,
@@ -457,6 +479,7 @@ SFPCA <- R6::R6Class("SFPCA",
 
                 U <- 0.5 * (result_lo$U + result_hi$U)
                 V <- 0.5 * (result_lo$V + result_hi$V)
+                return(list(U = U, V = V))
             }
             else {
                 moma_error("UNKNOWN.")
@@ -491,8 +514,9 @@ SFPCA <- R6::R6Class("SFPCA",
                                         alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
 
             # check indexes
-            missing_list <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-            if (any(self$fixed_list == TRUE & missing_list != TRUE)) {
+            is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+            is_fixed <- self$fixed_list
+            if (any(is_fixed == TRUE & is_missing == FALSE)) {
                 moma_error(
                     paste0(
                         "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",

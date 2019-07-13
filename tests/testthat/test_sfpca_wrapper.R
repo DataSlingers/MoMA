@@ -149,7 +149,6 @@ test_that("SFPCA object: left-project fucntion", {
         lambda_v = c(6),
         selection_scheme_str = "bbbb"
     )
-    SFPCA$debug("left_project")
     expect_error(
         a$left_project(matrix(0, 4, 1)),
         "`newX` is incompatible with orignal data."
@@ -703,6 +702,8 @@ test_that("SFPCA object: interpolate, exact mode", {
         "R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used."
     )
 
+    # case 1: interpolate cannot be used if all
+    # parameters are specified as scalars
     a <- moma_sfpca(X,
         u_sparsity = lasso(), v_sparsity = lasso(),
         lambda_u = 1.2, lambda_v = 1,
@@ -713,25 +714,87 @@ test_that("SFPCA object: interpolate, exact mode", {
         a$interpolate(
             alpha_u = 1, exact = TRUE
         ),
-        "SFPCA::interpolate does not support exact mode unless all parameters are specified."
+        "Invalid index in SFPCA::interpolate: alpha_u."
+    )
+    expect_error(
+        a$interpolate(
+            alpha_v = 1, exact = TRUE
+        ),
+        "Invalid index in SFPCA::interpolate: alpha_v."
+    )
+    expect_error(
+        a$interpolate(
+            lambda_u = 1, exact = TRUE
+        ),
+        "Invalid index in SFPCA::interpolate: lambda_u."
+    )
+    expect_error(
+        a$interpolate(
+            lambda_v = 1, exact = TRUE
+        ),
+        "Invalid index in SFPCA::interpolate: lambda_v."
     )
 
-    SFPCA$debug("interpolate")
-    internal_call <- a$interpolate(
-        alpha_u = 1, alpha_v = 1,
-        lambda_v = 1, lambda_u = 1,
-        exact = TRUE
-    )
 
-    dir_call <- moma_svd(
-        scale(X, center = a$center, scale = a$scale),
+    # case 2: interpolation on v side, both alpha and lambda are vectors
+    a <- moma_sfpca(X,
         u_sparsity = lasso(), v_sparsity = lasso(),
-        alpha_u = 1, alpha_v = 1,
-        lambda_v = 1, lambda_u = 1,
-        Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8)
+        alpha_v = seq(0.1, 1, 0.15), alpha_u = 0.32,
+        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
     )
-    expect_equal(internal_call$U, dir_call$u)
-    expect_equal(internal_call$V, dir_call$v)
+    # incomplete arguments
+    expect_error(
+        a$interpolate(
+            lambda_v = 1, exact = TRUE
+        ),
+        "Please spesify the following argument(s): alpha_v.",
+        fixed = TRUE
+    )
+    # extra arguments
+    expect_error(
+        a$interpolate(
+            lambda_v = 1, alpha_v = 1, alpha_u = 1,
+            exact = TRUE
+        ),
+        "Invalid index in SFPCA::interpolate: alpha_u."
+    )
+    # alpha_v too large
+    expect_error(
+        a$interpolate(
+            lambda_v = 0.21, alpha_v = 1
+        ),
+        "Invalid range: alpha_v."
+    )
+
+    # case 3: interpolation on v side, only lambda is a vector
+    a <- moma_sfpca(X,
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        alpha_v = 0.12, alpha_u = 0.32,
+        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+    )
+    # correct arguments
+    expect_no_error(
+        a$interpolate(
+            lambda_v = 1, exact = TRUE
+        )
+    )
+    # extra arguments
+    expect_error(
+        a$interpolate(
+            lambda_v = 1, alpha_v = 1, alpha_u = 1,
+            exact = TRUE
+        ),
+        "Invalid index in SFPCA::interpolate: alpha_u."
+    )
+    # alpha_v must not be specified
+    expect_error(
+        a$interpolate(
+            lambda_v = 0.21, alpha_v = 0.09
+        ),
+        "Invalid index in SFPCA::interpolate: alpha_v."
+    )
 })
 
 
@@ -750,32 +813,32 @@ test_that("SFPCA object: interpolate, inexact mode", {
         a$interpolate(alpha_v = 0.23, lambda_v = 0.121)
     )
 
-    # error becasue both alpha_v and lambda_v should be specified
+    # error because both alpha_v and lambda_v should be specified
     expect_error(
         a$interpolate(alpha_v = 0.23),
-        "SFPCA::interpolate only supports one-sided interpolation."
+        "Please spesify the following argument(s): lambda_v.",
+        fixed = TRUE
+    )
+    expect_error(
+        a$interpolate(),
+        "lease spesify the following argument(s): alpha_v,lambda_v.",
+        fixed = TRUE
     )
 
-    # error becasue alpha_u is a scalar during initialization
+    # error because alpha_u is a scalar during initialization
     expect_error(
         a$interpolate(alpha_u = 0.2323),
-        paste0(
-            "Invalid index in SFPCA::interpolate. Do not specify indexes of parameters ",
-            "i) that are chosen by BIC, or ",
-            "ii) that are not specified during initialization of the SFCPA object, or ",
-            "iii) that are scalars during initialization of the SFCPA object."
-        )
+        "Invalid index in SFPCA::interpolate: alpha_u"
     )
 
-    # error becasue both alpha_u should not be specified
+    # error because alpha_u should not be specified
     expect_error(
         a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1),
-        paste0(
-            "Invalid index in SFPCA::interpolate. Do not specify indexes of parameters ",
-            "i) that are chosen by BIC, or ",
-            "ii) that are not specified during initialization of the SFCPA object, or ",
-            "iii) that are scalars during initialization of the SFCPA object."
-        )
+        "Invalid index in SFPCA::interpolate: alpha_u"
+    )
+    expect_error(
+        a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1, lambda_u = 1.3),
+        "Invalid index in SFPCA::interpolate: alpha_u,lambda_u."
     )
 
     # unsorted alpha_v
