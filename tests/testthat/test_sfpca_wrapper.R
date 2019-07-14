@@ -23,7 +23,7 @@ test_that("SFPCA object: a naive case, 1x1 matrix", {
 
 test_that("SFPCA object: correct arguments", {
     set.seed(12)
-    
+
     a <- SFPCA$new(matrix(runif(12), 3, 4), scale = FALSE, cen = FALSE)
     expect_equal(a$Omega_u, diag(3))
     expect_equal(a$Omega_v, diag(4))
@@ -729,15 +729,25 @@ test_that("SFPCA object: interpolate, exact mode", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
+    # Once BIC is used, `SFPCA::interpolate`
+    # cannot be called at all.
     a <- moma_sfpca(X,
         u_sparsity = lasso(), v_sparsity = lasso(),
         lambda_u = c(1, 2), lambda_v = c(1, 2),
-        alpha_u = c(1, 2), alpha_v = c(1, 2),
+        alpha_u = c(1, 2),
+        alpha_v = c(1, 2), # selected by BIC
         Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8),
         selection_scheme_str = "gggb"
     )
     expect_error(
         a$interpolate(),
+        "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
+    )
+    expect_error(
+        a$interpolate(
+            lambda_u = 1.1, lambda_v = 1.3,
+            alpha_u = 1.4
+        ),
         "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
     )
 
@@ -904,5 +914,22 @@ test_that("SFPCA object: interpolate, inexact mode", {
     expect_error(
         a$interpolate(alpha_v = 0.23, lambda_v = 0.121),
         "Penalty levels not sorted"
+    )
+
+    # interpolate on both sides is not supported
+    a <- moma_sfpca(X,
+        u_sparsity = lasso(), v_sparsity = lasso(),
+        alpha_v = seq(0.1, 1, 0.15), alpha_u = seq(0.1, 1, 0.15),
+        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+        lambda_v = seq(0.1, 1.4, 0.4), lambda_u = seq(0.1, 1.3, 0.45)
+    )
+    # trying to do two-sided interpolation
+    # but not supported now.
+    expect_error(
+        a$interpolate(
+            alpha_v = 0.23, lambda_v = 0.121,
+            alpha_u = 0.1, lambda_u = 0.3
+        ),
+        "SFPCA::interpolate only supports one-sided interpolation"
     )
 })
