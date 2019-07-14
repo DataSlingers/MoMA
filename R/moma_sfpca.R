@@ -198,7 +198,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
             if (!inherits(rank, "numeric") || !is.wholenumber(rank) || rank <= 0
             || rank > min(p, n)) {
-                moma_error("rank should be a legit positive integer.")
+                moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
             }
             self$rank <- rank
 
@@ -309,7 +309,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 list(coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
                 list(rown, paste0("PC", seq_len(rank)))
-            return(list(U = U, V = V))
+            return(list(U = U, V = V, d = diag(t(U) %*% self$X %*% V)))
         },
 
         interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
@@ -317,7 +317,7 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # If BIC scheme has been used for any parameters, exit.
             if (any(self$selection_scheme_list != 0)) {
-                moma_error("R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used.")
+                moma_error("R6 object SFPCA do not support interpolation when BIC selection scheme has been used.")
             }
 
             # Reject inputs like alpha_u = "1" or "alpha_u" = c(1,2,3)
@@ -337,7 +337,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 moma_error(
                     paste0(
                         "Invalid index in SFPCA::interpolate: ",
-                        paste(param_str_list[output_para], collapse = ","),
+                        paste(param_str_list[output_para], collapse = ", "),
                         ". Do not specify indexes of parameters ",
                         "i) that are chosen by BIC, or ",
                         "ii) that are not specified during initialization of the SFCPA object, or ",
@@ -350,7 +350,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 moma_error(
                     paste0(
                         "Please spesify the following argument(s): ",
-                        paste(param_str_list[output_para], collapse = ","),
+                        paste(param_str_list[output_para], collapse = ", "),
                         "."
                     )
                 )
@@ -547,7 +547,12 @@ SFPCA <- R6::R6Class("SFPCA",
             }
 
             if (dim(newX)[2] != self$p) {
-                moma_error("`newX` is incompatible with orignal data.")
+                moma_error(
+                    paste0(
+                        "`newX` is incompatible with orignal data. ",
+                        "It must have ", self$p, " columns."
+                    )
+                )
             }
 
             PV <- solve(crossprod(V), t(V))

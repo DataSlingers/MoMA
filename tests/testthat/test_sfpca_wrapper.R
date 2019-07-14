@@ -52,23 +52,23 @@ test_that("SFPCA object: as SVD", {
     X <- matrix(runif(12), 4, 3)
     expect_error(
         SFPCA$new(X, rank = "3.1", center = FALSE, scale = FALSE),
-        "rank should be a legit positive integer"
+        "`rank` should be a positive integer smaller than the rank of the data matrix."
     )
     expect_error(
         SFPCA$new(X, rank = 0, center = FALSE, scale = FALSE),
-        "rank should be a legit positive integer"
+        "`rank` should be a positive integer smaller than the rank of the data matrix."
     )
     expect_error(
         SFPCA$new(X, rank = -1.1, center = FALSE, scale = FALSE),
-        "rank should be a legit positive integer"
+        "`rank` should be a positive integer smaller than the rank of the data matrix."
     )
     expect_error(
         SFPCA$new(X, rank = -1, center = FALSE, scale = FALSE),
-        "rank should be a legit positive integer"
+        "`rank` should be a positive integer smaller than the rank of the data matrix."
     )
     expect_error(
         SFPCA$new(X, rank = 3.1, center = FALSE, scale = FALSE),
-        "rank should be a legit positive integer"
+        "`rank` should be a positive integer smaller than the rank of the data matrix."
     )
 
     # test no penalty case
@@ -82,7 +82,7 @@ test_that("SFPCA object: as SVD", {
 
     expect_equal(abs(mysvd$U), abs(svda$u), check.attributes = FALSE) # use `abs` to avoid sign difference
     expect_equal(abs(mysvd$V), abs(svda$v), check.attributes = FALSE)
-
+    expect_equal(mysvd$d, svda$d, check.attributes = FALSE)
 
     # test a matrix with dimnames
     rown <- paste0("row", seq(1:4))
@@ -96,8 +96,31 @@ test_that("SFPCA object: as SVD", {
     expect_equal(rownames(mysvd$V), coln)
 
 
-    # test default arguments
-    expect_equal(a$get_mat_by_index(), a$get_mat_by_index())
+    # `a` is specified without
+    # any parameters (all four parameters default
+    # to 0 actually), so users must not specify any
+    # parameters when calling `get_mat_by_index`.
+    # A bit stringent though.
+    expect_error(
+        a$get_mat_by_index(alpha_u = 1),
+        "Invalid index in SFPCA::get_mat_by_index."
+    )
+    expect_error(
+        a$get_mat_by_index(alpha_v = 1),
+        "Invalid index in SFPCA::get_mat_by_index."
+    )
+    expect_error(
+        a$get_mat_by_index(lambda_u = 1),
+        "Invalid index in SFPCA::get_mat_by_index."
+    )
+    expect_error(
+        a$get_mat_by_index(lambda_v = 1),
+        "Invalid index in SFPCA::get_mat_by_index."
+    )
+    expect_no_error(
+        a$get_mat_by_index(),
+        "Invalid index in SFPCA::get_mat_by_index."
+    )
 
     # test selection with BIC seach and grid search
     a <- SFPCA$new(X,
@@ -121,7 +144,7 @@ test_that("SFPCA object: print fucntion", {
     )
     print_message <- capture.output(print(a))
 
-    expect_message <- c(
+    expected_message <- c(
         "An <SFPCA> object containing solutions to the following settings",
         "rank = 3 ",
         "Penalty and selection:",
@@ -134,12 +157,10 @@ test_that("SFPCA object: print fucntion", {
         "lambda_v: grid search ",
         "[1] 6 7"
     )
-    expect_equal(expect_message, print_message)
+    expect_equal(expected_message, print_message)
 })
 
 test_that("SFPCA object: left-project fucntion", {
-
-    # unamed matrix
     X <- matrix(runif(17 * 8), 17, 8)
     a <- SFPCA$new(X,
         rank = 3,
@@ -151,16 +172,16 @@ test_that("SFPCA object: left-project fucntion", {
     )
     expect_error(
         a$left_project(matrix(0, 4, 1)),
-        "`newX` is incompatible with orignal data."
+        "`newX` is incompatible with orignal data. It must have 8 columns."
     )
 
     new_data <- matrix(runif(24), 3, 8)
     res <- a$left_project(new_data)
 
     V <- res$V
-    # we verify the the projected data
+    # We verify the the projected data
     # satisfies the normal equation:
-    # X^T X b = X^T y
+    # X^T X b = X^T y.
     expect_equal(
         t(V) %*% V %*% t(res$proj_data),
         t(V) %*% t(res$scaled_data)
@@ -171,7 +192,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
-    invaid_indices_error <-
+    invalid_indices_error <-
         paste0(
             "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
             "i) that are chosen by BIC, or ",
@@ -181,15 +202,16 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
 
     # case 1:
     # parameters that did not appear in initialization
-    # should not appear in SFPCA::get_mat_by_index at all
+    # should not appear in `SFPCA::get_mat_by_index` at all
     a <- moma_sfpca(X)
     expect_no_error(
         a$get_mat_by_index()
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 1),
-        invaid_indices_error
+        invalid_indices_error
     )
+    # when an unused argument is given, or a typo.
     expect_warning(
         a$get_mat_by_index(alphau = 1),
         paste0("extra argument ", sQuote("alphau"), " will be disregarded")
@@ -205,19 +227,19 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 1),
-        invaid_indices_error
+        invalid_indices_error
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 2),
-        invaid_indices_error
+        invalid_indices_error
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 1),
-        invaid_indices_error
+        invalid_indices_error
     )
 
 
-    # case 2:
+    # case 3:
     # parameters that were selected by BIC
     # should not appear in SFPCA::get_mat_by_index either
     a <- moma_sfpca(X,
@@ -233,11 +255,11 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 0),
-        invaid_indices_error
+        invalid_indices_error
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 0),
-        invaid_indices_error
+        invalid_indices_error
     )
 
     a <- moma_sfpca(X, alpha_u = c(1, 2))
@@ -249,15 +271,15 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 2, alpha_v = 0),
-        invaid_indices_error
+        invalid_indices_error
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 0),
-        invaid_indices_error
+        invalid_indices_error
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 0),
-        invaid_indices_error
+        invalid_indices_error
     )
 })
 
@@ -699,16 +721,28 @@ test_that("SFPCA object: interpolate, exact mode", {
     )
     expect_error(
         a$interpolate(),
-        "R6 ojbect SFPCA do not support interpolation when BIC selection scheme has been used."
+        "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
     )
 
-    # case 1: interpolate cannot be used if all
+    # case 1: `SFPCA::interpolate` cannot be used at all if all
     # parameters are specified as scalars
     a <- moma_sfpca(X,
         u_sparsity = lasso(), v_sparsity = lasso(),
         lambda_u = 1.2, lambda_v = 1,
         alpha_u = 0.7, alpha_v = 0.3,
         Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8)
+    )
+    # this returns `a$get_mat_by_id()`
+    expect_no_error(
+        a$interpolate(
+            exact = TRUE
+        )
+    )
+    expect_error(
+        a$interpolate(
+            exact = FALSE
+        ),
+        "SFPCA::interpolate only supports one-sided interpolation"
     )
     expect_error(
         a$interpolate(
@@ -786,7 +820,7 @@ test_that("SFPCA object: interpolate, exact mode", {
             lambda_v = 1, alpha_v = 1, alpha_u = 1,
             exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: alpha_u."
+        "Invalid index in SFPCA::interpolate: alpha_u, alpha_v."
     )
     # alpha_v must not be specified
     expect_error(
@@ -821,7 +855,7 @@ test_that("SFPCA object: interpolate, inexact mode", {
     )
     expect_error(
         a$interpolate(),
-        "lease spesify the following argument(s): alpha_v,lambda_v.",
+        "Please spesify the following argument(s): alpha_v, lambda_v.",
         fixed = TRUE
     )
 
@@ -838,7 +872,7 @@ test_that("SFPCA object: interpolate, inexact mode", {
     )
     expect_error(
         a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1, lambda_u = 1.3),
-        "Invalid index in SFPCA::interpolate: alpha_u,lambda_u."
+        "Invalid index in SFPCA::interpolate: alpha_u, lambda_u."
     )
 
     # unsorted alpha_v
