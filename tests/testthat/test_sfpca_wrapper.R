@@ -1,6 +1,7 @@
 context("Test R6 object")
-set.seed(12)
 test_that("SFPCA object: a naive case, 1x1 matrix", {
+    set.seed(12)
+
     a <- SFPCA$new(matrix(1), center = FALSE)
     result_to_be_tested <- a$grid_result[[1]]
 
@@ -21,6 +22,8 @@ test_that("SFPCA object: a naive case, 1x1 matrix", {
 })
 
 test_that("SFPCA object: correct arguments", {
+    set.seed(12)
+    
     a <- SFPCA$new(matrix(runif(12), 3, 4), scale = FALSE, cen = FALSE)
     expect_equal(a$Omega_u, diag(3))
     expect_equal(a$Omega_v, diag(4))
@@ -49,6 +52,8 @@ test_that("SFPCA object: correct arguments", {
 
 
 test_that("SFPCA object: as SVD", {
+    set.seed(12)
+
     X <- matrix(runif(12), 4, 3)
     expect_error(
         SFPCA$new(X, rank = "3.1", center = FALSE, scale = FALSE),
@@ -133,6 +138,8 @@ test_that("SFPCA object: as SVD", {
 })
 
 test_that("SFPCA object: print fucntion", {
+    set.seed(12)
+
     X <- matrix(runif(12), 4, 3)
     a <- SFPCA$new(X,
         rank = 3,
@@ -161,6 +168,8 @@ test_that("SFPCA object: print fucntion", {
 })
 
 test_that("SFPCA object: left-project fucntion", {
+    set.seed(12)
+
     X <- matrix(runif(17 * 8), 17, 8)
     a <- SFPCA$new(X,
         rank = 3,
@@ -286,6 +295,8 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
 
 
 test_that("SFPCA object wrappers: moma_spca", {
+    set.seed(12)
+
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
@@ -379,6 +390,8 @@ test_that("SFPCA object wrappers: moma_spca", {
 
 
 test_that("SFPCA object wrappers: moma_twspca", {
+    set.seed(12)
+
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
@@ -477,6 +490,8 @@ test_that("SFPCA object wrappers: moma_twspca", {
 
 
 test_that("SFPCA object wrappers: moma_fpca", {
+    set.seed(12)
+
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
@@ -572,6 +587,8 @@ test_that("SFPCA object wrappers: moma_fpca", {
 
 
 test_that("SFPCA object wrappers: moma_twfpca", {
+    set.seed(12)
+
     X <- matrix(runif(17 * 8), 17, 8)
 
     # test inputs
