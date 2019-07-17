@@ -285,22 +285,17 @@ SFPCA <- R6::R6Class("SFPCA",
 
             U <- matrix(0, nrow = n, ncol = rank)
             V <- matrix(0, nrow = p, ncol = rank)
+            d <- vector(mode = "numeric", length = rank)
             for (i in (1:self$rank)) {
-                U[, i] <-
-                    get_5Dlist_elem(self$grid_result,
-                        alpha_u_i = alpha_u,
-                        lambda_u_i = lambda_u,
-                        alpha_v_i = alpha_v,
-                        lambda_v_i = lambda_v, rank_i = i
-                    )[[1]]$u$vector
-
-                V[, i] <-
-                    get_5Dlist_elem(self$grid_result,
-                        alpha_u_i = alpha_u,
-                        lambda_u_i = lambda_u,
-                        alpha_v_i = alpha_v,
-                        lambda_v_i = lambda_v, rank_i = i
-                    )[[1]]$v$vector
+                rank_i_result <- get_5Dlist_elem(self$grid_result,
+                    alpha_u_i = alpha_u,
+                    lambda_u_i = lambda_u,
+                    alpha_v_i = alpha_v,
+                    lambda_v_i = lambda_v, rank_i = i
+                )[[1]]
+                U[, i] <- rank_i_result$u$vector
+                V[, i] <- rank_i_result$v$vector
+                d[i] <- rank_i_result$d
             }
 
             coln <- colnames(self$X) %||% paste0("Xcol_", seq_len(p))
@@ -309,7 +304,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 list(coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
                 list(rown, paste0("PC", seq_len(rank)))
-            return(list(U = U, V = V, d = diag(t(U) %*% self$X %*% V)))
+            return(list(U = U, V = V, d = d))
         },
 
         interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
