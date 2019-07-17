@@ -119,8 +119,8 @@ SFPCA <- R6::R6Class("SFPCA",
                 moma_error("cannot rescale a constant/zero column to unit variance")
             }
 
-            self$center <- if (is.null(cen)) FALSE else cen
-            self$scale <- if (is.null(sc)) FALSE else sc
+            self$center <- cen %||% FALSE
+            self$scale <- sc %||% FALSE
             self$n <- n
             self$p <- p
             self$X <- X
@@ -303,8 +303,8 @@ SFPCA <- R6::R6Class("SFPCA",
                     )[[1]]$v$vector
             }
 
-            coln <- if (is.null(colnames(self$X))) paste0("Xcol_", seq_len(p)) else colnames(self$X)
-            rown <- if (is.null(rownames(self$X))) paste0("Xrow_", seq_len(n)) else rownames(self$X)
+            coln <- colnames(self$X) %||% paste0("Xcol_", seq_len(p))
+            rown <- rownames(self$X) %||% paste0("Xrow_", seq_len(n))
             dimnames(V) <-
                 list(coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-

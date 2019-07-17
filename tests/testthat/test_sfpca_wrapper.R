@@ -23,7 +23,6 @@ test_that("SFPCA object: a naive case, 1x1 matrix", {
 
 test_that("SFPCA object: X contains string", {
     set.seed(12)
-    SFPCA$debug("initialize")
     X <- matrix(seq(1:12), 4, 3)
     X[1, 1] <- "abc"
     expect_error(SFPCA$new(X), "X must not have NaN, NA, or Inf.")
