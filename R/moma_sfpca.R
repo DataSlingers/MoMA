@@ -194,6 +194,7 @@ SFPCA <- R6::R6Class("SFPCA",
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
+            # TODO: check that `rank` < min(rank(X), rank(Y))
             is.wholenumber <-
                 function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
             if (!inherits(rank, "numeric") || !is.wholenumber(rank) || rank <= 0
