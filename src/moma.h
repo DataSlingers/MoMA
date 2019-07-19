@@ -107,8 +107,8 @@ class MoMA
     int check_convergence(int iter, double tol);
 
     // change penalty level
-    int reset(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v);
     int set_X(arma::mat new_X);
+    int set_penalty(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v);
 
     // following functions are implemented in `moma_level1.cpp`
     Rcpp::List criterion_search(const arma::vec &bic_au_grid,

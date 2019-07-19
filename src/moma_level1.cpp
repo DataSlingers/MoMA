@@ -124,7 +124,7 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
         double opt_alpha_u  = u_result["alpha"];
         double opt_alpha_v  = v_result["alpha"];
 
-        reset(opt_lambda_u, opt_lambda_v, opt_alpha_u, opt_alpha_v);
+        set_penalty(opt_lambda_u, opt_lambda_v, opt_alpha_u, opt_alpha_v);
         initialize_uv();
         solve();  // Use MoMA::u and MoMA::v as start points
 
@@ -355,7 +355,7 @@ Rcpp::List MoMA::grid_search(const arma::vec &alpha_u,
                         << " lambda_u " << lambda_u(i) << " lambda_v " << lambda_v(j) << " alpha_u "
                         << alpha_u(k) << " alpha_v " << alpha_v(m);
 
-                    reset(lambda_u(i), lambda_v(j), alpha_u(k), alpha_v(m));
+                    set_penalty(lambda_u(i), lambda_v(j), alpha_u(k), alpha_v(m));
 
                     // MoMA::solve use the result from last
                     // iteration as starting point
