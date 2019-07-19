@@ -197,8 +197,8 @@ SFPCA <- R6::R6Class("SFPCA",
                     rank = rank
                 ),
                 list(
-                    Omega_u = check_omega(Omega_u, alpha_u, n),
-                    Omega_v = check_omega(Omega_v, alpha_v, p),
+                    Omega_u = Omega_u,
+                    Omega_v = Omega_v,
                     prox_arg_list_u = add_default_prox_args(u_sparsity),
                     prox_arg_list_v = add_default_prox_args(v_sparsity)
                 ),
