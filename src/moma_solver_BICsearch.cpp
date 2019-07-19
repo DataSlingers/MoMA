@@ -32,7 +32,7 @@ Rcpp::List BIC_searcher::search(const arma::vec &y,          // min_{u} || y - u
         // Put lambda_u in the inner loop to avoid reconstructing S many times
         for (int j = 0; j < lambda_u.n_elem; j++)
         {
-            pr_solver->reset(lambda_u(j), alpha_u(i));
+            pr_solver->set_penalty(lambda_u(j), alpha_u(i));
             // working_u is the solution of the previous problem
             working_u     = pr_solver->solve(y, working_u);
             working_bic_u = cur_criterion(y, working_u);

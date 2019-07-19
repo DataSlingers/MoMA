@@ -58,7 +58,7 @@ class _PR_solver
         int i_dim);
 
     // Used when solving for a bunch of lambda's and alpha's
-    int reset(double new_lambda, double new_alpha);
+    int set_penalty(double new_lambda, double new_alpha);
     double bic(arma::vec y, const arma::vec &est);
     virtual ~_PR_solver()                                              = default;
     virtual arma::vec solve(arma::vec y, const arma::vec &start_point) = 0;
@@ -141,7 +141,7 @@ class PR_solver
     // wrap operations in _PR_solver class
     arma::vec solve(arma::vec y, const arma::vec &start_point);
     double bic(arma::vec y, const arma::vec &est);
-    int reset(double new_lambda, double new_alpha);
+    int set_penalty(double new_lambda, double new_alpha);
 
     ~PR_solver() { delete prs; }
 };
