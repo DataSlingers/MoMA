@@ -73,7 +73,7 @@ arma::vec _PR_solver::g(const arma::vec &v,
     return res;
 }
 
-int _PR_solver::reset(double new_lambda, double new_alpha)
+int _PR_solver::set_penalty(double new_lambda, double new_alpha)
 {
     if (new_alpha != alpha)
     {
@@ -277,9 +277,9 @@ arma::vec PR_solver::solve(arma::vec y, const arma::vec &start_point)
     return (*prs).solve(y, start_point);
 }
 
-int PR_solver::reset(double new_lambda, double new_alpha)
+int PR_solver::set_penalty(double new_lambda, double new_alpha)
 {
-    return (*prs).reset(new_lambda, new_alpha);
+    return (*prs).set_penalty(new_lambda, new_alpha);
 }
 
 double PR_solver::bic(arma::vec y, const arma::vec &est)

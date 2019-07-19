@@ -180,10 +180,10 @@ int MoMA::check_convergence(int iter, double tol)
 }
 
 // Note it does not change MoMA::u and MoMA::v
-int MoMA::reset(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v)
+int MoMA::set_penalty(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v)
 {
-    solver_u.reset(newlambda_u, newalpha_u);
-    solver_v.reset(newlambda_v, newalpha_v);
+    solver_u.set_penalty(newlambda_u, newalpha_u);
+    solver_v.set_penalty(newlambda_v, newalpha_v);
 
     // NOTE: We must keep the alpha's and lambda's up-to-date
     // in both MoMA and solve_u/v
