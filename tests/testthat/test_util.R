@@ -1,7 +1,6 @@
 context("Tests for Util.R")
 
-test_that("is_* functions",{
-
+test_that("is_* functions", {
     expect_true(all(
         is_fin_numeric_scalar(1),
         !is_fin_numeric_scalar(c()),
@@ -23,19 +22,29 @@ test_that("is_* functions",{
         !is_valid_parameters(NaN),
 
         !is_valid_parameters(list()),
-        !is_valid_parameters(c("a",1)),
-        !is_valid_parameters(list(1,list(1,2,3)))
+        !is_valid_parameters(c("a", 1)),
+        !is_valid_parameters(list(1, list(1, 2, 3))),
 
-        !is_valid_parameters(c(1,Inf)),
-        !is_valid_parameters(c(Inf,1)),
-        !is_valid_parameters(c(1,NA)),
+        !is_valid_parameters(c(1, Inf)),
+        !is_valid_parameters(c(Inf, 1)),
+        !is_valid_parameters(c(1, NA)),
         !is_valid_parameters(c(NA)),
-        !is_valid_parameters(c(1,NaN)),
-        !is_valid_parameters(c(NaN,1)),
+        !is_valid_parameters(c(1, NaN)),
+        !is_valid_parameters(c(NaN, 1)),
 
-        is_valid_parameters(seq(0,10)),
-        is_valid_parameters(matrix(c(1,2,3,4),2)),
-        is_valid_parameters(c(1,2,3)),
-        is_valid_parameters(list(1,2,3))
+        is_valid_parameters(seq(0, 10)),
+        is_valid_parameters(matrix(c(1, 2, 3, 4), 2)),
+        is_valid_parameters(c(1, 2, 3)),
+        is_valid_parameters(list(1, 2, 3))
+    ))
+
+
+    expect_true(all(
+        !is_valid_select_str(1),
+        !is_valid_select_str("a"),
+        is_valid_select_str("g"),
+        is_valid_select_str("b"),
+        !is_valid_select_str("bb"),
+        !is_valid_select_str("")
     ))
 })

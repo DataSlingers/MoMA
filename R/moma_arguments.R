@@ -15,11 +15,6 @@
 #' @name moma_sparsity
 NULL
 
-# Check whether `x` is a boolean value
-is_logical_scalar <- function(x) {
-    return(is.logical(x) && (length(x) == 1) && !is.na(x))
-}
-
 empty <- function() {
     arglist <- list()
     class(arglist) <- "moma_sparsity"
@@ -359,3 +354,58 @@ moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
     class(arglist) <- "moma_pg_settings"
     return(arglist)
 }
+
+create_moma_sparsity_func <- function(f) {
+    aug_f <- function(..., lambda = 0, select_scheme = "g") {
+        chkDots(...)
+
+        # step 1: check selection_scheme
+        tryCatch(select_scheme <- match.arg(select_scheme),
+            error = function(e) {
+                moma_error(
+                    "Unsupported choice of ", sQuote("select_scheme"),
+                    "; type ", sQuote("?select_scheme"), " for supported selection schemes."
+                )
+            }
+        )
+
+        # Step 2: check lambda
+        if (!is_valid_parameters(lambda)) {
+            moma_error(sQuote("lambda"), " is not valid: ", lambda)
+        }
+
+        # Step 3: check select_scheme
+        if (!is_valid_select_str(select_scheme)) {
+            moma_error(
+                sQuote("select_scheme"), " is not valid: ", lambda,
+                ". It should be either `g` or `b`."
+            )
+        }
+
+        # step 4: return
+        arg_for_f <- mget(ls())
+        arg_for_f <- arg_for_f[
+            names(arg_for_f) %in% c("lambda", "select_scheme") == FALSE
+        ] # fetch arguments for the function `f`
+        a <- list(
+            sparsity_type = do.call(f, arg_for_f),
+            lambda = lambda,
+            select_scheme = select_scheme
+        )
+        class(a) <- "moma_sparsity_type"
+        return(a)
+    }
+    formals(aug_f) <- c(formals(f), formals(aug_f))
+    aug_f
+}
+
+moma_empty <- create_moma_sparsity_func(empty)
+moma_lasso <- create_moma_sparsity_func(lasso)
+moma_mcp <- create_moma_sparsity_func(mcp)
+moma_scad <- create_moma_sparsity_func(scad)
+moma_slope <- create_moma_sparsity_func(slope)
+moma_grplasso <- create_moma_sparsity_func(grplasso)
+moma_fusedlasso <- create_moma_sparsity_func(fusedlasso)
+moma_l1tf <- create_moma_sparsity_func(l1tf)
+moma_spfusedlasso <- create_moma_sparsity_func(spfusedlasso)
+moma_cluster <- create_moma_sparsity_func(cluster)
