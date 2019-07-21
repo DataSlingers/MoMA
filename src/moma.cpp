@@ -2,6 +2,7 @@
 // -*-
 #include "moma.h"
 
+// Initializer for PCA
 MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
            /*
             * sparsity - enforced through penalties
@@ -56,6 +57,9 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
                i_X.n_cols)
 // const reference must be passed to initializer list
 {
+    ds         = DeflationScheme::PCA;
+    X_original = i_X;
+
     if (i_EPS >= 1 || i_EPS_inner >= 1)
     {
         MoMALogger::error("EPS or EPS_inner too large.");
@@ -85,20 +89,152 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
     is_solved      = false;  // TODO: check if alphauv == 0
 };
 
-int MoMA::deflate(double d)
-{
-    MoMALogger::debug("Deflating:\n")
-        << "\nX = \n"
-        << X << "u^T = " << u.t() << "v^T = " << v.t() << "d = u^TXv = " << d;
+// Initializer for LDA and CCA
+MoMA::MoMA(
+    // const arma::mat &X_,  // Pass X_ as a reference to avoid copy
+    const arma::mat &i_X_working,
+    const arma::mat &i_Y_working,
+    /*
+     * sparsity - enforced through penalties
+     */
+    double i_lambda_u,  // regularization level
+    double i_lambda_v,
+    Rcpp::List i_prox_arg_list_u,
+    Rcpp::List i_prox_arg_list_v,
 
-    if (d <= 0.0)
+    /*
+     * smoothness - enforced through constraints
+     */
+    double i_alpha_u,  // Smoothing levels
+    double i_alpha_v,
+    const arma::mat &i_Omega_u,  // Smoothing matrices
+    const arma::mat &i_Omega_v,
+
+    /*
+     * Algorithm parameters:
+     */
+    double i_EPS,
+    long i_MAX_ITER,
+    double i_EPS_inner,
+    long i_MAX_ITER_inner,
+    std::string i_solver,
+    DeflationScheme i_ds)
+    : MoMA(i_X_working.t() * i_Y_working,  // the matrix on which we find pSVD
+           i_lambda_u,
+           i_lambda_u,
+           i_prox_arg_list_u,
+           i_prox_arg_list_v,
+           i_alpha_u,
+           i_alpha_v,
+           i_Omega_u,
+           i_Omega_v,
+           i_EPS,
+           i_MAX_ITER,
+           i_EPS_inner,
+           i_MAX_ITER_inner,
+           i_solver)
+{
+    ds = i_ds;
+    if (ds == DeflationScheme::CCA)
     {
-        MoMALogger::error("Cannot deflate by non-positive factor.");
+        // const matrix
+        X_original = i_X_working;
+        Y_original = i_Y_working;
+
+        // deflated matrices
+        X_working = i_X_working;
+        Y_working = i_Y_working;
     }
-    X = X - d * u * v.t();
-    // Re-initialize u and v after deflation
-    initialize_uv();
-    return d;
+    else if (ds == DeflationScheme::LDA)
+    {
+        MoMALogger::debug("Initializing MoMA LDA mode.");
+        // const matrix
+        X_original = i_X_working;
+        Y_original = i_Y_working;
+
+        // deflated matrices
+        X_working = i_X_working;
+        // we do not need Y_working
+        // since Y is an indicator matrix
+        MoMALogger::debug(" X_target = \n") << X;
+    }
+    else
+    {
+        MoMALogger::error("Error in MoMA LDA initialzation.");
+    }
+};
+
+int MoMA::deflate()
+{
+    if (is_solved != true)
+    {
+        MoMALogger::error("Please call `MoMA::solve` before `MoMA::deflate`.");
+    }
+    if (ds == DeflationScheme::PCA)
+    {
+        double d = arma::as_scalar(u.t() * X * v);
+        MoMALogger::debug("Deflating:\n")
+            << "\nX = \n"
+            << X << "u^T = " << u.t() << "v^T = " << v.t() << "d = u^TXv = " << d;
+
+        if (d <= 0.0)
+        {
+            MoMALogger::error("Cannot deflate by non-positive factor.");
+        }
+        X = X - d * u * v.t();
+        // Re-initialize u and v after deflation
+        initialize_uv();
+        return 0;
+    }
+    else if (ds == DeflationScheme::CCA)
+    {
+        double u_norm = arma::norm(u);
+        double v_norm = arma::norm(v);
+
+        if (u_norm == 0.0 || v_norm == 0.0)
+        {
+            MoMALogger::error("Zero singular vecters in MoMA::deflate.");
+        }
+
+        // u and v are scores
+        // "cv" = canonical variates
+        arma::mat X_cv   = X_working * u;
+        arma::mat Y_cv   = Y_working * v;
+        double norm_X_cv = arma::norm(X_cv);
+        double norm_Y_cv = arma::norm(Y_cv);
+
+        // subtract cv's out of X_working and Y_working
+        X_working = X_working - 1 / (norm_X_cv * norm_X_cv) * X_cv * X_cv.t() * X_working;
+        Y_working = Y_working - 1 / (norm_Y_cv * norm_Y_cv) * Y_cv * Y_cv.t() * Y_working;
+
+        X = X_working.t() * Y_working;
+
+        return 0;
+    }
+    else if (ds == DeflationScheme::LDA)
+    {
+        double u_norm = arma::norm(u);
+        double v_norm = arma::norm(v);
+
+        if (u_norm == 0.0 || v_norm == 0.0)
+        {
+            MoMALogger::error("Zero singular vecters in MoMA::deflate.");
+        }
+
+        // u and v are scores
+        // "cv" = canonical variates
+        arma::mat X_cv   = X_working * u;
+        double norm_X_cv = arma::norm(X_cv);
+
+        // subtract cv's out of X_working and Y_working
+        X_working = X_working - 1 / (norm_X_cv * norm_X_cv) * X_cv * X_cv.t() * X_working;
+
+        X = X_working.t() * Y_original;
+    }
+    else
+    {
+        MoMALogger::error("Wrong defaltion scheme.");
+    }
 }
 
 // Dependence on MoMA's internal states: MoMA::X, MoMA::u, MoMA::v, MoMA::alpha_u/v,
@@ -203,9 +339,29 @@ int MoMA::set_penalty(double newlambda_u, double newlambda_v, double newalpha_u,
     return 0;
 }
 
-int MoMA::set_X(arma::mat new_X)
+int MoMA::reset_X()
 {
-    X = new_X;
-    initialize_uv();
-    return 0;
+    if (ds == DeflationScheme::PCA)
+    {
+        X = X_original;
+        initialize_uv();
+        return 0;
+    }
+    else if (ds == DeflationScheme::CCA)
+    {
+        X_working = X_original;
+        Y_working = Y_original;
+        X         = X_working.t() * Y_working;
+        initialize_uv();
+        return 0;
+    }
+    else if (ds == DeflationScheme::LDA)
+    {
+        X_working = X_original;
+        X         = X_working.t() * Y_original;
+    }
+    else
+    {
+        MoMALogger::error("MoMA::reset_X for other modes not implemented.");
+    }
 }

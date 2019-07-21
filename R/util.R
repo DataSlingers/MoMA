@@ -180,3 +180,10 @@ check_omega <- function(Omega, alpha, n) {
 second_diff_mat <- function(n) {
     return(crossprod(diff(diag(n))))
 }
+
+DEFLATION_SCHEME <- c(
+    PCA = 1,
+    CCA = 2,
+    LDA = 3,
+    PLS = 4
+)
