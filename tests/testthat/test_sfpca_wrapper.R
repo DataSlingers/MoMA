@@ -60,8 +60,6 @@ test_that("SFPCA object: correct arguments", {
     expect_equal(dim(a$grid_result), c(1, 1, 1, 1, 1))
 })
 
-
-
 test_that("SFPCA object: as SVD", {
     set.seed(12)
 
@@ -241,7 +239,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     # case 2:
     # parameters that were scalars in initialization
     # should not appear in SFPCA::get_mat_by_index either
-    a <- moma_sfpca(X, alpha_u = 1)
+    a <- moma_sfpca(X, u_smooth = moma_smoothness(alpha = 1))
     expect_no_error(
         a$get_mat_by_index()
     )
@@ -263,9 +261,8 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     # parameters that were selected by BIC
     # should not appear in SFPCA::get_mat_by_index either
     a <- moma_sfpca(X,
-        alpha_u = c(1, 2),
-        alpha_v = c(1, 2, 3), # selected by BIC
-        selection_scheme_str = "gbgg"
+        u_smooth = moma_smoothness(alpha = c(1, 2)),
+        v_smooth = moma_smoothness(alpha = c(1, 2), select_scheme = "b")
     )
     expect_no_error(
         a$get_mat_by_index()
@@ -282,7 +279,9 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
         invalid_indices_error
     )
 
-    a <- moma_sfpca(X, alpha_u = c(1, 2))
+    a <- moma_sfpca(X,
+        u_smooth = moma_smoothness(alpha = c(1, 2))
+    )
     expect_no_error(
         a$get_mat_by_index()
     )
@@ -303,8 +302,6 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
 })
 
-
-
 test_that("SFPCA object wrappers: moma_spca", {
     set.seed(12)
 
@@ -312,58 +309,57 @@ test_that("SFPCA object wrappers: moma_spca", {
 
     # test inputs
     expect_error(
-        moma_spca(X, lambda_v = c(1, 2), lambda_u = c(2, 3)),
-        "Please use `moma_twspca` if both sides are penalized"
-    )
-    expect_error(
-        moma_spca(X, lambda_v = c(1, 2), u_sparsity = empty()),
-        "Please use `moma_twspca` if both sides are penalized"
-    )
-    expect_error(
-        moma_spca(X, v_sparsity = empty(), u_sparsity = empty()),
-        "Please use `moma_twspca` if both sides are penalized"
-    )
-    expect_error(
         moma_spca(X,
-            v_sparsity = empty(), lambda_v = c(1, 2),
-            lambda_u = c(0)
+            v_sparse = moma_empty(lambda = c(1, 2)),
+            u_sparse = moma_empty(lambda = c(1, 2))
         ),
         "Please use `moma_twspca` if both sides are penalized"
     )
     expect_error(
-        moma_spca(X, lambda_v = c(1, 2), lambda_u = c(0)),
+        moma_spca(X,
+            v_sparse = moma_empty(),
+            u_sparse = moma_empty()
+        ),
         "Please use `moma_twspca` if both sides are penalized"
     )
+    expect_error(
+        moma_spca(X,
+            v_sparse = lasso()
+        ),
+        paste0(
+            "Invalid argument: ",
+            sQuote("u_sparse / v_sparse"),
+            ". They should be of class `moma_sparsity_type`."
+        )
+    )
+
+
     expect_warning(moma_spca(X), "No sparsity is imposed!")
 
 
     # test selection schemes
     expect_error(
         moma_spca(X,
-            lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-            selection_scheme_str = "gb"
+            u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
         ),
-        "`selection_scheme_str` should be either 'g' or 'b'"
+        "‘select_scheme’ is not valid: c. It should be either `g` or `b`.",
+        fixed = TRUE
     )
 
     expect_error(
         moma_spca(X,
-            lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-            selection_scheme_str = "c"
+            u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "gg")
         ),
-        "`selection_scheme_str` should be either 'g' or 'b'"
+        "‘select_scheme’ is not valid: gg. It should be either `g` or `b`.",
+        fixed = TRUE
     )
 
 
-    expect_error(a <- moma_spca(X, lambda_u = c()),
-        paste0(
-            "All penalty levels (",
-            sQuote("lambda_u"), ", ",
-            sQuote("lambda_v"), ", ",
-            sQuote("alpha_u"), ", ",
-            sQuote("alpha_v"),
-            ") must be numeric."
+    expect_error(
+        moma_spca(X,
+            u_smooth = moma_lasso(lambda = c())
         ),
+        "‘lambda’ is not valid: NULL",
         fixed = TRUE
     )
 
@@ -373,38 +369,28 @@ test_that("SFPCA object wrappers: moma_spca", {
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    expect_warning(
-        a <- moma_spca(X, selection_scheme_str = "b"), # no effects
+    expect_no_warning(
+        a <- moma_spca(X, u_sparse = moma_empty()),
         "No sparsity is imposed!"
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    a <- moma_spca(X,
-        lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-        selection_scheme_str = "g"
-    )
+    a <- moma_spca(X, u_sparse = moma_lasso(select_scheme = "g"))
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    a <- moma_spca(X,
-        lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-        selection_scheme_str = "b"
-    )
+    a <- moma_spca(X, u_sparse = moma_lasso(select_scheme = "b"))
     expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
 
-
     a <- moma_spca(X,
-        lambda_v = seq(0, 2, 0.2), v_sparsity = lasso(),
-        selection_scheme_str = "g"
+        v_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "g")
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_spca(X,
-        lambda_v = seq(0, 2, 0.2), v_sparsity = lasso(),
-        selection_scheme_str = "b"
+        v_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "b")
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
 })
-
 
 test_that("SFPCA object wrappers: moma_twspca", {
     set.seed(12)
@@ -413,19 +399,28 @@ test_that("SFPCA object wrappers: moma_twspca", {
 
     # test inputs
     expect_no_error(
-        moma_twspca(X, lambda_v = c(1, 2), lambda_u = c(2, 3))
+        moma_twspca(X,
+            v_sparse = moma_empty(lambda = c(1, 2)),
+            u_sparse = moma_empty(lambda = c(2, 3))
+        )
     )
     expect_no_error(
-        moma_twspca(X, lambda_v = c(1, 2), u_sparsity = empty())
+        moma_twspca(X,
+            v_sparse = moma_empty(),
+            u_sparse = moma_empty(lambda = c(2, 3))
+        )
     )
     expect_no_error(
-        moma_twspca(X, v_sparsity = empty(), u_sparsity = empty())
+        moma_twspca(X,
+            v_sparse = moma_empty(),
+            u_sparse = moma_empty()
+        )
     )
 
     expect_no_error(
         moma_twspca(X,
-            v_sparsity = empty(), lambda_v = c(1, 2),
-            lambda_u = c(0)
+            v_sparse = moma_empty(lambda = c(0)),
+            u_sparse = moma_empty()
         )
     )
 
@@ -433,8 +428,11 @@ test_that("SFPCA object wrappers: moma_twspca", {
         moma_twspca(X),
         "No sparsity is imposed!"
     )
+
     expect_warning(
-        moma_twspca(X, lambda_u = seq(0, 2, 0.2), u_sparsity = lasso()),
+        moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 2, 0.2))
+        ),
         "Please use `moma_spca` if only one side is penalized"
     )
 
@@ -443,10 +441,9 @@ test_that("SFPCA object wrappers: moma_twspca", {
     expect_warning(
         expect_error(
             moma_twspca(X,
-                lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-                selection_scheme_str = "gbb"
+                u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "bb")
             ),
-            "`selection_scheme_str` should be of length two."
+            "‘select_scheme’ is not valid: bb. It should be either `g` or `b`"
         ),
         "Please use `moma_spca` if only one side is penalized."
     )
@@ -454,22 +451,20 @@ test_that("SFPCA object wrappers: moma_twspca", {
     expect_warning(
         expect_error(
             moma_twspca(X,
-                lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-                selection_scheme_str = "cc"
+                u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
             ),
-            "`selection_scheme_str` should consist of 'g' or 'b'"
+            "‘select_scheme’ is not valid: c. It should be either `g` or `b`"
         ),
-        "Please use `moma_spca` if only one side is penalized"
+        "Please use `moma_spca` if only one side is penalized."
     )
 
     expect_warning(
         expect_no_error(
             moma_twspca(X,
-                lambda_u = seq(0, 1, 0.1), u_sparsity = lasso(),
-                selection_scheme_str = "bb"
+                u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "b")
             )
         ),
-        "Please use `moma_spca` if only one side is penalized"
+        "Please use `moma_spca` if only one side is penalized."
     )
 
 
@@ -477,48 +472,72 @@ test_that("SFPCA object wrappers: moma_twspca", {
     expect_warning(a <- moma_twspca(X))
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    expect_warning(a <- moma_twspca(X, selection_scheme_str = "bb"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
-    expect_warning(a <- moma_twspca(X, selection_scheme_str = "gg"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
-    expect_warning(a <- moma_twspca(X, selection_scheme_str = "bg"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
-    expect_warning(a <- moma_twspca(X, selection_scheme_str = "gb"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
-
-
-    a <- moma_twspca(X,
-        lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-        lambda_v = seq(0, 2, 0.2), v_sparsity = lasso(),
-        selection_scheme_str = "bb"
-    )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
-
-    a <- moma_twspca(X,
-        lambda_u = seq(0, 1, 0.1), u_sparsity = lasso(),
-        lambda_v = seq(0, 1, 0.1), v_sparsity = lasso(),
-        selection_scheme_str = "gg",
-        pg_setting = moma_pg_settings(MAX_ITER = 2000)
-    )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
-
-    a <- moma_twspca(X,
-        lambda_u = seq(0, 2, 0.2), u_sparsity = lasso(),
-        lambda_v = seq(0, 2, 0.2), v_sparsity = lasso(),
-        selection_scheme_str = "gb"
-    )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
-
-    expect_warning(
+    expect_no_warning(
         a <- moma_twspca(X,
-            lambda_v = seq(0, 2, 0.2), v_sparsity = lasso(),
-            selection_scheme_str = "bg"
-        ),
-        "Please use `moma_spca` if only one side is penalized"
+            u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "b"),
+            v_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "b")
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2)),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2))
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b"),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2))
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2)),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b")
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
+
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b"),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b")
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "g"),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "g")
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "g"),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b")
+        )
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
+
+    expect_no_warning(
+        a <- moma_twspca(X,
+            u_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b"),
+            v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "g")
+        )
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
 })
-
 
 test_that("SFPCA object wrappers: moma_fpca", {
     set.seed(12)
@@ -527,19 +546,26 @@ test_that("SFPCA object wrappers: moma_fpca", {
 
     # test inputs
     expect_error(
-        moma_fpca(X, alpha_v = c(1, 2), alpha_u = c(2, 3)),
+        moma_fpca(X,
+            u_smooth = moma_smoothness(alpha = c(1, 2)),
+            v_smooth = moma_smoothness(alpha = c(1, 2))
+        ),
         "Please use `moma_twfpca` if both sides are penalized"
     )
     expect_error(
         moma_fpca(X,
-            alpha_u = seq(0, 2, 0.2), Omega_u = lasso(),
-            selection_scheme_str = "g"
+            u_smooth = moma_smoothness(
+                Omega = lasso(),
+                alpha = c(1, 2)
+            )
         ),
         "Omega_u/v is not a matrix."
     )
 
     # test when no penalty matrix is provided
-    a <- moma_fpca(X, alpha_v = c(1, 2))
+    a <- moma_fpca(X,
+        v_smooth = moma_smoothness(alpha = c(1, 2))
+    )
     expect_equal(a$Omega_u, diag(17)) # Omega is set to identiy mat if u or v is unpenalzied
     expect_equal(a$Omega_v, second_diff_mat(8)) # the default penalty matrix
 
@@ -552,13 +578,16 @@ test_that("SFPCA object wrappers: moma_fpca", {
 
     expect_error(
         moma_fpca(X,
-            Omega_v = 2 * diag(8), alpha_v = c(1, 2),
-            alpha_u = c(0)
+            v_smooth = moma_smoothness(Omega = 2 * diag(8), alpha = c(1, 2)),
+            u_smooth = moma_smoothness(alpha = c(0))
         ),
         "Please use `moma_twfpca` if both sides are penalized"
     )
     expect_error(
-        moma_fpca(X, alpha_v = c(1, 2), alpha_u = c(0)),
+        moma_fpca(X,
+            v_smooth = moma_smoothness(alpha = c(1, 2)),
+            u_smooth = moma_smoothness(alpha = c(0))
+        ),
         "Please use `moma_twfpca` if both sides are penalized"
     )
     expect_warning(moma_fpca(X), "No smoothness is imposed!")
@@ -568,18 +597,26 @@ test_that("SFPCA object wrappers: moma_fpca", {
     # error when nchar(selection_scheme_str) != 1
     expect_error(
         moma_fpca(X,
-            alpha_u = seq(0, 2, 0.2), Omega_u = second_diff_mat(17),
-            selection_scheme_str = "gb"
+            u_smooth = moma_smoothness(
+                Omega = second_diff_mat(17),
+                alpha = seq(0, 2, 0.2),
+                select_scheme = "bg"
+            )
         ),
-        "`selection_scheme_str` should be either 'g' or 'b'"
+        "‘select_scheme’ is not valid: bg. It should be either `g` or `b`",
+        fixed = TRUE
     )
 
     expect_error(
         moma_fpca(X,
-            alpha_u = seq(0, 2, 0.2), Omega_u = second_diff_mat(8),
-            selection_scheme_str = "c"
+            u_smooth = moma_smoothness(
+                Omega = second_diff_mat(17),
+                alpha = seq(0, 2, 0.2),
+                select_scheme = "c"
+            )
         ),
-        "`selection_scheme_str` should be either 'g' or 'b'"
+        "‘select_scheme’ is not valid: c. It should be either `g` or `b`",
+        fixed = TRUE
     )
 
 
@@ -589,39 +626,34 @@ test_that("SFPCA object wrappers: moma_fpca", {
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    expect_warning(
-        a <- moma_fpca(X, selection_scheme_str = "b"), # no effects
-        "No smoothness is imposed!"
-    )
+
+    a <- moma_fpca(X, u_smooth = moma_smoothness(alpha = seq(0, 2, 0.2)))
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    a <- moma_fpca(X,
-        alpha_u = seq(0, 2, 0.2),
-        selection_scheme_str = "g"
-    )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    a <- moma_fpca(X, u_smooth = moma_smoothness(
+        alpha = seq(0, 2, 0.2),
+        select_scheme = "b"
+    ))
 
-    a <- moma_fpca(X,
-        alpha_u = seq(0, 2, 0.2),
-        selection_scheme_str = "b"
-    )
     expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
     expect_equal(a$Omega_u, second_diff_mat(17))
 
     a <- moma_fpca(X,
-        alpha_v = seq(0, 2, 0.2),
-        selection_scheme_str = "g"
+        v_smooth = moma_smoothness(alpha = seq(0, 2, 0.2))
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
     expect_equal(a$Omega_v, second_diff_mat(8))
+    expect_equal(a$Omega_u, diag(17))
+
 
     a <- moma_fpca(X,
-        alpha_v = seq(0, 2, 0.2),
-        selection_scheme_str = "b"
+        v_smooth = moma_smoothness(
+            alpha = seq(0, 2, 0.2),
+            select_scheme = "b"
+        )
     )
     expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
 })
-
 
 test_that("SFPCA object wrappers: moma_twfpca", {
     set.seed(12)
@@ -630,25 +662,26 @@ test_that("SFPCA object wrappers: moma_twfpca", {
 
     # test inputs
     expect_no_error(
-        moma_twfpca(X, alpha_v = c(1, 2), alpha_u = c(2, 3))
+        moma_twfpca(X,
+            v_smooth = moma_smoothness(alpha = c(1, 2)),
+            u_smooth = moma_smoothness(alpha = c(2, 3))
+        )
     )
 
     expect_warning(
         expect_no_error(
-            moma_twfpca(X, alpha_v = c(1, 2))
+            moma_twfpca(X,
+                u_smooth = moma_smoothness(alpha = c(2, 3))
+            )
         ),
         "Please use `moma_fpca` if only one side is penalized"
-    )
-    expect_no_error(
-        moma_twfpca(X, Omega_v = diag(8), Omega_u = 2.1 * second_diff_mat(17))
     )
 
     # incompatible Omega
     expect_warning(
         expect_error(
             moma_twfpca(X,
-                alpha_u = seq(0, 2, 0.2), Omega_u = 2.1 * second_diff_mat(11),
-                selection_scheme_str = "bb"
+                u_smooth = moma_smoothness(Omega = 2.1 * second_diff_mat(11), alpha = seq(0, 2, 0.2))
             ),
             "Omega shoud be a compatible matrix. It should be of 17x17, but is actually 11x11"
         ),
@@ -658,8 +691,8 @@ test_that("SFPCA object wrappers: moma_twfpca", {
 
     expect_no_error(
         moma_twfpca(X,
-            Omega_v = diag(8), alpha_v = c(1, 2),
-            alpha_u = c(0)
+            v_smooth = moma_smoothness(Omega = diag(8), alpha = c(1, 2)),
+            u_smooth = moma_smoothness(alpha = c(0))
         )
     )
 
@@ -668,323 +701,290 @@ test_that("SFPCA object wrappers: moma_twfpca", {
         "No smoothness is imposed!"
     )
     expect_warning(
-        moma_twfpca(X, alpha_u = seq(0, 2, 0.2), Omega_u = 2.3 * second_diff_mat(17)),
-        "Please use `moma_fpca` if only one side is penalized"
-    )
-
-
-    # test selection schemes
-    expect_warning(
-        expect_error(
-            moma_twfpca(X,
-                alpha_u = seq(0, 2, 0.2), Omega_u = lasso(),
-                selection_scheme_str = "gbb"
-            ),
-            "`selection_scheme_str` should be of length two."
+        moma_twfpca(X,
+            u_smooth = moma_smoothness(Omega = 2.3 * second_diff_mat(17)),
+            alpha = seq(0, 2, 0.2)
         ),
         "Please use `moma_fpca` if only one side is penalized"
     )
 
-    expect_warning(
-        expect_error(
-            moma_twfpca(X,
-                alpha_u = seq(0, 2, 0.2), Omega_u = lasso(),
-                selection_scheme_str = "cc"
-            ),
-            "`selection_scheme_str` should consist of 'g' or 'b'"
-        ),
-        "Please use `moma_fpca` if only one side is penalized"
-    )
-
-    expect_warning(
-        expect_no_error(
-            moma_twfpca(X,
-                alpha_u = seq(0, 2, 0.2), Omega_u = 2.1 * second_diff_mat(17),
-                selection_scheme_str = "bb"
-            )
-        ),
-        "Please use `moma_fpca` if only one side is penalized"
-    )
 
     expect_warning(a <- moma_twfpca(X))
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    expect_warning(a <- moma_twfpca(X, selection_scheme_str = "bb"))
-    expect_true(all(a$selection_scheme_list == c(1, 1, 0, 0)))
-    expect_warning(a <- moma_twfpca(X, selection_scheme_str = "gg"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
-    expect_warning(a <- moma_twfpca(X, selection_scheme_str = "bg"))
-    expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
-    expect_warning(a <- moma_twfpca(X, selection_scheme_str = "gb"))
-    expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
-
-
-    a <- moma_twfpca(X,
-        alpha_u = seq(0, 2, 0.2), Omega_u = 1.1 * second_diff_mat(17),
-        alpha_v = seq(0, 2, 0.2), Omega_v = 1.2 * second_diff_mat(8),
-        selection_scheme_str = "bb"
-    )
-    expect_true(all(a$selection_scheme_list == c(1, 1, 0, 0)))
-    expect_equal(a$Omega_u, 1.1 * second_diff_mat(17))
-    expect_equal(a$Omega_v, 1.2 * second_diff_mat(8))
-
-    a <- moma_twfpca(X,
-        alpha_u = seq(0, 2, 0.2), Omega_u = 1.1 * second_diff_mat(17),
-        alpha_v = seq(0, 2, 0.2), Omega_v = 1.2 * second_diff_mat(8),
-        selection_scheme_str = "gg"
-    )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
-    expect_equal(a$Omega_u, 1.1 * second_diff_mat(17))
-    expect_equal(a$Omega_v, 1.2 * second_diff_mat(8))
-
-    a <- moma_twfpca(X,
-        alpha_u = seq(0, 2, 0.2), Omega_u = 1.1 * second_diff_mat(17),
-        alpha_v = seq(0, 2, 0.2), Omega_v = 1.2 * second_diff_mat(8),
-        selection_scheme_str = "gb"
-    )
-    expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
-
-    expect_warning(
+    expect_no_error(
         a <- moma_twfpca(X,
-            alpha_v = seq(0, 2, 0.2), Omega_v = 2.1 * second_diff_mat(8),
-            selection_scheme_str = "bg"
+            v_smooth = moma_smoothness(
+                Omega = diag(8),
+                alpha = c(1, 2)
+            ),
+            u_smooth = moma_smoothness(
+                Omega = second_diff_mat(8),
+                alpha = c(0)
+            ) # if alpha = 0, Omega will be overwritten,
+        )
+    )
+
+    expect_error(
+        a <- moma_twfpca(X,
+            v_smooth = moma_smoothness(Omega = diag(8), alpha = c(1, 2)),
+            u_smooth = moma_smoothness(Omega = second_diff_mat(8), alpha = c(1))
         ),
-        "Please use `moma_fpca` if only one side is penalized"
+        "Omega shoud be a compatible matrix. It should be of 17x17, but is actually 8x8 "
+    )
+
+    a <- moma_twfpca(X,
+        u_smooth = moma_smoothness(select_scheme = "g"),
+        v_smooth = moma_smoothness(select_scheme = "b")
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
+    a <- moma_twfpca(X,
+        u_smooth = moma_smoothness(select_scheme = "b"),
+        v_smooth = moma_smoothness(select_scheme = "b")
+    )
+    expect_true(all(a$selection_scheme_list == c(1, 1, 0, 0)))
+    a <- moma_twfpca(X,
+        u_smooth = moma_smoothness(select_scheme = "g"),
+        v_smooth = moma_smoothness(select_scheme = "g")
+    )
+    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    a <- moma_twfpca(X,
+        u_smooth = moma_smoothness(select_scheme = "b"),
+        v_smooth = moma_smoothness(select_scheme = "g")
     )
     expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
 })
 
-test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", {
-    set.seed(113)
-    X <- matrix(runif(17 * 8), 17, 8) * 10
+# test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", {
+#     set.seed(113)
+#     X <- matrix(runif(17 * 8), 17, 8) * 10
 
-    a <- moma_sfpca(X,
-        alpha_u = c(1, 2), alpha_v = c(1.1, 2.1),
-        lambda_u = c(1.3, 2.3), lambda_v = c(1.4, 2.4)
-    )
+#     a <- moma_sfpca(X,
+#         alpha_u = c(1, 2), alpha_v = c(1.1, 2.1),
+#         lambda_u = c(1.3, 2.3), lambda_v = c(1.4, 2.4)
+#     )
 
-    expect_no_error(
-        a$get_mat_by_index(alpha_u = 2)
-    )
-    expect_error(
-        a$get_mat_by_index(alpha_u = 2.1),
-        "Non-integer input in SFPCA::get_mat_by_index"
-    )
+#     expect_no_error(
+#         a$get_mat_by_index(alpha_u = 2)
+#     )
+#     expect_error(
+#         a$get_mat_by_index(alpha_u = 2.1),
+#         "Non-integer input in SFPCA::get_mat_by_index"
+#     )
 
-    expect_no_error(
-        a$left_project(X)
-    )
-    expect_error(
-        a$left_project(X, alpha_u = 2.1),
-        "Non-integer input in SFPCA::left_project"
-    )
-})
+#     expect_no_error(
+#         a$left_project(X)
+#     )
+#     expect_error(
+#         a$left_project(X, alpha_u = 2.1),
+#         "Non-integer input in SFPCA::left_project"
+#     )
+# })
 
-test_that("SFPCA object: interpolate, exact mode", {
-    set.seed(113)
-    X <- matrix(runif(17 * 8), 17, 8) * 10
+# test_that("SFPCA object: interpolate, exact mode", {
+#     set.seed(113)
+#     X <- matrix(runif(17 * 8), 17, 8) * 10
 
-    # Once BIC is used, `SFPCA::interpolate`
-    # cannot be called at all.
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        lambda_u = c(1, 2), lambda_v = c(1, 2),
-        alpha_u = c(1, 2),
-        alpha_v = c(1, 2), # selected by BIC
-        Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8),
-        selection_scheme_str = "gggb"
-    )
-    expect_error(
-        a$interpolate(),
-        "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
-    )
-    expect_error(
-        a$interpolate(
-            lambda_u = 1.1, lambda_v = 1.3,
-            alpha_u = 1.4
-        ),
-        "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
-    )
+#     # Once BIC is used, `SFPCA::interpolate`
+#     # cannot be called at all.
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         lambda_u = c(1, 2), lambda_v = c(1, 2),
+#         alpha_u = c(1, 2),
+#         alpha_v = c(1, 2), # selected by BIC
+#         Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8),
+#         selection_scheme_str = "gggb"
+#     )
+#     expect_error(
+#         a$interpolate(),
+#         "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
+#     )
+#     expect_error(
+#         a$interpolate(
+#             lambda_u = 1.1, lambda_v = 1.3,
+#             alpha_u = 1.4
+#         ),
+#         "R6 object SFPCA do not support interpolation when BIC selection scheme has been used."
+#     )
 
-    # case 1: `SFPCA::interpolate` cannot be used at all if all
-    # parameters are specified as scalars
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        lambda_u = 1.2, lambda_v = 1,
-        alpha_u = 0.7, alpha_v = 0.3,
-        Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8)
-    )
-    # this returns `a$get_mat_by_id()`
-    expect_no_error(
-        a$interpolate(
-            exact = TRUE
-        )
-    )
-    expect_error(
-        a$interpolate(
-            exact = FALSE
-        ),
-        "SFPCA::interpolate only supports one-sided interpolation"
-    )
-    expect_error(
-        a$interpolate(
-            alpha_u = 1, exact = TRUE
-        ),
-        "Invalid index in SFPCA::interpolate: alpha_u."
-    )
-    expect_error(
-        a$interpolate(
-            alpha_v = 1, exact = TRUE
-        ),
-        "Invalid index in SFPCA::interpolate: alpha_v."
-    )
-    expect_error(
-        a$interpolate(
-            lambda_u = 1, exact = TRUE
-        ),
-        "Invalid index in SFPCA::interpolate: lambda_u."
-    )
-    expect_error(
-        a$interpolate(
-            lambda_v = 1, exact = TRUE
-        ),
-        "Invalid index in SFPCA::interpolate: lambda_v."
-    )
-
-
-    # case 2: interpolation on v side, both alpha and lambda are vectors
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        alpha_v = seq(0.1, 1, 0.15), alpha_u = 0.32,
-        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
-        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
-    )
-    # incomplete arguments
-    expect_error(
-        a$interpolate(
-            lambda_v = 1, exact = TRUE
-        ),
-        "Please spesify the following argument(s): alpha_v.",
-        fixed = TRUE
-    )
-    # extra arguments
-    expect_error(
-        a$interpolate(
-            lambda_v = 1, alpha_v = 1, alpha_u = 1,
-            exact = TRUE
-        ),
-        "Invalid index in SFPCA::interpolate: alpha_u."
-    )
-    # alpha_v too large
-    expect_error(
-        a$interpolate(
-            lambda_v = 0.21, alpha_v = 1
-        ),
-        "Invalid range: alpha_v."
-    )
-
-    # case 3: interpolation on v side, only lambda is a vector
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        alpha_v = 0.12, alpha_u = 0.32,
-        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
-        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
-    )
-    # correct arguments
-    expect_no_error(
-        a$interpolate(
-            lambda_v = 1, exact = TRUE
-        )
-    )
-    # extra arguments
-    expect_error(
-        a$interpolate(
-            lambda_v = 1, alpha_v = 1, alpha_u = 1,
-            exact = TRUE
-        ),
-        "Invalid index in SFPCA::interpolate: alpha_u, alpha_v."
-    )
-    # alpha_v must not be specified
-    expect_error(
-        a$interpolate(
-            lambda_v = 0.21, alpha_v = 0.09
-        ),
-        "Invalid index in SFPCA::interpolate: alpha_v."
-    )
-})
+#     # case 1: `SFPCA::interpolate` cannot be used at all if all
+#     # parameters are specified as scalars
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         lambda_u = 1.2, lambda_v = 1,
+#         alpha_u = 0.7, alpha_v = 0.3,
+#         Omega_u = second_diff_mat(17), Omega_v = second_diff_mat(8)
+#     )
+#     # this returns `a$get_mat_by_id()`
+#     expect_no_error(
+#         a$interpolate(
+#             exact = TRUE
+#         )
+#     )
+#     expect_error(
+#         a$interpolate(
+#             exact = FALSE
+#         ),
+#         "SFPCA::interpolate only supports one-sided interpolation"
+#     )
+#     expect_error(
+#         a$interpolate(
+#             alpha_u = 1, exact = TRUE
+#         ),
+#         "Invalid index in SFPCA::interpolate: alpha_u."
+#     )
+#     expect_error(
+#         a$interpolate(
+#             alpha_v = 1, exact = TRUE
+#         ),
+#         "Invalid index in SFPCA::interpolate: alpha_v."
+#     )
+#     expect_error(
+#         a$interpolate(
+#             lambda_u = 1, exact = TRUE
+#         ),
+#         "Invalid index in SFPCA::interpolate: lambda_u."
+#     )
+#     expect_error(
+#         a$interpolate(
+#             lambda_v = 1, exact = TRUE
+#         ),
+#         "Invalid index in SFPCA::interpolate: lambda_v."
+#     )
 
 
-test_that("SFPCA object: interpolate, inexact mode", {
-    set.seed(113)
-    X <- matrix(runif(17 * 8), 17, 8) * 10
+#     # case 2: interpolation on v side, both alpha and lambda are vectors
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         alpha_v = seq(0.1, 1, 0.15), alpha_u = 0.32,
+#         Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+#         lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+#     )
+#     # incomplete arguments
+#     expect_error(
+#         a$interpolate(
+#             lambda_v = 1, exact = TRUE
+#         ),
+#         "Please spesify the following argument(s): alpha_v.",
+#         fixed = TRUE
+#     )
+#     # extra arguments
+#     expect_error(
+#         a$interpolate(
+#             lambda_v = 1, alpha_v = 1, alpha_u = 1,
+#             exact = TRUE
+#         ),
+#         "Invalid index in SFPCA::interpolate: alpha_u."
+#     )
+#     # alpha_v too large
+#     expect_error(
+#         a$interpolate(
+#             lambda_v = 0.21, alpha_v = 1
+#         ),
+#         "Invalid range: alpha_v."
+#     )
 
-    # interpolation on v side
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        alpha_v = seq(0.1, 1, 0.15), alpha_u = 0.32,
-        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
-        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
-    )
-    expect_no_error(
-        a$interpolate(alpha_v = 0.23, lambda_v = 0.121)
-    )
+#     # case 3: interpolation on v side, only lambda is a vector
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         alpha_v = 0.12, alpha_u = 0.32,
+#         Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+#         lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+#     )
+#     # correct arguments
+#     expect_no_error(
+#         a$interpolate(
+#             lambda_v = 1, exact = TRUE
+#         )
+#     )
+#     # extra arguments
+#     expect_error(
+#         a$interpolate(
+#             lambda_v = 1, alpha_v = 1, alpha_u = 1,
+#             exact = TRUE
+#         ),
+#         "Invalid index in SFPCA::interpolate: alpha_u, alpha_v."
+#     )
+#     # alpha_v must not be specified
+#     expect_error(
+#         a$interpolate(
+#             lambda_v = 0.21, alpha_v = 0.09
+#         ),
+#         "Invalid index in SFPCA::interpolate: alpha_v."
+#     )
+# })
 
-    # error because both alpha_v and lambda_v should be specified
-    expect_error(
-        a$interpolate(alpha_v = 0.23),
-        "Please spesify the following argument(s): lambda_v.",
-        fixed = TRUE
-    )
-    expect_error(
-        a$interpolate(),
-        "Please spesify the following argument(s): alpha_v, lambda_v.",
-        fixed = TRUE
-    )
+# test_that("SFPCA object: interpolate, inexact mode", {
+#     set.seed(113)
+#     X <- matrix(runif(17 * 8), 17, 8) * 10
 
-    # error because alpha_u is a scalar during initialization
-    expect_error(
-        a$interpolate(alpha_u = 0.2323),
-        "Invalid index in SFPCA::interpolate: alpha_u"
-    )
+#     # interpolation on v side
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         alpha_v = seq(0.1, 1, 0.15), alpha_u = 0.32,
+#         Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+#         lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+#     )
+#     expect_no_error(
+#         a$interpolate(alpha_v = 0.23, lambda_v = 0.121)
+#     )
 
-    # error because alpha_u should not be specified
-    expect_error(
-        a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1),
-        "Invalid index in SFPCA::interpolate: alpha_u"
-    )
-    expect_error(
-        a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1, lambda_u = 1.3),
-        "Invalid index in SFPCA::interpolate: alpha_u, lambda_u."
-    )
+#     # error because both alpha_v and lambda_v should be specified
+#     expect_error(
+#         a$interpolate(alpha_v = 0.23),
+#         "Please spesify the following argument(s): lambda_v.",
+#         fixed = TRUE
+#     )
+#     expect_error(
+#         a$interpolate(),
+#         "Please spesify the following argument(s): alpha_v, lambda_v.",
+#         fixed = TRUE
+#     )
 
-    # unsorted alpha_v
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        alpha_v = c(seq(0.1, 1, 0.15), 0.02),
-        alpha_u = 0.32,
-        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
-        lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
-    )
+#     # error because alpha_u is a scalar during initialization
+#     expect_error(
+#         a$interpolate(alpha_u = 0.2323),
+#         "Invalid index in SFPCA::interpolate: alpha_u"
+#     )
 
-    expect_error(
-        a$interpolate(alpha_v = 0.23, lambda_v = 0.121),
-        "Penalty levels not sorted"
-    )
+#     # error because alpha_u should not be specified
+#     expect_error(
+#         a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1),
+#         "Invalid index in SFPCA::interpolate: alpha_u"
+#     )
+#     expect_error(
+#         a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1, lambda_u = 1.3),
+#         "Invalid index in SFPCA::interpolate: alpha_u, lambda_u."
+#     )
 
-    # interpolate on both sides is not supported
-    a <- moma_sfpca(X,
-        u_sparsity = lasso(), v_sparsity = lasso(),
-        alpha_v = seq(0.1, 1, 0.15), alpha_u = seq(0.1, 1, 0.15),
-        Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
-        lambda_v = seq(0.1, 1.4, 0.4), lambda_u = seq(0.1, 1.3, 0.45)
-    )
-    # trying to do two-sided interpolation
-    # but not supported now.
-    expect_error(
-        a$interpolate(
-            alpha_v = 0.23, lambda_v = 0.121,
-            alpha_u = 0.1, lambda_u = 0.3
-        ),
-        "SFPCA::interpolate only supports one-sided interpolation"
-    )
-})
+#     # unsorted alpha_v
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         alpha_v = c(seq(0.1, 1, 0.15), 0.02),
+#         alpha_u = 0.32,
+#         Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+#         lambda_v = seq(0.1, 1, 0.2), lambda_u = 2.1
+#     )
+
+#     expect_error(
+#         a$interpolate(alpha_v = 0.23, lambda_v = 0.121),
+#         "Penalty levels not sorted"
+#     )
+
+#     # interpolate on both sides is not supported
+#     a <- moma_sfpca(X,
+#         u_sparsity = lasso(), v_sparsity = lasso(),
+#         alpha_v = seq(0.1, 1, 0.15), alpha_u = seq(0.1, 1, 0.15),
+#         Omega_v = second_diff_mat(8), Omega_u = second_diff_mat(17),
+#         lambda_v = seq(0.1, 1.4, 0.4), lambda_u = seq(0.1, 1.3, 0.45)
+#     )
+#     # trying to do two-sided interpolation
+#     # but not supported now.
+#     expect_error(
+#         a$interpolate(
+#             alpha_v = 0.23, lambda_v = 0.121,
+#             alpha_u = 0.1, lambda_u = 0.3
+#         ),
+#         "SFPCA::interpolate only supports one-sided interpolation"
+#     )
+# })
