@@ -202,9 +202,9 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
-            if (!inherits(rank, "numeric") || 
-                !is.wholenumber(rank) || 
-                rank <= 0 || 
+            if (!inherits(rank, "numeric") ||
+                !is.wholenumber(rank) ||
+                rank <= 0 ||
                 rank > min(p, n)) {
                 moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
             }
@@ -581,30 +581,17 @@ SFPCA <- R6::R6Class("SFPCA",
 #' Defaults to \code{TRUE}.
 #' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
 #' Defaults to \code{FALSE}.
-#' @param u_sparsity,v_sparsity an object of class inheriting from "\code{moma_sparsity}". Most conveniently
-#' specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
-#' penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
-#' specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
-#' @param lambda_u,lambda_v a numeric vector or a number that specifies the penalty level of sparsity.
-#' Note that for \code{moma_spca}, these two parameter must not be
-#' specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
-#' @param Omega_u,Omega_v a positive definite matrix that encourages smoothness.  Note that for \code{moma_fpca}, these two parameter must not be
-#' specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
-#' @param alpha_u,alpha_v v a numeric vector or a number that specifies the penalty level of smoothness.
-#' Note that for \code{moma_fpca}, these two parameter must not be
-#' specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
+#' @param u_sparse,v_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
+#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
+#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
+#'        specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
+#' @param u_smooth,v_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
+#'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
+#           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
+#'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
 #' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
-#' specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
-#' used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
-#' @param selection_scheme_str a one-letter, two-letter or four-letter string that specifies selection schemes for tuning
-#' parameters, containing only "b" and "g". "b" stands for greedy nested BIC selection, and "g"
-#' stands for exhaustive grid search. For \code{moma_sfpca}, it is a four-letter string, and selection schemes for the tuning parameters,
-#' alpha_u, alpha_v, lambda_u and lambda_v are specified by the four letters of the string, respectively. For
-#' \code{moma_spca} and \code{moma_fpca}, it is a one-leter string that specifies the selection scheme
-#' for the paramter of interest. For \code{moma_twspca}, it is a two-letter string, and
-#' selection schemes for lambda_u and lambda_v are specified by the two letters respectively. For
-#' \code{moma_twfpca}, it is a two-letter string, and selection schemes for alpha_u and alpha_v
-#' are specified by the two letters respectively.
+#'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
+#'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
 #' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
 #' in nested greedy BIC selection scheme.
 #' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
