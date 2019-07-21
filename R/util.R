@@ -24,8 +24,11 @@ is_square <- function(x) {
     is.matrix(x) && (NROW(x) == NCOL(x))
 }
 
-MOMA_EMPTYMAT <- matrix()
-MOMA_EMPTYVEC <- vector(mode = "numeric")
+MOMA_EMPTYMAT <- matrix() # the default `w` arguemnt for unordered fusion
+MOMA_EMPTYVEC <- vector(mode = "numeric") # the defautl `group` arguement for group lasso
+# MOMA_DEFAULT_PROX must be consistent with
+# the initializer of the C++ class ProxOp
+# in `moma_prox.h`
 MOMA_DEFAULT_PROX <- list(
     P = "NONE",
     gamma = 3,
@@ -60,7 +63,7 @@ is.wholenumber <-
 # This function checks the validity of Omega and alpha
 check_omega <- function(Omega, alpha, n) {
 
-    # check if Omega is a matrix
+    # check if Omega is a matrix or a NULL
     if (!is.matrix(Omega) && !is.null(Omega)) {
         moma_error("Omega_u/v is not a matrix.")
     }
@@ -68,7 +71,7 @@ check_omega <- function(Omega, alpha, n) {
     # TODO: store them as sparse matrices using the package Matrix
     if (length(alpha) == 1 && alpha == 0) {
         # discard the Omega matrix specified by users
-        Omega <- diag(n)
+        Omega <- diag(n) # TODO: should not overwrite
     }
     else if (is.null(Omega)) {
         # The user wants smooth penalty

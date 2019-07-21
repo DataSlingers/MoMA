@@ -157,7 +157,8 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(selection_scheme_str, "character") || nchar(selection_scheme_str) != 4 ||
+            if (!inherits(selection_scheme_str, "character") ||
+                nchar(selection_scheme_str) != 4 ||
                 !all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
                 moma_error(
                     "Invalid selection_scheme_str ", selection_scheme_str,
@@ -166,12 +167,14 @@ SFPCA <- R6::R6Class("SFPCA",
             }
 
             # turn "b"/"g" to 1/0
+            # `selection_scheme_list` will be passed to C++ functions
             selection_scheme_list <- list(
                 selection_criterion_alpha_u = 0,
                 selection_criterion_alpha_v = 0,
                 selection_criterion_lambda_u = 0,
                 selection_criterion_lambda_v = 0
             )
+            # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
                 # "Fixed" parameters are those
                 # i) that are chosen by BIC, or
@@ -182,26 +185,27 @@ SFPCA <- R6::R6Class("SFPCA",
                 is_lambda_u_fixed = FALSE,
                 is_lambda_v_fixed = FALSE
             )
-
-            parameter_list <- list(
+            parameter_length_list <- sapply(FUN = length, list(
                 self$alpha_u,
                 self$alpha_v,
                 self$lambda_u,
                 self$lambda_v
-            )
+            ))
+
             for (i in 1:4) {
-                selection_scheme_list[[i]] <- ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
-                fixed_list[[i]] <- substr(selection_scheme_str, i, i) == "b" || length(parameter_list[[i]]) == 1
+                para_select_str_i <- substr(selection_scheme_str, i, i)
+                selection_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
+                fixed_list[[i]] <- para_select_str_i == "b" || parameter_length_list[[i]] == 1
             }
             self$selection_scheme_list <- selection_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
-            is.wholenumber <-
-                function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
-            if (!inherits(rank, "numeric") || !is.wholenumber(rank) || rank <= 0
-            || rank > min(p, n)) {
+            if (!inherits(rank, "numeric") || 
+                !is.wholenumber(rank) || 
+                rank <= 0 || 
+                rank > min(p, n)) {
                 moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
             }
             self$rank <- rank
@@ -607,24 +611,51 @@ SFPCA <- R6::R6Class("SFPCA",
 #' @export
 moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
-                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
-                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
+                       u_sparse = moma_empty(), v_sparse = moma_empty(),
+                       u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                        pg_setting = moma_pg_settings(),
-                       selection_scheme_str = "gggg",
                        max_bic_iter = 5,
                        rank = 1) {
     chkDots(...)
+    if (!inherits(u_sparse, "moma_sparsity_type") ||
+        !inherits(v_sparse, "moma_sparsity_type")) {
+        moma_error(
+            "Invalid argument: ",
+            sQuote("u_sparse / v_sparse"),
+            ". They should be of class `moma_sparsity_type`."
+        )
+    }
+
+    if (!inherits(u_smooth, "moma_smoothness_type") ||
+        !inherits(v_smooth, "moma_smoothness_type")) {
+        moma_error(
+            "Invalid argument: ",
+            sQuote("u_smooth / v_smooth"),
+            ". They should be of class `moma_smoothness_type`."
+        )
+    }
+
+
     return(SFPCA$new(
         X,
         center = center, scale = scale,
         # sparsity
-        u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        lambda_u = lambda_u, lambda_v = lambda_v,
+        u_sparsity = u_sparse$sparsity_type,
+        v_sparsity = v_sparse$sparsity_type,
+        lambda_u = u_sparse$lambda,
+        lambda_v = v_sparse$lambda,
         # smoothness
-        Omega_u = Omega_u, Omega_v = Omega_v,
-        alpha_u = alpha_u, alpha_v = alpha_v,
+        Omega_u = u_smooth$Omega,
+        Omega_v = v_smooth$Omega,
+        alpha_u = u_smooth$alpha,
+        alpha_v = v_smooth$alpha,
         pg_setting = pg_setting,
-        selection_scheme_str = selection_scheme_str,
+        selection_scheme_str = paste0( # the order is important
+            u_smooth$select_scheme,
+            v_smooth$select_scheme,
+            u_sparse$select_scheme,
+            v_sparse$select_scheme
+        ),
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -637,47 +668,28 @@ moma_sfpca <- function(X, ...,
 #' @describeIn moma_sfpca a function for one-way sparse PCA
 moma_spca <- function(X, ...,
                       center = TRUE, scale = FALSE,
-                      u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
+                      u_sparse = moma_empty(), v_sparse = moma_empty(),
+                      #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                       pg_setting = moma_pg_settings(),
-                      selection_scheme_str = "g",
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(u_sparsity) && missing(lambda_u))
-    v_penalized <- !(missing(v_sparsity) && missing(lambda_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_sparse)
+    is_v_penalized <- !missing(v_sparse)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No sparsity is imposed!")
     }
 
-    if (u_penalized && v_penalized) {
+    if (is_u_penalized && is_v_penalized) {
         moma_error("Please use `moma_twspca` if both sides are penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 1 || !selection_scheme_str %in% c("g", "b")) {
-        moma_error("`selection_scheme_str` should be either 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <-
-        if (u_penalized) {
-            paste0("gg", selection_scheme_str, "g")
-        }
-        else if (v_penalized) {
-            paste0("ggg", selection_scheme_str)
-        }
-        else {
-            "gggg"
-        }
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        lambda_u = lambda_u, lambda_v = lambda_v,
-        #  Omega_u = Omega_u, Omega_v = Omega_v,
-        #  alpha_u = alpha_u, alpha_v = alpha_v,
+        u_sparse = u_sparse, v_sparse = v_sparse,
+        # u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -692,41 +704,28 @@ moma_spca <- function(X, ...,
 #' @describeIn moma_sfpca a function for two-way sparse PCA
 moma_twspca <- function(X, ...,
                         center = TRUE, scale = FALSE,
-                        u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
+                        u_sparse = moma_empty(), v_sparse = moma_empty(),
+                        #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                         pg_setting = moma_pg_settings(),
-                        selection_scheme_str = "gg",
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(u_sparsity) && missing(lambda_u))
-    v_penalized <- !(missing(v_sparsity) && missing(lambda_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_sparse)
+    is_v_penalized <- !missing(v_sparse)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No sparsity is imposed!")
     }
 
-    if (!u_penalized || !v_penalized) {
+    if (is_u_penalized != is_v_penalized) {
         moma_warning("Please use `moma_spca` if only one side is penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 2) {
-        moma_error("`selection_scheme_str` should be of length two.")
-    }
-    if (!all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-        moma_error("`selection_scheme_str` should consist of 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <- paste0("gg", selection_scheme_str)
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        lambda_u = lambda_u, lambda_v = lambda_v,
-        # Omega_u = Omega_u, Omega_v = Omega_v,
-        # alpha_u = alpha_u, alpha_v = alpha_v,
+        u_sparse = u_sparse, v_sparse = v_sparse,
+        # u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -739,47 +738,28 @@ moma_twspca <- function(X, ...,
 #' @describeIn moma_sfpca a function for one-way functional PCA
 moma_fpca <- function(X, ...,
                       center = TRUE, scale = FALSE,
-                      Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0,
+                      #    u_sparse = moma_empty(), v_sparse = moma_empty(),
+                      u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                       pg_setting = moma_pg_settings(),
-                      selection_scheme_str = "g",
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(Omega_u) && missing(alpha_u))
-    v_penalized <- !(missing(Omega_v) && missing(alpha_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_smooth)
+    is_v_penalized <- !missing(v_smooth)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No smoothness is imposed!")
     }
 
-    if (u_penalized && v_penalized) {
+    if (is_u_penalized && is_v_penalized) {
         moma_error("Please use `moma_twfpca` if both sides are penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 1 || !selection_scheme_str %in% c("g", "b")) {
-        moma_error("`selection_scheme_str` should be either 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <-
-        if (u_penalized) {
-            paste0(selection_scheme_str, "ggg")
-        }
-        else if (v_penalized) {
-            paste0("g", selection_scheme_str, "gg")
-        }
-        else {
-            "gggg"
-        }
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        #   u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        #   lambda_u = lambda_u, lambda_v = lambda_v,
-        Omega_u = Omega_u, Omega_v = Omega_v,
-        alpha_u = alpha_u, alpha_v = alpha_v,
+        # u_sparse = u_sparse, v_sparse = v_sparse,
+        u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -792,41 +772,28 @@ moma_fpca <- function(X, ...,
 #' @describeIn moma_sfpca a function for two-way functional PCA
 moma_twfpca <- function(X, ...,
                         center = TRUE, scale = FALSE,
-                        Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0,
+                        #    u_sparse = moma_empty(), v_sparse = moma_empty(),
+                        u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                         pg_setting = moma_pg_settings(),
-                        selection_scheme_str = "gg",
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(Omega_u) && missing(alpha_u))
-    v_penalized <- !(missing(Omega_v) && missing(alpha_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_smooth)
+    is_v_penalized <- !missing(v_smooth)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No smoothness is imposed!")
     }
 
-    if (!u_penalized || !v_penalized) {
+    if (!is_u_penalized || !is_v_penalized) {
         moma_warning("Please use `moma_fpca` if only one side is penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 2) {
-        moma_error("`selection_scheme_str` should be of length two.")
-    }
-    if (!all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-        moma_error("`selection_scheme_str` should consist of 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <- paste0(selection_scheme_str, "gg")
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        #   u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        #   lambda_u = lambda_u, lambda_v = lambda_v,
-        Omega_u = Omega_u, Omega_v = Omega_v,
-        alpha_u = alpha_u, alpha_v = alpha_v,
+        # u_sparse = u_sparse, v_sparse = v_sparse,
+        u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))

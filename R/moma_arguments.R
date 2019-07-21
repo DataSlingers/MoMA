@@ -359,16 +359,6 @@ create_moma_sparsity_func <- function(f) {
     aug_f <- function(..., lambda = 0, select_scheme = "g") {
         chkDots(...)
 
-        # step 1: check selection_scheme
-        tryCatch(select_scheme <- match.arg(select_scheme),
-            error = function(e) {
-                moma_error(
-                    "Unsupported choice of ", sQuote("select_scheme"),
-                    "; type ", sQuote("?select_scheme"), " for supported selection schemes."
-                )
-            }
-        )
-
         # Step 2: check lambda
         if (!is_valid_parameters(lambda)) {
             moma_error(sQuote("lambda"), " is not valid: ", lambda)
@@ -377,7 +367,7 @@ create_moma_sparsity_func <- function(f) {
         # Step 3: check select_scheme
         if (!is_valid_select_str(select_scheme)) {
             moma_error(
-                sQuote("select_scheme"), " is not valid: ", lambda,
+                sQuote("select_scheme"), " is not valid: ", select_scheme,
                 ". It should be either `g` or `b`."
             )
         }
@@ -409,3 +399,30 @@ moma_fusedlasso <- create_moma_sparsity_func(fusedlasso)
 moma_l1tf <- create_moma_sparsity_func(l1tf)
 moma_spfusedlasso <- create_moma_sparsity_func(spfusedlasso)
 moma_cluster <- create_moma_sparsity_func(cluster)
+
+# What this function does now is just wrap three arguement
+# into a list.
+# TODO: `Omega` could be a user-defined function
+moma_smoothness <- function(Omega = NULL, ..., alpha = 0, select_scheme = "g") {
+
+    # Step 2: check lambda
+    if (!is_valid_parameters(alpha)) {
+        moma_error(sQuote("alpha"), " is not valid: ", alpha)
+    }
+
+    # Step 3: check select_scheme
+    if (!is_valid_select_str(select_scheme)) {
+        moma_error(
+            sQuote("select_scheme"), " is not valid: ", select_scheme,
+            ". It should be either `g` or `b`."
+        )
+    }
+
+    a <- list(
+        Omega = Omega,
+        alpha = alpha,
+        select_scheme = select_scheme
+    )
+    class(a) <- "moma_smoothness_type"
+    return(a)
+}
