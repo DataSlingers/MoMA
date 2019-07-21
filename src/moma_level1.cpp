@@ -194,8 +194,6 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
 
     RcppFiveDList five_d_list(n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v, rank);
 
-    const arma::mat original_X =
-        X;  // keep a copy of X, because MoMA::X will be contanminated during defaltion
     for (int i = 0; i < n_alpha_u; i++)
     {
         for (int j = 0; j < n_lambda_u; j++)
@@ -221,7 +219,7 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         MoMALogger::error("Wrong BIC search grid!");
                     }
 
-                    set_X(original_X);
+                    reset_X();
                     for (int pc = 0; pc < rank; pc++)
                     {
                         // MoMA::criterion_search returns a list containing two lists:
@@ -241,16 +239,39 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         arma::vec curv = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
                         double d       = arma::as_scalar(curu.t() * X * curv);
 
-                        five_d_list.insert(
-                            Rcpp::List::create(Rcpp::Named("u") = u_result,
-                                               Rcpp::Named("v") = v_result, Rcpp::Named("k") = pc,
-                                               Rcpp::Named("X") = X, Rcpp::Named("d") = d),
-                            i, j, k, m, pc);
+                        Rcpp::List wrap_up;
+                        if (ds == DeflationScheme::PCA)
+                        {
+                            wrap_up = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
+                                Rcpp::Named("k") = pc, Rcpp::Named("X") = X, Rcpp::Named("d") = d);
+                        }
+                        else if (ds == DeflationScheme::CCA)
+                        {
+                            wrap_up = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
+                                Rcpp::Named("k") = pc, Rcpp::Named("X") = X_working,
+                                Rcpp::Named("Y") = Y_working,  // an extra "Y" element
+                                Rcpp::Named("d") = d);
+                        }
+                        else if (ds == DeflationScheme::LDA)
+                        {
+                            wrap_up = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
+                                Rcpp::Named("k") = pc, Rcpp::Named("X") = X_working,
+                                Rcpp::Named("d") = d);
+                        }
+                        else
+                        {
+                            MoMALogger::error("No implemented hash = alkjefiawuveacqw9.");
+                        }
+
+                        five_d_list.insert(wrap_up, i, j, k, m, pc);
 
                         // Deflate the matrix
                         if (pc < rank - 1)
                         {
-                            deflate(d);
+                            deflate();
                         }
                     }
                 }
@@ -298,7 +319,7 @@ Rcpp::List MoMA::multi_rank(int rank, arma::vec initial_u, arma::vec initial_v)
         // deflate X
         if (i < rank - 1)
         {
-            deflate(d(i));
+            deflate();
             // After deflation MoMA::u and MoMA::v are
             // re-initialized as leading SVs of the deflated matrix
             // MoMA::X = MoMA::X - d u v^T
