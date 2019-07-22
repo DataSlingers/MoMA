@@ -533,7 +533,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
-            PV <- solve(crossprod(V), t(V))
+            PV <- solve(crossprod(V), t(V)) # project onto the span of V
             scaled_data <- scale(newX, self$center, self$scale)
             result <- scaled_data %*% t(PV)
             colnames(result) <- paste0("PC", seq_len(self$rank))
@@ -605,8 +605,8 @@ SFPCA <- R6::R6Class("SFPCA",
                                 tabPanel(
                                     "Projected data",
                                     fluidRow(
-                                        column(width = 6, plotOutput("X_rows_projected", height = "700px")),
-                                        column(width = 6, plotOutput("X_cols_projected", height = "700px"))
+                                        column(width = 6, plotOutput("X_rows_projected")),
+                                        column(width = 6, plotOutput("X_cols_projected"))
                                     )
                                 )
                             )
@@ -640,6 +640,23 @@ SFPCA <- R6::R6Class("SFPCA",
                             ylab = "u",
                             type = "l"
                         )
+                    })
+
+                    output$X_rows_projected <- renderPlot({
+                        rank_k_result <- get_rank_k_result()
+                        V_rank2 <- rank_k_result$V[, 1:2]
+                        # project onto the span of V_rank2
+                        P_Vrank2 <- solve(crossprod(V_rank2), t(V_rank2))
+                        X_projected <- self$X %*% t(P_Vrank2)
+                        plot(X_projected,
+                            xlab = "PC1",
+                            ylab = "PC2",
+                            main = "Projected rows of the data matrix"
+                        )
+                    })
+
+                    output$X_cols_projected <- renderPlot({
+
                     })
                 }
             )
