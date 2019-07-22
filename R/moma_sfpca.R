@@ -50,7 +50,10 @@ SFPCA <- R6::R6Class("SFPCA",
             # internal functions
             private$check_input_index <- FALSE
             res <- self$get_mat_by_index(
-                alpha_u, alpha_v, lambda_u, lambda_v
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v
             )
             private$check_input_index <- TRUE
             return(res)
@@ -221,9 +224,7 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         get_mat_by_index = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
-            if (private$check_input_index) {
-                chkDots(...)
-            }
+            chkDots(...)
 
             error_if_not_finite_numeric_scalar(alpha_u)
             error_if_not_finite_numeric_scalar(alpha_v)
@@ -241,6 +242,9 @@ SFPCA <- R6::R6Class("SFPCA",
             # i) that are chosen by BIC, or
             # ii) that are not specified during initialization of the SFCPA object, or
             # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
+
+            # When `get_mat_by_index` is called internally
+            # we skip the input checking
             if (private$check_input_index) {
                 is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
                 is_fixed <- self$fixed_list
@@ -539,6 +543,106 @@ SFPCA <- R6::R6Class("SFPCA",
                 V = V,
                 PV = PV
             ))
+        },
+
+        plot = function() {
+            shinyApp(
+                ui = fluidPage(
+                    tags$style(
+                        type = "text/css",
+                        ".recalculating { opacity: 1.0; }"
+                    ),
+                    titlePanel("Sparse and functional PCA"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            width = 2,
+                            sliderInput(
+                                "alpha_u_i",
+                                "alpha_u",
+                                min = 1,
+                                max = length(self$alpha_u),
+                                value = 1,
+                                step = 1
+                            ),
+                            sliderInput(
+                                "alpha_v_i",
+                                "alpha_v",
+                                min = 1,
+                                max = length(self$alpha_v),
+                                value = 1,
+                                step = 1
+                            ),
+                            sliderInput(
+                                "lambda_u_i",
+                                "lambda_u",
+                                min = 1,
+                                max = length(self$lambda_u),
+                                value = 1,
+                                step = 1
+                            ),
+                            sliderInput(
+                                "lambda_v_i",
+                                "lambda_v",
+                                min = 1,
+                                max = length(self$lambda_v),
+                                value = 1,
+                                step = 1
+                            )
+                        ),
+                        mainPanel(
+                            tabsetPanel(
+                                tabPanel(
+                                    "Loadings of PCs",
+                                    fluidRow(
+                                        column(
+                                            width = 2,
+                                            radioButtons("rank", "Rank", seq(1, self$rank))
+                                        ),
+                                        column(width = 5, plotOutput("u_loadings_plot")),
+                                        column(width = 5, plotOutput("v_loadings_plot"))
+                                    )
+                                ),
+                                tabPanel(
+                                    "Projected data",
+                                    fluidRow(
+                                        column(width = 6, plotOutput("X_rows_projected", height = "700px")),
+                                        column(width = 6, plotOutput("X_cols_projected", height = "700px"))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                server = function(input, output) {
+                    get_rank_k_result <- reactive({
+                        private$private_get_mat_by_index(
+                            alpha_u = input$alpha_u_i,
+                            alpha_v = input$alpha_v_i,
+                            lambda_u = input$lambda_u_i,
+                            lambda_v = input$lambda_v_i
+                        )
+                    })
+
+
+                    output$v_loadings_plot <- renderPlot({
+                        k <- as.integer(input$rank)
+                        rank_k_result <- get_rank_k_result()
+                        plot(rank_k_result$V[, k],
+                            ylab = "v",
+                            type = "l"
+                        )
+                    })
+
+                    output$u_loadings_plot <- renderPlot({
+                        k <- as.integer(input$rank)
+                        rank_k_result <- get_rank_k_result()
+                        plot(rank_k_result$U[, k],
+                            ylab = "u",
+                            type = "l"
+                        )
+                    })
+                }
+            )
         }
     )
 )
