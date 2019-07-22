@@ -57,6 +57,20 @@ SFPCA <- R6::R6Class("SFPCA",
             )
             private$check_input_index <- TRUE
             return(res)
+        },
+        private_left_project = function(newX, ...,
+                                                alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, rank = 1) {
+            private$check_input_index <- FALSE
+            res <- self$left_project(
+                newX = newX,
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v,
+                rank = rank
+            )
+            private$check_input_index <- TRUE
+            return(res)
         }
     ),
     public = list(
@@ -317,7 +331,7 @@ SFPCA <- R6::R6Class("SFPCA",
             is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
             is_fixed <- self$fixed_list == TRUE
             param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
-            if (any(is_missing == FALSE & is_fixed == TRUE)) {  # elementwise and
+            if (any(is_missing == FALSE & is_fixed == TRUE)) { # elementwise and
                 output_para <- is_missing == FALSE & is_fixed == TRUE
                 moma_error(
                     paste0(
@@ -496,20 +510,26 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         left_project = function(newX, ...,
-                                        alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+                                        alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, rank = 1) {
 
             # check indexes
-            is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-            is_fixed <- self$fixed_list
-            if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                moma_error(
-                    paste0(
-                        "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
-                        "i) that are chosen by BIC, or ",
-                        "ii) that are not specified during initialization of the SFCPA object, or ",
-                        "iii) that are scalars during initialization of the SFCPA object."
+            if (private$check_input_index) {
+                is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+                is_fixed <- self$fixed_list
+                if (any(is_fixed == TRUE & is_missing == FALSE)) {
+                    moma_error(
+                        paste0(
+                            "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
+                            "i) that are chosen by BIC, or ",
+                            "ii) that are not specified during initialization of the SFCPA object, or ",
+                            "iii) that are scalars during initialization of the SFCPA object."
+                        )
                     )
-                )
+                }
+            }
+
+            if (rank > self$rank) {
+                moma_error("Invalid `rank` in SFPCA::left_project.")
             }
 
             error_if_not_finite_numeric_scalar(alpha_u)
@@ -527,7 +547,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 alpha_v = alpha_v,
                 lambda_u = lambda_u,
                 lambda_v = lambda_v
-            )$V
+            )$V[, 1:rank]
 
 
             # newX should be uncencter and unscaled.
@@ -548,7 +568,8 @@ SFPCA <- R6::R6Class("SFPCA",
             PV <- solve(crossprod(V), t(V)) # project onto the span of V
             scaled_data <- scale(newX, self$center, self$scale)
             result <- scaled_data %*% t(PV)
-            colnames(result) <- paste0("PC", seq_len(self$rank))
+            colnames(result) <- paste0("PC", seq_len(rank))
+
             return(list(
                 scaled_data = scaled_data,
                 proj_data = result,
@@ -572,7 +593,9 @@ SFPCA <- R6::R6Class("SFPCA",
                                 "alpha_u_i",
                                 "alpha_u",
                                 min = 1,
-                                max = length(self$alpha_u),
+                                max = ifelse(self$fixed_list$is_alpha_u_fixed,
+                                    1, length(self$alpha_u)
+                                ),
                                 value = 1,
                                 step = 1
                             ),
@@ -580,7 +603,9 @@ SFPCA <- R6::R6Class("SFPCA",
                                 "alpha_v_i",
                                 "alpha_v",
                                 min = 1,
-                                max = length(self$alpha_v),
+                                max = ifelse(self$fixed_list$is_alpha_v_fixed,
+                                    1, length(self$alpha_v)
+                                ),
                                 value = 1,
                                 step = 1
                             ),
@@ -588,7 +613,9 @@ SFPCA <- R6::R6Class("SFPCA",
                                 "lambda_u_i",
                                 "lambda_u",
                                 min = 1,
-                                max = length(self$lambda_u),
+                                max = ifelse(self$fixed_list$is_lambda_u_fixed,
+                                    1, length(self$lambda_u)
+                                ),
                                 value = 1,
                                 step = 1
                             ),
@@ -596,7 +623,9 @@ SFPCA <- R6::R6Class("SFPCA",
                                 "lambda_v_i",
                                 "lambda_v",
                                 min = 1,
-                                max = length(self$lambda_v),
+                                max = ifelse(self$fixed_list$is_lambda_v_fixed,
+                                    1, length(self$lambda_v)
+                                ),
                                 value = 1,
                                 step = 1
                             )
@@ -635,13 +664,28 @@ SFPCA <- R6::R6Class("SFPCA",
                         )
                     })
 
+                    get_left_projected <- reactive({
+                        private$private_left_project(
+                            newX = self$X,
+                            alpha_u = input$alpha_u_i,
+                            alpha_v = input$alpha_v_i,
+                            lambda_u = input$lambda_u_i,
+                            lambda_v = input$lambda_v_i,
+                            rank = 2
+                        )
+                    })
 
                     output$v_loadings_plot <- renderPlot({
                         k <- as.integer(input$rank)
                         rank_k_result <- get_rank_k_result()
                         plot(rank_k_result$V[, k],
                             ylab = "v",
-                            type = "l"
+                            type = "l",
+                            xaxt = "n"
+                        )
+                        axis(1,
+                            at = 1:self$p,
+                            labels = self$X_coln
                         )
                     })
 
@@ -655,11 +699,8 @@ SFPCA <- R6::R6Class("SFPCA",
                     })
 
                     output$X_rows_projected <- renderPlot({
-                        rank_k_result <- get_rank_k_result()
-                        V_rank2 <- rank_k_result$V[, 1:2]
-                        # project onto the span of V_rank2
-                        P_Vrank2 <- solve(crossprod(V_rank2), t(V_rank2))
-                        X_projected <- self$X %*% t(P_Vrank2)
+                        X_projected <- get_left_projected()$proj_data
+                        # print(X_projected)
                         plot(X_projected,
                             xlab = "PC1",
                             ylab = "PC2",
