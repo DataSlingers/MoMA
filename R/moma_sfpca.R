@@ -50,7 +50,24 @@ SFPCA <- R6::R6Class("SFPCA",
             # internal functions
             private$check_input_index <- FALSE
             res <- self$get_mat_by_index(
-                alpha_u, alpha_v, lambda_u, lambda_v
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v
+            )
+            private$check_input_index <- TRUE
+            return(res)
+        },
+        private_left_project = function(newX, ...,
+                                                alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, rank = 1) {
+            private$check_input_index <- FALSE
+            res <- self$left_project(
+                newX = newX,
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v,
+                rank = rank
             )
             private$check_input_index <- TRUE
             return(res)
@@ -119,6 +136,8 @@ SFPCA <- R6::R6Class("SFPCA",
             self$n <- n
             self$p <- p
             self$X <- X
+            self$coln <- colnames(X) %||% paste0("Xcol_", seq_len(p))
+            self$rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             # Step 1.3: sparsity
             error_if_not_of_class(u_sparsity, "moma_sparsity")
@@ -152,8 +171,8 @@ SFPCA <- R6::R6Class("SFPCA",
             fixed_list <- list(
                 # "Fixed" parameters are those
                 # i) that are chosen by BIC, or
-                # ii) that are not specified during initialization of the SFCPA object, or
-                # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
+                # ii) that are not specified during initialization of the SFPCA object, or
+                # iii) that are scalars as opposed to vectors during initialization of the SFPCA object.
                 is_alpha_u_fixed = FALSE,
                 is_alpha_v_fixed = FALSE,
                 is_lambda_u_fixed = FALSE,
@@ -226,9 +245,7 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         get_mat_by_index = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
-            if (private$check_input_index) {
-                chkDots(...)
-            }
+            chkDots(...)
 
             error_if_not_finite_numeric_scalar(alpha_u)
             error_if_not_finite_numeric_scalar(alpha_v)
@@ -244,8 +261,11 @@ SFPCA <- R6::R6Class("SFPCA",
             # at all (this is a bit stringent, can be improved later).
             # "Fixed" parameters are those
             # i) that are chosen by BIC, or
-            # ii) that are not specified during initialization of the SFCPA object, or
-            # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
+            # ii) that are not specified during initialization of the SFPCA object, or
+            # iii) that are scalars as opposed to vectors during initialization of the SFPCA object.
+
+            # When `get_mat_by_index` is called internally
+            # we skip the input checking
             if (private$check_input_index) {
                 is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
                 is_fixed <- self$fixed_list
@@ -254,8 +274,8 @@ SFPCA <- R6::R6Class("SFPCA",
                         paste0(
                             "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
                             "i) that are chosen by BIC, or ",
-                            "ii) that are not specified during initialization of the SFCPA object, or ",
-                            "iii) that are scalars during initialization of the SFCPA object."
+                            "ii) that are not specified during initialization of the SFPCA object, or ",
+                            "iii) that are scalars during initialization of the SFPCA object."
                         )
                     )
                 }
@@ -268,6 +288,12 @@ SFPCA <- R6::R6Class("SFPCA",
             U <- matrix(0, nrow = n, ncol = rank)
             V <- matrix(0, nrow = p, ncol = rank)
             d <- vector(mode = "numeric", length = rank)
+
+            chosen_lambda_u <- vector(mode = "numeric", length = rank)
+            chosen_alpha_u <- vector(mode = "numeric", length = rank)
+            chosen_lambda_v <- vector(mode = "numeric", length = rank)
+            chosen_alpha_v <- vector(mode = "numeric", length = rank)
+
             for (i in (1:self$rank)) {
                 rank_i_result <- get_5Dlist_elem(self$grid_result,
                     alpha_u_i = alpha_u,
@@ -275,16 +301,29 @@ SFPCA <- R6::R6Class("SFPCA",
                     alpha_v_i = alpha_v,
                     lambda_v_i = lambda_v, rank_i = i
                 )[[1]]
+
                 U[, i] <- rank_i_result$u$vector
                 V[, i] <- rank_i_result$v$vector
                 d[i] <- rank_i_result$d
+
+                chosen_lambda_u[i] <- rank_i_result$u$lambda
+                chosen_alpha_u[i] <- rank_i_result$u$alpha
+                chosen_lambda_v[i] <- rank_i_result$v$lambda
+                chosen_alpha_v[i] <- rank_i_result$v$alpha
             }
+
 
             dimnames(V) <-
                 list(self$X_coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
                 list(self$X_rown, paste0("PC", seq_len(rank)))
-            return(list(U = U, V = V, d = d))
+            return(list(
+                U = U, V = V, d = d,
+                chosen_lambda_u = chosen_lambda_u,
+                chosen_lambda_v = chosen_lambda_v,
+                chosen_alpha_u = chosen_alpha_u,
+                chosen_alpha_v = chosen_alpha_v
+            ))
         },
 
         interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
@@ -306,7 +345,7 @@ SFPCA <- R6::R6Class("SFPCA",
             is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
             is_fixed <- self$fixed_list == TRUE
             param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
-            if (any(is_missing == FALSE & is_fixed == TRUE)) {
+            if (any(is_missing == FALSE & is_fixed == TRUE)) { # elementwise and
                 output_para <- is_missing == FALSE & is_fixed == TRUE
                 moma_error(
                     paste0(
@@ -314,8 +353,8 @@ SFPCA <- R6::R6Class("SFPCA",
                         paste(param_str_list[output_para], collapse = ", "),
                         ". Do not specify indexes of parameters ",
                         "i) that are chosen by BIC, or ",
-                        "ii) that are not specified during initialization of the SFCPA object, or ",
-                        "iii) that are scalars during initialization of the SFCPA object."
+                        "ii) that are not specified during initialization of the SFPCA object, or ",
+                        "iii) that are scalars during initialization of the SFPCA object."
                     )
                 )
             }
@@ -485,20 +524,26 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         left_project = function(newX, ...,
-                                        alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+                                        alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, rank = 1) {
 
             # check indexes
-            is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-            is_fixed <- self$fixed_list
-            if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                moma_error(
-                    paste0(
-                        "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
-                        "i) that are chosen by BIC, or ",
-                        "ii) that are not specified during initialization of the SFCPA object, or ",
-                        "iii) that are scalars during initialization of the SFCPA object."
+            if (private$check_input_index) {
+                is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+                is_fixed <- self$fixed_list
+                if (any(is_fixed == TRUE & is_missing == FALSE)) {
+                    moma_error(
+                        paste0(
+                            "Invalid index in SFPCA::left_project. Do not specify indexes of parameters ",
+                            "i) that are chosen by BIC, or ",
+                            "ii) that are not specified during initialization of the SFPCA object, or ",
+                            "iii) that are scalars during initialization of the SFPCA object."
+                        )
                     )
-                )
+                }
+            }
+
+            if (rank > self$rank) {
+                moma_error("Invalid `rank` in SFPCA::left_project.")
             }
 
             error_if_not_finite_numeric_scalar(alpha_u)
@@ -516,7 +561,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 alpha_v = alpha_v,
                 lambda_u = lambda_u,
                 lambda_v = lambda_v
-            )$V
+            )$V[, 1:rank]
 
 
             # newX should be uncencter and unscaled.
@@ -534,16 +579,177 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
-            PV <- solve(crossprod(V), t(V))
+            PV <- solve(crossprod(V), t(V)) # project onto the span of V
             scaled_data <- scale(newX, self$center, self$scale)
             result <- scaled_data %*% t(PV)
-            colnames(result) <- paste0("PC", seq_len(self$rank))
+            colnames(result) <- paste0("PC", seq_len(rank))
+
             return(list(
                 scaled_data = scaled_data,
                 proj_data = result,
                 V = V,
                 PV = PV
             ))
+        },
+
+        plot = function() {
+            shinyApp(
+                ui = fluidPage(
+                    tags$style(
+                        type = "text/css",
+                        ".recalculating { opacity: 1.0; }"
+                    ),
+                    titlePanel("Sparse and functional PCA"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            width = 2,
+                            sliderInput(
+                                "alpha_u_i",
+                                "alpha_u",
+                                min = 1,
+                                max = ifelse(self$fixed_list$is_alpha_u_fixed,
+                                    1, length(self$alpha_u)
+                                ),
+                                value = 1,
+                                step = 1
+                            ),
+                            sliderInput(
+                                "alpha_v_i",
+                                "alpha_v",
+                                min = 1,
+                                max = ifelse(self$fixed_list$is_alpha_v_fixed,
+                                    1, length(self$alpha_v)
+                                ),
+                                value = 1,
+                                step = 1
+                            ),
+                            sliderInput(
+                                "lambda_u_i",
+                                "lambda_u",
+                                min = 1,
+                                max = ifelse(self$fixed_list$is_lambda_u_fixed,
+                                    1, length(self$lambda_u)
+                                ),
+                                value = 1,
+                                step = 1
+                            ),
+                            sliderInput(
+                                "lambda_v_i",
+                                "lambda_v",
+                                min = 1,
+                                max = ifelse(self$fixed_list$is_lambda_v_fixed,
+                                    1, length(self$lambda_v)
+                                ),
+                                value = 1,
+                                step = 1
+                            )
+                        ),
+                        mainPanel(
+                            tabsetPanel(
+                                tabPanel(
+                                    "Loadings of PCs",
+                                    fluidRow(
+                                        column(
+                                            width = 2,
+                                            radioButtons("rank", "Rank", seq(1, self$rank))
+                                        ),
+                                        column(width = 5, plotOutput("u_loadings_plot")),
+                                        column(width = 5, plotOutput("v_loadings_plot"))
+                                    ),
+                                    fluidRow(
+                                        column(4, verbatimTextOutput("alpha_u")),
+                                        column(4, verbatimTextOutput("lambda_u")),
+                                        column(4, verbatimTextOutput("alpha_v")),
+                                        column(4, verbatimTextOutput("lambda_v"))
+                                    )
+                                ),
+                                tabPanel(
+                                    "Projected data",
+                                    fluidRow(
+                                        column(width = 6, plotOutput("X_rows_projected")),
+                                        column(width = 6, plotOutput("X_cols_projected"))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                server = function(input, output) {
+                    get_rank_k_result <- reactive({
+                        private$private_get_mat_by_index(
+                            alpha_u = input$alpha_u_i,
+                            alpha_v = input$alpha_v_i,
+                            lambda_u = input$lambda_u_i,
+                            lambda_v = input$lambda_v_i
+                        )
+                    })
+
+                    get_left_projected <- reactive({
+                        private$private_left_project(
+                            newX = self$X,
+                            alpha_u = input$alpha_u_i,
+                            alpha_v = input$alpha_v_i,
+                            lambda_u = input$lambda_u_i,
+                            lambda_v = input$lambda_v_i,
+                            rank = 2
+                        )
+                    })
+
+                    # plot the singuler vector
+                    output$v_loadings_plot <- renderPlot({
+                        k <- as.integer(input$rank)
+                        rank_k_result <- get_rank_k_result()
+                        plot(rank_k_result$V[, k],
+                            ylab = "v",
+                            type = "l",
+                            xaxt = "n",
+                            main = "Loadings of PCs",
+                            xlab = "X features"
+                        )
+                        axis(1,
+                            at = 1:self$p,
+                            labels = self$coln
+                        )
+                    })
+
+                    # plot the singuler vector
+                    output$u_loadings_plot <- renderPlot({
+                        k <- as.integer(input$rank)
+                        rank_k_result <- get_rank_k_result()
+                        plot(rank_k_result$U[, k],
+                            ylab = "u",
+                            type = "l"
+                        )
+                    })
+
+                    output$lambda_v <- renderPrint({
+                        k <- as.integer(input$rank)
+
+                        alpha_u_value <- get_rank_k_result()$chosen_alpha_u[k]
+                        cat(paste0("alpha_u = ", alpha_u_value), "\n")
+                        alpha_v_value <- get_rank_k_result()$chosen_alpha_v[k]
+                        cat(paste0("alpha_v = ", alpha_v_value), "\n")
+                        lambda_u_value <- get_rank_k_result()$chosen_lambda_u[k]
+                        cat(paste0("lambda_u = ", lambda_u_value), "\n")
+                        lambda_v_value <- get_rank_k_result()$chosen_lambda_v[k]
+                        cat(paste0("lambda_v = ", lambda_v_value), "\n")
+                    })
+
+                    output$X_rows_projected <- renderPlot({
+                        X_projected <- get_left_projected()$proj_data
+                        # print(X_projected)
+                        plot(X_projected,
+                            xlab = "PC1",
+                            ylab = "PC2",
+                            main = "Projected rows of the data matrix"
+                        )
+                    })
+
+                    output$X_cols_projected <- renderPlot({
+
+                    })
+                }
+            )
         }
     )
 )
@@ -563,7 +769,7 @@ SFPCA <- R6::R6Class("SFPCA",
 #'        specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
 #' @param u_smooth,v_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
 #'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
+#'           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
 #'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
 #' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
 #'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm

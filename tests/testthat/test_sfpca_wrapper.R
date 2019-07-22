@@ -263,6 +263,25 @@ test_that("SFPCA object: left-project fucntion", {
         t(V) %*% V %*% t(res$proj_data),
         t(V) %*% t(res$scaled_data)
     )
+
+    # Test that left projection uses the
+    # correct V matrix
+    a <- SFPCA$new(X,
+        rank = 3,
+        alpha_u = c(1),
+        lambda_u = c(2),
+        alpha_v = c(1, 2, 3), # grid search
+        lambda_v = c(6),
+        selection_scheme_str = "bgbb"
+    )
+    for (i in 1:3) {
+        V_left_prejct <- a$left_project(new_data, alpha_v = i, rank = 3)$V
+        V_get_mat_by_id <- a$get_mat_by_index(alpha_v = i)$V
+
+        expect_equal(V_left_prejct, V_get_mat_by_id,
+            check.attributes = FALSE
+        )
+    }
 })
 
 test_that("SFPCA object: `fixed_list` functions as expected", {
@@ -273,8 +292,8 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
         paste0(
             "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
             "i) that are chosen by BIC, or ",
-            "ii) that are not specified during initialization of the SFCPA object, or ",
-            "iii) that are scalars during initialization of the SFCPA object."
+            "ii) that are not specified during initialization of the SFPCA object, or ",
+            "iii) that are scalars during initialization of the SFPCA object."
         )
 
     # case 1:
@@ -403,7 +422,7 @@ test_that("Special-case functions: moma_spca", {
     # test selection schemes
     expect_error(
         moma_spca(X,
-            u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
+            u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
         ),
         paste0(
             sQuote("select_scheme"),
@@ -413,7 +432,7 @@ test_that("Special-case functions: moma_spca", {
 
     expect_error(
         moma_spca(X,
-            u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "gg")
+            u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "gg")
         ),
         paste0(
             sQuote("select_scheme"),
@@ -424,7 +443,7 @@ test_that("Special-case functions: moma_spca", {
 
     expect_error(
         moma_spca(X,
-            u_smooth = moma_lasso(lambda = c())
+            u_sparse = moma_lasso(lambda = c())
         ),
         paste0(sQuote("lambda"), " is not a valid grid")
     )
@@ -840,6 +859,7 @@ test_that("Special-case functions: get_mat_by_index and left_project takes non-i
         u_smooth = moma_smoothness(alpha = c(1.4, 2.4))
     )
 
+    # test `get_mat_by_index`
     expect_no_error(
         a$get_mat_by_index(alpha_u = 2)
     )
@@ -850,7 +870,12 @@ test_that("Special-case functions: get_mat_by_index and left_project takes non-i
             " must be a whole number"
         )
     )
+    expect_error(
+        a$get_mat_by_index(alpha_u = c(1, 2, 3)),
+        "Non-length-one input in SFPCA::get_mat_by_index"
+    )
 
+    # test `left_project`
     expect_no_error(
         a$left_project(X)
     )

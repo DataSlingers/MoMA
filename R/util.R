@@ -65,6 +65,9 @@ is_logical_scalar <- function(x) {
 is_square <- function(x) {
     is.matrix(x) && (NROW(x) == NCOL(x))
 }
+is_factor <- function(a) {
+    return(is.finite(a) && is.factor(a))
+}
 
 error_if_not_of_class <- function(x, cl) {
     nm <- deparse(substitute(x))
@@ -189,3 +192,11 @@ DEFLATION_SCHEME <- c(
     PCA_Schur_complement = 5,
     PCA_Projection = 6
 )
+
+# project rows of X to the column
+# space of V
+project <- function(X, V) {
+    PV <- solve(crossprod(V), t(V)) # project onto the span of V
+    result <- X %*% t(PV)
+    return(result)
+}
