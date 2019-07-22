@@ -350,16 +350,20 @@ test_that("SFPCA object wrappers: moma_spca", {
         moma_spca(X,
             u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
         ),
-        "‘select_scheme’ is not valid: c. It should be either `g` or `b`.",
-        fixed = TRUE
+        paste0(
+            sQuote("select_scheme"), " is not valid: ", "c",
+            ". It should be either `g` or `b`."
+        )
     )
 
     expect_error(
         moma_spca(X,
             u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "gg")
         ),
-        "‘select_scheme’ is not valid: gg. It should be either `g` or `b`.",
-        fixed = TRUE
+        paste0(
+            sQuote("select_scheme"), " is not valid: ", "gg",
+            ". It should be either `g` or `b`."
+        )
     )
 
 
@@ -367,8 +371,7 @@ test_that("SFPCA object wrappers: moma_spca", {
         moma_spca(X,
             u_smooth = moma_lasso(lambda = c())
         ),
-        "‘lambda’ is not valid: NULL",
-        fixed = TRUE
+        paste0(sQuote("lambda"), " is not valid: NULL")
     )
 
     expect_warning(
@@ -451,7 +454,10 @@ test_that("SFPCA object wrappers: moma_twspca", {
             moma_twspca(X,
                 u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "bb")
             ),
-            "‘select_scheme’ is not valid: bb. It should be either `g` or `b`"
+            paste0(
+                sQuote("select_scheme"), " is not valid: ", "bb",
+                ". It should be either `g` or `b`."
+            )
         ),
         "Please use `moma_spca` if only one side is penalized."
     )
@@ -461,7 +467,10 @@ test_that("SFPCA object wrappers: moma_twspca", {
             moma_twspca(X,
                 u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
             ),
-            "‘select_scheme’ is not valid: c. It should be either `g` or `b`"
+            paste0(
+                sQuote("select_scheme"), " is not valid: ", "c",
+                ". It should be either `g` or `b`."
+            )
         ),
         "Please use `moma_spca` if only one side is penalized."
     )
@@ -612,8 +621,10 @@ test_that("SFPCA object wrappers: moma_fpca", {
                 select_scheme = "bg"
             )
         ),
-        "‘select_scheme’ is not valid: bg. It should be either `g` or `b`",
-        fixed = TRUE
+        paste0(
+            sQuote("select_scheme"), " is not valid: ", "bg",
+            ". It should be either `g` or `b`."
+        )
     )
 
     expect_error(
@@ -624,8 +635,10 @@ test_that("SFPCA object wrappers: moma_fpca", {
                 select_scheme = "c"
             )
         ),
-        "‘select_scheme’ is not valid: c. It should be either `g` or `b`",
-        fixed = TRUE
+        paste0(
+            sQuote("select_scheme"), " is not valid: ", "c",
+            ". It should be either `g` or `b`."
+        )
     )
 
 
