@@ -263,7 +263,7 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         }
                         else
                         {
-                            MoMALogger::error("No implemented hash = alkjefiawuveacqw9.");
+                            MoMALogger::error("Not implemented.");
                         }
 
                         five_d_list.insert(wrap_up, i, j, k, m, pc);
