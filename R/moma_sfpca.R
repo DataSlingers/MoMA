@@ -267,6 +267,12 @@ SFPCA <- R6::R6Class("SFPCA",
             U <- matrix(0, nrow = n, ncol = rank)
             V <- matrix(0, nrow = p, ncol = rank)
             d <- vector(mode = "numeric", length = rank)
+
+            chosen_lambda_u <- vector(mode = "numeric", length = rank)
+            chosen_alpha_u <- vector(mode = "numeric", length = rank)
+            chosen_lambda_v <- vector(mode = "numeric", length = rank)
+            chosen_alpha_v <- vector(mode = "numeric", length = rank)
+
             for (i in (1:self$rank)) {
                 rank_i_result <- get_5Dlist_elem(self$grid_result,
                     alpha_u_i = alpha_u,
@@ -274,9 +280,15 @@ SFPCA <- R6::R6Class("SFPCA",
                     alpha_v_i = alpha_v,
                     lambda_v_i = lambda_v, rank_i = i
                 )[[1]]
+
                 U[, i] <- rank_i_result$u$vector
                 V[, i] <- rank_i_result$v$vector
                 d[i] <- rank_i_result$d
+
+                chosen_lambda_u[i] <- rank_i_result$u$lambda
+                chosen_alpha_u[i] <- rank_i_result$u$alpha
+                chosen_lambda_v[i] <- rank_i_result$v$lambda
+                chosen_alpha_v[i] <- rank_i_result$v$alpha
             }
 
             dimnames(V) <-
@@ -305,7 +317,7 @@ SFPCA <- R6::R6Class("SFPCA",
             is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
             is_fixed <- self$fixed_list == TRUE
             param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
-            if (any(is_missing == FALSE & is_fixed == TRUE)) {
+            if (any(is_missing == FALSE & is_fixed == TRUE)) {  # elementwise and
                 output_para <- is_missing == FALSE & is_fixed == TRUE
                 moma_error(
                     paste0(
