@@ -1,4 +1,6 @@
 context("Test R6 object")
+# Test suites whose names start with "SFPCA object"
+# should call SFPCA$initialize() directly
 test_that("SFPCA object: a naive case, 1x1 matrix", {
     set.seed(12)
 
@@ -41,7 +43,7 @@ test_that("SFPCA object: correct arguments", {
     expect_equal(a$Omega_v, diag(4))
     expect_equal(a$sc, NULL)
 
-    # check Omega defaults to identiy matrix if alpha != 0
+    # check Omega is replaced by identiy matrix if alpha != 0,
     a <- SFPCA$new(matrix(runif(12), 3, 4), alpha_u = 1)
     expect_equal(a$Omega_u, second_diff_mat(3))
     expect_equal(a$Omega_v, diag(4))
@@ -172,7 +174,7 @@ test_that("SFPCA object: print fucntion", {
         "Penalty and selection:",
         "alpha_u: BIC search ",
         "[1] 1 2",
-        "alpha_u: grid search ",
+        "alpha_v: grid search ",
         "[1] 3 4",
         "lambda_u: BIC search ",
         "[1] 2 3",
@@ -229,7 +231,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     # case 1:
     # parameters that did not appear in initialization
     # should not appear in `SFPCA::get_mat_by_index` at all
-    a <- moma_sfpca(X)
+    a <- SFPCA$new(X)
     expect_no_error(
         a$get_mat_by_index()
     )
@@ -247,7 +249,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     # case 2:
     # parameters that were scalars in initialization
     # should not appear in SFPCA::get_mat_by_index either
-    a <- moma_sfpca(X, u_smooth = moma_smoothness(alpha = 1))
+    a <- SFPCA$new(X, alpha_u = 1)
     expect_no_error(
         a$get_mat_by_index()
     )
@@ -268,9 +270,10 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     # case 3:
     # parameters that were selected by BIC
     # should not appear in SFPCA::get_mat_by_index either
-    a <- moma_sfpca(X,
-        u_smooth = moma_smoothness(alpha = c(1, 2)),
-        v_smooth = moma_smoothness(alpha = c(1, 2), select_scheme = "b")
+    a <- SFPCA$new(X,
+        alpha_u = c(1, 2),
+        alpha_v = c(1, 2, 3), # selected by BIC
+        selection_scheme_str = "gbgg"
     )
     expect_no_error(
         a$get_mat_by_index()
@@ -287,8 +290,9 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
         invalid_indices_error
     )
 
-    a <- moma_sfpca(X,
-        u_smooth = moma_smoothness(alpha = c(1, 2))
+    a <- SFPCA$new(X,
+        X,
+        alpha_u = c(1, 2)
     )
     expect_no_error(
         a$get_mat_by_index()
@@ -310,7 +314,9 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
 })
 
-test_that("SFPCA object wrappers: moma_spca", {
+# Test suites whose names start with "Special-case functions"
+# should not call SFPCA$initialize() directly
+test_that("Special-case functions: moma_spca", {
     set.seed(12)
 
     X <- matrix(runif(17 * 8), 17, 8) * 10
@@ -380,10 +386,7 @@ test_that("SFPCA object wrappers: moma_spca", {
     )
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
-    expect_no_warning(
-        a <- moma_spca(X, u_sparse = moma_empty()),
-        "No sparsity is imposed!"
-    )
+    a <- moma_spca(X, u_sparse = moma_empty())
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_spca(X, u_sparse = moma_lasso(select_scheme = "g"))
@@ -403,7 +406,7 @@ test_that("SFPCA object wrappers: moma_spca", {
     expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
 })
 
-test_that("SFPCA object wrappers: moma_twspca", {
+test_that("Special-case functions: moma_twspca", {
     set.seed(12)
 
     X <- matrix(runif(17 * 8), 17, 8) * 10
@@ -557,7 +560,7 @@ test_that("SFPCA object wrappers: moma_twspca", {
     expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
 })
 
-test_that("SFPCA object wrappers: moma_fpca", {
+test_that("Special-case functions: moma_fpca", {
     set.seed(12)
 
     X <- matrix(runif(17 * 8), 17, 8) * 10
@@ -677,7 +680,7 @@ test_that("SFPCA object wrappers: moma_fpca", {
     expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
 })
 
-test_that("SFPCA object wrappers: moma_twfpca", {
+test_that("Special-case functions: moma_twfpca", {
     set.seed(12)
 
     X <- matrix(runif(17 * 8), 17, 8) * 10
@@ -777,7 +780,7 @@ test_that("SFPCA object wrappers: moma_twfpca", {
     expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
 })
 
-test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", {
+test_that("Special-case functions: get_mat_by_index and left_project takes non-ingeters", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
@@ -805,7 +808,7 @@ test_that("SFPCA object: get_mat_by_index and left_project takes non-ingeters", 
     )
 })
 
-test_that("SFPCA object: interpolate, exact mode", {
+test_that("Special-case functions: interpolate, exact mode", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
@@ -837,12 +840,16 @@ test_that("SFPCA object: interpolate, exact mode", {
         v_smooth = moma_smoothness(alpha = 1.2),
         u_smooth = moma_smoothness(alpha = 1.3)
     )
-    # this returns `a$get_mat_by_id()`
+    # this is the same as
+    # a$interpolate(alpha_u = lambda_u = alpha_v = lambda_v = 1,
+    #               exact = TRUE)
     expect_no_error(
         a$interpolate(
             exact = TRUE
         )
     )
+    # Either (alpha_u, lambda_u) or
+    # (alpha_u, lambda_u) is specified
     expect_error(
         a$interpolate(
             exact = FALSE
@@ -875,7 +882,7 @@ test_that("SFPCA object: interpolate, exact mode", {
     )
 
 
-    # case 2: interpolation on v side, both alpha and lambda are vectors
+    # case 2: interpolation on v side, both alpha_v and lambda_v are vectors
     a <- moma_sfpca(X,
         v_sparse = moma_lasso(lambda = c(1, 1.2)),
         u_sparse = moma_lasso(lambda = 1.1),
@@ -936,7 +943,7 @@ test_that("SFPCA object: interpolate, exact mode", {
     )
 })
 
-test_that("SFPCA object: interpolate, inexact mode", {
+test_that("Special-case functions: interpolate, inexact mode", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
@@ -991,7 +998,7 @@ test_that("SFPCA object: interpolate, inexact mode", {
         "Penalty levels not sorted"
     )
 
-    # interpolate on both sides is not supported
+    # interpolation on both sides is not supported
     a <- moma_sfpca(X,
         v_sparse = moma_lasso(lambda = seq(0.1, 1.4, 0.4)),
         u_sparse = moma_lasso(lambda = seq(0.1, 1.3, 0.45)),
@@ -1007,4 +1014,8 @@ test_that("SFPCA object: interpolate, inexact mode", {
         ),
         "SFPCA::interpolate only supports one-sided interpolation"
     )
+})
+
+test_that("Special-case functions: interpolate gives expected results", {
+    # TODO
 })

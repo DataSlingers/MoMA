@@ -505,7 +505,7 @@ SFPCA <- R6::R6Class("SFPCA",
 
             cat(paste0("alpha_u: ", selection_list_str[1]), "\n")
             print(self$alpha_u)
-            cat(paste0("alpha_u: ", selection_list_str[2]), "\n")
+            cat(paste0("alpha_v: ", selection_list_str[2]), "\n")
             print(self$alpha_v)
             cat(paste0("lambda_u: ", selection_list_str[3]), "\n")
             print(self$lambda_u)
