@@ -263,6 +263,25 @@ test_that("SFPCA object: left-project fucntion", {
         t(V) %*% V %*% t(res$proj_data),
         t(V) %*% t(res$scaled_data)
     )
+
+    # Test that left projection uses the
+    # correct V matrix
+    a <- SFPCA$new(X,
+        rank = 3,
+        alpha_u = c(1),
+        lambda_u = c(2),
+        alpha_v = c(1, 2, 3), # grid search
+        lambda_v = c(6),
+        selection_scheme_str = "bgbb"
+    )
+    for (i in 1:3) {
+        V_left_prejct <- a$left_project(new_data, alpha_v = i, rank = 3)$V
+        V_get_mat_by_id <- a$get_mat_by_index(alpha_v = i)$V
+
+        expect_equal(V_left_prejct, V_get_mat_by_id,
+            check.attributes = FALSE
+        )
+    }
 })
 
 test_that("SFPCA object: `fixed_list` functions as expected", {
