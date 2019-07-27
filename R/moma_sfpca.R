@@ -309,7 +309,13 @@ SFPCA <- R6::R6Class("SFPCA",
                 list(self$X_coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
                 list(self$X_rown, paste0("PC", seq_len(rank)))
-            return(list(U = U, V = V, d = d))
+            return(list(
+                U = U, V = V, d = d,
+                chosen_lambda_u = chosen_lambda_u,
+                chosen_lambda_v = chosen_lambda_v,
+                chosen_alpha_u = chosen_alpha_u,
+                chosen_alpha_v = chosen_alpha_v
+            ))
         },
 
         interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
@@ -641,6 +647,12 @@ SFPCA <- R6::R6Class("SFPCA",
                                         ),
                                         column(width = 5, plotOutput("u_loadings_plot")),
                                         column(width = 5, plotOutput("v_loadings_plot"))
+                                    ),
+                                    fluidRow(
+                                        column(4, verbatimTextOutput("alpha_u")),
+                                        column(4, verbatimTextOutput("lambda_u")),
+                                        column(4, verbatimTextOutput("alpha_v")),
+                                        column(4, verbatimTextOutput("lambda_v"))
                                     )
                                 ),
                                 tabPanel(
@@ -675,6 +687,7 @@ SFPCA <- R6::R6Class("SFPCA",
                         )
                     })
 
+                    # plot the singuler vector
                     output$v_loadings_plot <- renderPlot({
                         k <- as.integer(input$rank)
                         rank_k_result <- get_rank_k_result()
@@ -689,6 +702,7 @@ SFPCA <- R6::R6Class("SFPCA",
                         )
                     })
 
+                    # plot the singuler vector
                     output$u_loadings_plot <- renderPlot({
                         k <- as.integer(input$rank)
                         rank_k_result <- get_rank_k_result()
@@ -696,6 +710,19 @@ SFPCA <- R6::R6Class("SFPCA",
                             ylab = "u",
                             type = "l"
                         )
+                    })
+
+                    output$lambda_v <- renderPrint({
+                        k <- as.integer(input$rank)
+
+                        alpha_u_value <- get_rank_k_result()$chosen_alpha_u[k]
+                        cat(paste0("alpha_u = ", alpha_u_value), "\n")
+                        alpha_v_value <- get_rank_k_result()$chosen_alpha_v[k]
+                        cat(paste0("alpha_v = ", alpha_v_value), "\n")
+                        lambda_u_value <- get_rank_k_result()$chosen_lambda_u[k]
+                        cat(paste0("lambda_u = ", lambda_u_value), "\n")
+                        lambda_v_value <- get_rank_k_result()$chosen_lambda_v[k]
+                        cat(paste0("lambda_v = ", lambda_v_value), "\n")
                     })
 
                     output$X_rows_projected <- renderPlot({
