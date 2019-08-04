@@ -356,6 +356,10 @@ moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
 }
 
 create_moma_sparsity_func <- function(f) {
+    # Given f, we want to generate a new function, which
+    # 1. contains all arguments in f;
+    # 2. has two extra arguments `lambda` and `select_scheme`;
+    # 3. returns a list that contains ( f(...), lambda = ..., select_scheme = ... ).
     aug_f <- function(..., lambda = 0, select_scheme = "g") {
         chkDots(...)
 
