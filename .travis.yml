@@ -37,6 +37,7 @@ before_install:
 
 after_success:
   - Rscript -e "source('build_steps.R'); after_success(); unlink('build_steps.R')"
+  - Rscript -e 'if(Sys.info()["sysname"] != "Linux"){q()}; library(covr); flags <- getOption("covr.flags"); flags[] <- gsub("-O0 ", "", flags); options(covr.flags=flags); codecov(quiet=FALSE)'
 
 branches:
   except:
