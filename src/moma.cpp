@@ -57,7 +57,7 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
                i_X.n_cols)
 // const reference must be passed to initializer list
 {
-    ds         = DeflationScheme::PCA;
+    ds         = DeflationScheme::PCA_Hotelling;
     X_original = i_X;
 
     if (i_EPS >= 1 || i_EPS_inner >= 1)
@@ -164,13 +164,28 @@ MoMA::MoMA(
     }
 };
 
+arma::vec normalize(const arma::vec &u)
+{
+    arma::vec res = u;
+    double mn     = arma::norm(u);
+    if (mn > 0)
+    {
+        res /= mn;
+    }
+    else
+    {
+        res.zeros();
+    }
+    return res;
+}
+
 int MoMA::deflate()
 {
     if (is_solved != true)
     {
         MoMALogger::error("Please call `MoMA::solve` before `MoMA::deflate`.");
     }
-    if (ds == DeflationScheme::PCA)
+    if (ds == DeflationScheme::PCA_Hotelling)
     {
         double d = arma::as_scalar(u.t() * X * v);
         MoMALogger::debug("Deflating:\n")
@@ -183,6 +198,33 @@ int MoMA::deflate()
         }
         X = X - d * u * v.t();
         // Re-initialize u and v after deflation
+        initialize_uv();
+        return 0;
+    }
+    else if (ds == DeflationScheme::PCA_Schur_complement)
+    {
+        double d = arma::as_scalar(u.t() * X * v);
+        if (d <= 0.0)
+        {
+            MoMALogger::error("Error in Schur complement: devided by zero.");
+        }
+
+        // No need to scale u and v
+        X = X - (X * u) * (v.t() * X) / d;
+
+        initialize_uv();
+        return 0;
+    }
+    else if (ds == DeflationScheme::PCA_Projection)
+    {
+        arma::mat eye_u(n, n, arma::fill::eye);
+        arma::mat eye_v(p, p, arma::fill::eye);
+
+        arma::vec u_unit = normalize(u);
+        arma::vec v_unit = normalize(v);
+
+        X = (eye_u - u_unit * u_unit.t()) * X * (eye_v - v_unit * v_unit.t());
+
         initialize_uv();
         return 0;
     }
@@ -209,6 +251,7 @@ int MoMA::deflate()
 
         X = X_working.t() * Y_working;
 
+        initialize_uv();
         return 0;
     }
     else if (ds == DeflationScheme::LDA)
@@ -226,10 +269,13 @@ int MoMA::deflate()
         arma::mat X_cv   = X_working * u;
         double norm_X_cv = arma::norm(X_cv);
 
-        // subtract cv's out of X_working and Y_working
+        // subtract cv's out of X_working only
         X_working = X_working - 1 / (norm_X_cv * norm_X_cv) * X_cv * X_cv.t() * X_working;
 
         X = X_working.t() * Y_original;
+
+        initialize_uv();
+        return 0;
     }
     else
     {
@@ -341,7 +387,7 @@ int MoMA::set_penalty(double newlambda_u, double newlambda_v, double newalpha_u,
 
 int MoMA::reset_X()
 {
-    if (ds == DeflationScheme::PCA)
+    if (ds == DeflationScheme::PCA_Hotelling)
     {
         X = X_original;
         initialize_uv();

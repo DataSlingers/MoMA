@@ -182,8 +182,10 @@ second_diff_mat <- function(n) {
 }
 
 DEFLATION_SCHEME <- c(
-    PCA = 1,
-    CCA = 2,
-    LDA = 3,
-    PLS = 4
+    PCA_Hotelling        = 1,
+    CCA                  = 2,
+    LDA                  = 3,
+    PLS                  = 4,
+    PCA_Schur_complement = 5,
+    PCA_Projection       = 6
 )
