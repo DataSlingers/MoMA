@@ -83,7 +83,7 @@ check_omega <- function(Omega, alpha, n) {
         # non-zero penalty levels explicitly
 
         # Check validity of Omega if users speicify both alpha and Omega
-        if (dim(Omega)[1] != dim(Omega)[2]) {
+        if (!is_square(Omega)) {
             moma_error(
                 "Omega shoud be a square matrix: nrows = ", dim(Omega)[1],
                 ", ncols = ", dim(Omega)[2]
