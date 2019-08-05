@@ -97,7 +97,8 @@ class MoMA
          long i_MAX_ITER,
          double i_EPS_inner,
          long i_MAX_ITER_inner,
-         std::string i_solver);
+         std::string i_solver,
+         DeflationScheme i_ds = DeflationScheme::PCA_Hotelling);
 
     MoMA(
         // Pass X_ as a reference to avoid copy

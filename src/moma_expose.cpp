@@ -174,6 +174,7 @@ Rcpp::List cpp_multirank_BIC_grid_search(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
+    int deflation_scheme             = 1,  // Defaults to 1 = PCA_Hotelling
     int selection_criterion_alpha_u  = 0,  // 0 means grid, 1 means BIC search
     int selection_criterion_alpha_v  = 0,
     int selection_criterion_lambda_u = 0,
@@ -199,7 +200,8 @@ Rcpp::List cpp_multirank_BIC_grid_search(
                  /* smoothness */
                  alpha_u(0), alpha_v(0), Omega_u, Omega_v,
                  /* algorithm parameters */
-                 EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver);
+                 EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver,
+                 static_cast<DeflationScheme>(deflation_scheme));
 
     return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, selection_criterion_alpha_u,
                                 selection_criterion_alpha_v, selection_criterion_lambda_u,
