@@ -1,3 +1,20 @@
+#' Sparsity-inducing penalty in \code{MoMA}
+#' In the package \code{MoMA}, we support the following sparsity-inducing
+#' penalty functions.
+#' \itemize{
+#'   \item{\code{\link{lasso}}} TODO
+#'   \item{\code{\link{mcp}}} TODO
+#'   \item{\code{\link{scad}}} TODO
+#'   \item{\code{\link{slope}}} TODO
+#'   \item{\code{\link{grplasso}}} TODO
+#'   \item{\code{\link{fusedlasso}}} TODO
+#'   \item{\code{\link{l1tf}}} TODO
+#'   \item{\code{\link{spfusedlasso}}} TODO
+#'   \item{\code{\link{cluster}}} TODO
+#' }
+#' @name moma_sparsity
+NULL
+
 # Check whether `x` is a boolean value
 is_logical_scalar <- function(x) {
     return(is.logical(x) && (length(x) == 1) && !is.na(x))
@@ -312,6 +329,21 @@ cluster <- function(..., w = NULL, ADMM = FALSE,
     return(arglist)
 }
 
+
+#' Algorithm settings for solving a penalzied SVD problem
+#'
+#' To find an (approximate) solution to a penalized SVD (Singular Value Decomposition) problem is to solve two
+#' penalized regression problems iteratively (outer loop). Each penalized regression (inner loop)
+#' is solved using one of the three algorithms: ISTA (Iterative Shrinkage-Thresholding Algorithm),
+#' FISTA (Fast Iterative Shrinkage-Thresholding Algorithm) and
+#' One-step ISTA (an approximated version of ISTA).
+#' @param ... to force users to specify arguments by names
+#' @param EPS precision for outer loop
+#' @param MAX_ITER the maximum number of iterations for outer loop
+#' @param EPS_inner precision for inner loop
+#' @param MAX_ITER_inner the maximum number of iterations for inner loop
+#' @param solver a string in \code{c("ista", "fista", "onestepista")}.
+#' @export
 moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
                              EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
                              solver = c("ista", "fista", "onestepista")) {

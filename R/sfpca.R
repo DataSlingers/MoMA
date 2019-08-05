@@ -55,8 +55,8 @@ sfpca <- function(X,
     lambda_u <- as.vector(lambda_u)
     lambda_v <- as.vector(lambda_v)
 
-    Omega_u <- if (is.null(Omega_u)) diag(dim(X)[1]) else Omega_u
-    Omega_v <- if (is.null(Omega_v)) diag(dim(X)[2]) else Omega_v
+    Omega_u <- Omega_u %||% diag(dim(X)[1])
+    Omega_v <- Omega_v %||% diag(dim(X)[2])
 
     prox_arg_list_u <- list(
         w = w_u,
