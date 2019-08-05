@@ -43,7 +43,7 @@ test_that("SFPCA object: correct arguments", {
     expect_equal(a$Omega_v, diag(4))
     expect_equal(a$sc, NULL)
 
-    # check Omega is replaced by identiy matrix if alpha != 0,
+    # check Omega is replaced by a second difference matrix if alpha != 0,
     a <- SFPCA$new(matrix(runif(12), 3, 4), alpha_u = 1)
     expect_equal(a$Omega_u, second_diff_mat(3))
     expect_equal(a$Omega_v, diag(4))
