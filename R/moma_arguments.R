@@ -377,6 +377,8 @@ create_moma_sparsity_func <- function(f) {
         }
 
         # step 4: return
+        # WARNING: do not define local variables before
+        # `mget(ls())`
         arg_for_f <- mget(ls())
         arg_for_f <- arg_for_f[
             names(arg_for_f) %in% c("lambda", "select_scheme") == FALSE
