@@ -106,6 +106,9 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.2: matrix
             X <- as.matrix(X)
+            if (!is.double(X)) {
+                moma_error("X must contain numbers only.")
+            }
             if (any(!is.finite(X))) {
                 moma_error("X must not have NaN, NA, or Inf.")
             }
