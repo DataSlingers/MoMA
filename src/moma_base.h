@@ -22,9 +22,11 @@ static const double MOMA_FLOATPOINT_EPS           = 1e-8;
 #define MOMA_FUSEDLASSODP_BUFFERSIZE 5000
 enum class DeflationScheme
 {
-    PCA = 1,
-    CCA = 2,
-    LDA = 3,
-    PLS = 4
+    PCA_Hotelling        = 1,
+    CCA                  = 2,
+    LDA                  = 3,
+    PLS                  = 4,
+    PCA_Schur_complement = 5,
+    PCA_Projection       = 6
 };
 #endif

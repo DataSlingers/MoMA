@@ -240,7 +240,9 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         double d       = arma::as_scalar(curu.t() * X * curv);
 
                         Rcpp::List wrap_up;
-                        if (ds == DeflationScheme::PCA)
+                        if (ds == DeflationScheme::PCA_Hotelling ||
+                            ds == DeflationScheme::PCA_Schur_complement ||
+                            ds == DeflationScheme::PCA_Projection)
                         {
                             wrap_up = Rcpp::List::create(
                                 Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
