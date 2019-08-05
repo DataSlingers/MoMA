@@ -76,7 +76,7 @@ check_omega <- function(Omega, alpha, n) {
     else if (is.null(Omega)) {
         # The user wants smooth penalty
         # but does not specify Omega matrix
-        Omega <- second_diff_mat(n) # TODO: should not overwrite
+        Omega <- second_diff_mat(n) # TODO: should just prompt an error instead of giving Omega a value
     }
     else {
         # At this point, users have specified an Omega and
