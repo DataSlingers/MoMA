@@ -6,11 +6,11 @@
     }
 }
 
-is_fin_numeric_scalar <- function(x) {
+is_finite_numeric_scalar <- function(x) {
     (length(x) == 1L) && is.numeric(x) && (!is.na(x)) && is.finite(x)
 }
 is_valid_parameters <- function(x) {
-    length(x) >= 1 && all(sapply(x, is_fin_numeric_scalar))
+    length(x) >= 1 && all(sapply(x, is_finite_numeric_scalar))
 }
 is_valid_select_str <- function(x) {
     is.character(x) && nchar(x) == 1 && x %in% c("b", "g")

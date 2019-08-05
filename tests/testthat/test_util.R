@@ -2,24 +2,24 @@ context("Tests for Util.R")
 
 test_that("is_* functions", {
     expect_true(all(
-        is_fin_numeric_scalar(1),
-        !is_fin_numeric_scalar(c()),
-        is_fin_numeric_scalar(c(1)),
-        !is_fin_numeric_scalar("a"),
-        !is_fin_numeric_scalar(Inf),
-        !is_fin_numeric_scalar(NaN),
-        !is_fin_numeric_scalar(NaN)
+        is_finite_numeric_scalar(1),
+        !is_finite_numeric_scalar(c()),
+        is_finite_numeric_scalar(c(1)),
+        !is_finite_numeric_scalar("a"),
+        !is_finite_numeric_scalar(Inf),
+        !is_finite_numeric_scalar(NaN),
+        !is_finite_numeric_scalar(NA)
     ))
 
     expect_true(all(
-        # compatible with `is_fin_numeric_scalar`
+        # compatible with `is_finite_numeric_scalar`
         is_valid_parameters(1),
         !is_valid_parameters(c()),
         is_valid_parameters(c(1)),
         !is_valid_parameters("a"),
         !is_valid_parameters(Inf),
         !is_valid_parameters(NaN),
-        !is_valid_parameters(NaN),
+        !is_valid_parameters(NA),
 
         !is_valid_parameters(list()),
         !is_valid_parameters(c("a", 1)),
