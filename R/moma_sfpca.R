@@ -84,8 +84,10 @@ SFPCA <- R6::R6Class("SFPCA",
                                       pg_setting = moma_pg_settings(),
                                       selection_scheme_str = "gggg",
                                       max_bic_iter = 5,
-                                      rank = 1) {
+                                      rank = 1,
+                                      deflation_scheme = "PCA_Hotelling") {
             chkDots(...)
+
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
             error_if_not_valid_parameters(alpha_u)
@@ -206,6 +208,9 @@ SFPCA <- R6::R6Class("SFPCA",
                 selection_scheme_list,
                 list(
                     max_bic_iter = max_bic_iter
+                ),
+                list(
+                    deflation_scheme = DEFLATION_SCHEME[deflation_scheme]
                 )
             )
             # make sure we explicitly specify ALL arguments
@@ -566,6 +571,8 @@ SFPCA <- R6::R6Class("SFPCA",
 #' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
 #' in nested greedy BIC selection scheme.
 #' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
+#' @param deflation_scheme A string specifying the deflation scheme.
+#'          It should be one of \code{"PCA_Hotelling", "PCA_Schur_complement", "PCA_Projection"}.
 #' @export
 moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
@@ -573,7 +580,8 @@ moma_sfpca <- function(X, ...,
                        u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                        pg_setting = moma_pg_settings(),
                        max_bic_iter = 5,
-                       rank = 1) {
+                       rank = 1,
+                       deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
 
     error_if_not_of_class(u_sparse, "moma_sparsity_type")
@@ -602,7 +610,8 @@ moma_sfpca <- function(X, ...,
             v_sparse$select_scheme
         ),
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }
 
@@ -617,7 +626,8 @@ moma_spca <- function(X, ...,
                       #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                       pg_setting = moma_pg_settings(),
                       max_bic_iter = 5,
-                      rank = 1) {
+                      rank = 1,
+                      deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_sparse)
     is_v_penalized <- !missing(v_sparse)
@@ -636,7 +646,8 @@ moma_spca <- function(X, ...,
         # u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
     # moma_error("Not implemented: SPCA")
 }
@@ -653,7 +664,8 @@ moma_twspca <- function(X, ...,
                         #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                         pg_setting = moma_pg_settings(),
                         max_bic_iter = 5,
-                        rank = 1) {
+                        rank = 1,
+                        deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_sparse)
     is_v_penalized <- !missing(v_sparse)
@@ -672,7 +684,8 @@ moma_twspca <- function(X, ...,
         # u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }
 
@@ -687,7 +700,8 @@ moma_fpca <- function(X, ...,
                       u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                       pg_setting = moma_pg_settings(),
                       max_bic_iter = 5,
-                      rank = 1) {
+                      rank = 1,
+                      deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_smooth)
     is_v_penalized <- !missing(v_smooth)
@@ -706,7 +720,8 @@ moma_fpca <- function(X, ...,
         u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }
 
@@ -721,7 +736,8 @@ moma_twfpca <- function(X, ...,
                         u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                         pg_setting = moma_pg_settings(),
                         max_bic_iter = 5,
-                        rank = 1) {
+                        rank = 1,
+                        deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_smooth)
     is_v_penalized <- !missing(v_smooth)
@@ -740,6 +756,7 @@ moma_twfpca <- function(X, ...,
         u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }

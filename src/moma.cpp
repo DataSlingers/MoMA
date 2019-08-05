@@ -27,7 +27,8 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
            long i_MAX_ITER,
            double i_EPS_inner,
            long i_MAX_ITER_inner,
-           std::string i_solver)
+           std::string i_solver,
+           DeflationScheme i_ds)
     : n(i_X.n_rows),
       p(i_X.n_cols),
       alpha_u(i_alpha_u),
@@ -57,7 +58,7 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
                i_X.n_cols)
 // const reference must be passed to initializer list
 {
-    ds         = DeflationScheme::PCA_Hotelling;
+    ds         = i_ds;
     X_original = i_X;
 
     if (i_EPS >= 1 || i_EPS_inner >= 1)
@@ -132,9 +133,9 @@ MoMA::MoMA(
            i_MAX_ITER,
            i_EPS_inner,
            i_MAX_ITER_inner,
-           i_solver)
+           i_solver,
+           i_ds)
 {
-    ds = i_ds;
     if (ds == DeflationScheme::CCA)
     {
         // const matrix
