@@ -211,7 +211,7 @@ int MoMA::deflate()
         }
 
         // No need to scale u and v
-        X = X - (X * u) * (v.t() * X) / d;
+        X = X - (X * v) * (u.t() * X) / d;
 
         initialize_uv();
         return 0;
@@ -388,7 +388,8 @@ int MoMA::set_penalty(double newlambda_u, double newlambda_v, double newalpha_u,
 
 int MoMA::reset_X()
 {
-    if (ds == DeflationScheme::PCA_Hotelling)
+    if (ds == DeflationScheme::PCA_Hotelling || ds == DeflationScheme::PCA_Schur_complement ||
+        ds == DeflationScheme::PCA_Projection)
     {
         X = X_original;
         initialize_uv();

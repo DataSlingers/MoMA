@@ -1074,3 +1074,67 @@ test_that("Special-case functions: interpolate, inexact mode", {
 test_that("Special-case functions: interpolate gives expected results", {
     # TODO
 })
+
+test_that("SFPCA object: correct deflation, PCA_Schur_complement", {
+    set.seed(12)
+    X <- matrix(runif(12), 4, 3)
+
+    a <- SFPCA$new(X, rank = 3, deflation_scheme = "PCA_Schur_complement")
+    rank1 <- a$grid_result[[1]]
+    rank2 <- a$grid_result[[2]]
+    rank3 <- a$grid_result[[3]]
+
+    # use Schur complement
+    get_next_X <- function(a) {
+        X <- a$X
+        u <- a$u$vector
+        v <- a$v$vector
+        d <- t(u) %*% X %*% v
+        return(
+            X - (X %*% v) %*% (t(u) %*% X) / d[1]
+        )
+    }
+
+
+    expect_equal(
+        get_next_X(rank1), rank2$X
+    )
+    expect_equal(
+        get_next_X(rank2), rank3$X
+    )
+})
+
+test_that("SFPCA object: correct deflation, PCA_Projection", {
+    set.seed(12)
+    X <- matrix(runif(12), 4, 3)
+
+    a <- SFPCA$new(X, rank = 3, deflation_scheme = "PCA_Projection")
+    rank1 <- a$grid_result[[1]]
+    rank2 <- a$grid_result[[2]]
+    rank3 <- a$grid_result[[3]]
+
+    # use projection deflation
+    get_next_X <- function(a) {
+        X <- a$X
+        u <- a$u$vector
+        v <- a$v$vector
+
+        u <- u / norm(u, "F")
+        v <- v / norm(v, "F")
+
+        eye_u <- diag(length(u))
+        eye_v <- diag(length(v))
+
+        return(
+            (eye_u - u %*% t(u)) %*% X %*% (eye_v - v %*% t(v))
+        )
+    }
+
+
+    expect_equal(
+        get_next_X(rank1), rank2$X
+    )
+    expect_equal(
+        get_next_X(rank2), rank3$X
+    )
+})
