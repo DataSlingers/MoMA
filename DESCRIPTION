@@ -11,7 +11,7 @@ Authors@R: c(
 Description: Unified approach to modern multivariate analysis providing sparse,
     smooth, and structured versions of PCA, PLS, LDA, and CCA.
 License: GPL (>= 2)
-Imports: Rcpp, R6
+Imports: Rcpp, R6, shinytest, shiny
 Suggests:
     knitr,
     rmarkdown,

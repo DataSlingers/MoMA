@@ -1,0 +1,83 @@
+{
+  "input": {
+    "alpha_u_i": 1,
+    "alpha_v_i": 4,
+    "lambda_u_i": 1,
+    "lambda_v_i": 3,
+    "rank": "1"
+  },
+  "output": {
+    "lambda_v": "alpha_u = 0 \nalpha_v = 0.3 \nlambda_u = 0 \nlambda_v = 0.2 ",
+    "u_loadings_plot": {
+      "src": "[image data sha1: f4a167fd7f4c65dc3aa7970bb746466489b702df]",
+      "width": 246,
+      "height": 400,
+      "coordmap": {
+        "panels": [
+          {
+            "domain": {
+              "left": -4.96,
+              "right": 155.96,
+              "bottom": -0.13966193447681,
+              "top": 0.162324293075223
+            },
+            "range": {
+              "left": 59.04,
+              "right": 215.76,
+              "bottom": 325.56,
+              "top": 58.04
+            },
+            "log": {
+              "x": null,
+              "y": null
+            },
+            "mapping": {
+
+            }
+          }
+        ],
+        "dims": {
+          "width": 246,
+          "height": 400
+        }
+      }
+    },
+    "v_loadings_plot": {
+      "src": "[image data sha1: 1081d67e17075fcae55871d63a885242cf023cfa]",
+      "width": 246,
+      "height": 400,
+      "coordmap": {
+        "panels": [
+          {
+            "domain": {
+              "left": 0.88,
+              "right": 4.12,
+              "bottom": -0.100768059832773,
+              "top": 0.787199687978931
+            },
+            "range": {
+              "left": 59.04,
+              "right": 215.76,
+              "bottom": 325.56,
+              "top": 58.04
+            },
+            "log": {
+              "x": null,
+              "y": null
+            },
+            "mapping": {
+
+            }
+          }
+        ],
+        "dims": {
+          "width": 246,
+          "height": 400
+        }
+      }
+    }
+  },
+  "export": {
+
+  }
+}
