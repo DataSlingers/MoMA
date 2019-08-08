@@ -1138,3 +1138,54 @@ test_that("SFPCA object: correct deflation, PCA_Projection", {
         get_next_X(rank2), rank3$X
     )
 })
+
+test_that("SFPCA object: orthogonality", {
+    set.seed(12)
+    X <- matrix(runif(12), 4, 3) * 10
+
+    deflation_choices <- c(
+        "PCA_Schur_complement",
+        "PCA_Projection"
+    )
+
+    for (ds in deflation_choices) {
+        a <- SFPCA$new(X,
+            rank = 3, deflation_scheme = ds,
+            v_sparsity = lasso(), lambda_v = 0.1,
+            Omega_v = second_diff_mat(3), alpha_v = 0.4,
+            u_sparsity = lasso(), lambda_u = 0.1,
+            Omega_u = second_diff_mat(4), alpha_u = 0.4,
+            center = FALSE, scale = FALSE
+        )
+
+        rank1 <- a$grid_result[[1]]
+        rank2 <- a$grid_result[[2]]
+        rank3 <- a$grid_result[[3]]
+
+        u1 <- rank1$u$vector
+        v1 <- rank1$v$vector
+
+        u2 <- rank2$u$vector
+        v2 <- rank2$v$vector
+
+        u3 <- rank3$u$vector
+        v3 <- rank3$v$vector
+
+        # Two-Way Orthogonality
+        expect_equal((t(u1) %*% rank2$X %*% v1)[1], 0)
+        expect_equal((t(u2) %*% rank3$X %*% v2)[1], 0)
+
+        # One-Way Orthogonality
+        expect_equal(norm(t(u1) %*% rank2$X), 0)
+        expect_equal(norm(t(v1) %*% t(rank2$X)), 0)
+
+        expect_equal(norm(t(u2) %*% rank3$X), 0)
+        expect_equal(norm(t(v2) %*% t(rank3$X)), 0)
+
+        if (ds == "PCA_Schur_complement") {
+            # Subsequent Orthogonality
+            expect_equal(norm(t(u1) %*% rank3$X), 0)
+            expect_equal(norm(t(v1) %*% t(rank3$X)), 0)
+        }
+    }
+})
