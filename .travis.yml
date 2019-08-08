@@ -33,6 +33,7 @@ r_packages:
 
 before_install:
   - bash script/format_check.sh || travis_terminate 1;
+  - bash script/linux_install_phantomjs.sh
   - Rscript -e "source('build_steps.R'); before_install()"
 
 after_success:
