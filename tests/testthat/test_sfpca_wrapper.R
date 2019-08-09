@@ -101,42 +101,42 @@ test_that("SFPCA object: as SVD", {
         SFPCA$new(X, rank = "3.1", center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
-            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+            " should be a positive integer smaller than the minimum-dimension of the data matrix."
         )
     )
     expect_error(
         SFPCA$new(X, rank = 0, center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
-            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+            " should be a positive integer smaller than the minimum-dimension of the data matrix."
         )
     )
     expect_error(
         SFPCA$new(X, rank = -1.1, center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
-            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+            " should be a positive integer smaller than the minimum-dimension of the data matrix."
         )
     )
     expect_error(
         SFPCA$new(X, rank = -1, center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
-            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+            " should be a positive integer smaller than the minimum-dimension of the data matrix."
         )
     )
     expect_error(
         SFPCA$new(X, rank = 3.1, center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
-            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+            " should be a positive integer smaller than the minimum-dimension of the data matrix."
         )
     )
     expect_error(
         SFPCA$new(X, rank = 5, center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
-            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+            " should be a positive integer smaller than the minimum-dimension of the data matrix."
         )
     )
 
