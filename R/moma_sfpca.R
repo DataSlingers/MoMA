@@ -157,12 +157,12 @@ SFPCA <- R6::R6Class("SFPCA",
                 is_lambda_u_fixed = FALSE,
                 is_lambda_v_fixed = FALSE
             )
-            parameter_length_list <- sapply(FUN = length, list(
+            parameter_length_list <- vapply(FUN = length, list(
                 self$alpha_u,
                 self$alpha_v,
                 self$lambda_u,
                 self$lambda_v
-            ))
+            ), integer(1))
 
             for (i in 1:4) {
                 para_select_str_i <- substr(selection_scheme_str, i, i)
