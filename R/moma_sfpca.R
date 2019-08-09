@@ -85,7 +85,6 @@ SFPCA <- R6::R6Class("SFPCA",
                                       selection_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1) {
-
             chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
@@ -137,14 +136,7 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(selection_scheme_str, "character") ||
-                nchar(selection_scheme_str) != 4 ||
-                !all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-                moma_error(
-                    "Invalid selection_scheme_str ", selection_scheme_str,
-                    ". It should be a four-char string containing only 'b' or 'g'."
-                )
-            }
+            error_if_not_fourchar_bg_string(selection_scheme_str)
 
             # turn "b"/"g" to 1/0
             # `selection_scheme_list` will be passed to C++ functions

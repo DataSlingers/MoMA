@@ -78,6 +78,19 @@ error_if_not_of_class <- function(x, cl) {
     }
 }
 
+error_if_not_fourchar_bg_string <- function(x) {
+    nm <- deparse(substitute(x))
+
+    if (!inherits(x, "character") ||
+        nchar(x) != 4 ||
+        !all(strsplit(x, split = "")[[1]] %in% c("b", "g"))) {
+        moma_error(
+            sQuote(nm),
+            " should be a four-char string containing only 'b' or 'g'."
+        )
+    }
+}
+
 MOMA_EMPTYMAT <- matrix() # the default `w` arguemnt for unordered fusion
 MOMA_EMPTYVEC <- vector(mode = "numeric") # the defautl `group` arguement for group lasso
 # MOMA_DEFAULT_PROX must be consistent with
