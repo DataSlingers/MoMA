@@ -364,17 +364,10 @@ create_moma_sparsity_func <- function(f) {
         chkDots(...)
 
         # Step 2: check lambda
-        if (!is_valid_parameters(lambda)) {
-            moma_error(sQuote("lambda"), " is not valid: ", lambda)
-        }
+        error_if_not_valid_parameters(lambda)
 
         # Step 3: check select_scheme
-        if (!is_valid_select_str(select_scheme)) {
-            moma_error(
-                sQuote("select_scheme"), " is not valid: ", select_scheme,
-                ". It should be either `g` or `b`."
-            )
-        }
+        error_if_not_valid_select_str(select_scheme)
 
         # step 4: return
         # WARNING: do not define local variables before
@@ -412,17 +405,10 @@ moma_cluster <- create_moma_sparsity_func(cluster)
 moma_smoothness <- function(Omega = NULL, ..., alpha = 0, select_scheme = "g") {
 
     # Step 2: check lambda
-    if (!is_valid_parameters(alpha)) {
-        moma_error(sQuote("alpha"), " is not valid: ", alpha)
-    }
+    error_if_not_valid_parameters(alpha)
 
     # Step 3: check select_scheme
-    if (!is_valid_select_str(select_scheme)) {
-        moma_error(
-            sQuote("select_scheme"), " is not valid: ", select_scheme,
-            ". It should be either `g` or `b`."
-        )
-    }
+    error_if_not_valid_select_str(select_scheme)
 
     a <- list(
         Omega = Omega,

@@ -48,6 +48,15 @@ error_if_not_valid_parameters <- function(x) {
 is_valid_select_str <- function(x) {
     is.character(x) && nchar(x) == 1 && x %in% c("b", "g")
 }
+error_if_not_valid_select_str <- function(x) {
+    nm <- deparse(substitute(x))
+    if (!is_valid_select_str(x)) {
+        moma_error(
+            sQuote(nm),
+            " should be either `g` or `b`."
+        )
+    }
+}
 # Check whether `x` is a boolean value
 is_logical_scalar <- function(x) {
     return(is.logical(x) && (length(x) == 1) && !is.na(x))
