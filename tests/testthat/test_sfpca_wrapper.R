@@ -339,7 +339,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
         invalid_indices_error
     )
 
-    a <- SFPCA$new(X,
+    a <- SFPCA$new(
         X,
         alpha_u = c(1, 2)
     )
