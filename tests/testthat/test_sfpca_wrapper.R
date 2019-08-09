@@ -86,23 +86,38 @@ test_that("SFPCA object: as SVD", {
     X <- matrix(runif(12), 4, 3)
     expect_error(
         SFPCA$new(X, rank = "3.1", center = FALSE, scale = FALSE),
-        "`rank` should be a positive integer smaller than the rank of the data matrix."
+        paste0(
+            sQuote("rank"),
+            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+        )
     )
     expect_error(
         SFPCA$new(X, rank = 0, center = FALSE, scale = FALSE),
-        "`rank` should be a positive integer smaller than the rank of the data matrix."
+        paste0(
+            sQuote("rank"),
+            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+        )
     )
     expect_error(
         SFPCA$new(X, rank = -1.1, center = FALSE, scale = FALSE),
-        "`rank` should be a positive integer smaller than the rank of the data matrix."
+        paste0(
+            sQuote("rank"),
+            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+        )
     )
     expect_error(
         SFPCA$new(X, rank = -1, center = FALSE, scale = FALSE),
-        "`rank` should be a positive integer smaller than the rank of the data matrix."
+        paste0(
+            sQuote("rank"),
+            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+        )
     )
     expect_error(
         SFPCA$new(X, rank = 3.1, center = FALSE, scale = FALSE),
-        "`rank` should be a positive integer smaller than the rank of the data matrix."
+        paste0(
+            sQuote("rank"),
+            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+        )
     )
 
     # test no penalty case

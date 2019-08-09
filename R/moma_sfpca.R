@@ -207,7 +207,10 @@ SFPCA <- R6::R6Class("SFPCA",
                 !is.wholenumber(rank) ||
                 rank <= 0 ||
                 rank > min(p, n)) {
-                moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
+                moma_error(
+                    sQuote("rank"),
+                    "should be a positive integer smaller than the minimum-dimension of the data matrix."
+                )
             }
             self$rank <- rank
 
