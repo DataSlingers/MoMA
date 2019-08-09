@@ -80,7 +80,10 @@ test_that("SFPCA object: correct arguments", {
         SFPCA$new(matrix(runif(12), 3, 4),
             selection_scheme_str = "bbba"
         ),
-        "Invalid selection_scheme_str bbba. It should be a four-char string containing only 'b' or 'g'. "
+        paste0(
+            sQuote("selection_scheme_str"),
+            " should be a four-char string containing only 'b's and 'g's"
+        )
     )
 
     a <- SFPCA$new(matrix(runif(12), 3, 4),
@@ -403,8 +406,8 @@ test_that("Special-case functions: moma_spca", {
             u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
         ),
         paste0(
-            sQuote("select_scheme"), " is not valid: ", "c",
-            ". It should be either `g` or `b`."
+            sQuote("select_scheme"),
+            " should be either `g` or `b`"
         )
     )
 
@@ -413,8 +416,8 @@ test_that("Special-case functions: moma_spca", {
             u_smooth = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "gg")
         ),
         paste0(
-            sQuote("select_scheme"), " is not valid: ", "gg",
-            ". It should be either `g` or `b`."
+            sQuote("select_scheme"),
+            " should be either `g` or `b`"
         )
     )
 
@@ -423,7 +426,7 @@ test_that("Special-case functions: moma_spca", {
         moma_spca(X,
             u_smooth = moma_lasso(lambda = c())
         ),
-        paste0(sQuote("lambda"), " is not valid: NULL")
+        paste0(sQuote("lambda"), " is not a valid grid")
     )
 
     expect_warning(
@@ -504,8 +507,8 @@ test_that("Special-case functions: moma_twspca", {
                 u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "bb")
             ),
             paste0(
-                sQuote("select_scheme"), " is not valid: ", "bb",
-                ". It should be either `g` or `b`."
+                sQuote("select_scheme"),
+                " should be either `g` or `b`"
             )
         ),
         "Please use `moma_spca` if only one side is penalized."
@@ -517,8 +520,8 @@ test_that("Special-case functions: moma_twspca", {
                 u_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "c")
             ),
             paste0(
-                sQuote("select_scheme"), " is not valid: ", "c",
-                ". It should be either `g` or `b`."
+                sQuote("select_scheme"),
+                " should be either `g` or `b`"
             )
         ),
         "Please use `moma_spca` if only one side is penalized."
@@ -671,8 +674,8 @@ test_that("Special-case functions: moma_fpca", {
             )
         ),
         paste0(
-            sQuote("select_scheme"), " is not valid: ", "bg",
-            ". It should be either `g` or `b`."
+            sQuote("select_scheme"),
+            " should be either `g` or `b`"
         )
     )
 
@@ -685,8 +688,8 @@ test_that("Special-case functions: moma_fpca", {
             )
         ),
         paste0(
-            sQuote("select_scheme"), " is not valid: ", "c",
-            ". It should be either `g` or `b`."
+            sQuote("select_scheme"),
+            " should be either `g` or `b`"
         )
     )
 

@@ -86,7 +86,7 @@ error_if_not_fourchar_bg_string <- function(x) {
         !all(strsplit(x, split = "")[[1]] %in% c("b", "g"))) {
         moma_error(
             sQuote(nm),
-            " should be a four-char string containing only 'b' or 'g'."
+            " should be a four-char string containing only 'b's and 'g's."
         )
     }
 }
