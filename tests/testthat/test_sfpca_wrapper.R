@@ -37,11 +37,22 @@ test_that("SFPCA object: X contains strings", {
 test_that("SFPCA object: correct arguments", {
     set.seed(12)
 
+    # check that we have `chkDots(...)`
+    expect_warning(
+        a <- SFPCA$new(matrix(runif(12), 3, 4), scale = FALSE, cen = FALSE),
+        paste0(
+            "extra argument ",
+            sQuote("cen"),
+            " will be disregarded"
+        )
+    )
+
     # check Omega defaults to identiy matrix if alpha = 0
-    a <- SFPCA$new(matrix(runif(12), 3, 4), scale = FALSE, cen = FALSE)
+    a <- SFPCA$new(matrix(runif(12), 3, 4), scale = FALSE, center = FALSE)
     expect_equal(a$Omega_u, diag(3))
     expect_equal(a$Omega_v, diag(4))
-    expect_equal(a$sc, NULL)
+    expect_equal(a$scale, FALSE)
+    expect_equal(a$center, FALSE)
 
     # check Omega is replaced by a second difference matrix if alpha != 0,
     a <- SFPCA$new(matrix(runif(12), 3, 4), alpha_u = 1)

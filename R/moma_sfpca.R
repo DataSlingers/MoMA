@@ -84,6 +84,7 @@ SFPCA <- R6::R6Class("SFPCA",
                                       max_bic_iter = 5,
                                       rank = 1) {
 
+            chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
             if (!inherits(alpha_u, c("numeric", "integer")) ||
