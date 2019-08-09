@@ -94,7 +94,8 @@ test_that("SFPCA object: correct arguments", {
 test_that("SFPCA object: as SVD", {
     set.seed(12)
 
-    # check `rank`
+    # check the arguemtn `rank` is a positive
+    # integer.
     X <- matrix(runif(12), 4, 3)
     expect_error(
         SFPCA$new(X, rank = "3.1", center = FALSE, scale = FALSE),
@@ -126,6 +127,13 @@ test_that("SFPCA object: as SVD", {
     )
     expect_error(
         SFPCA$new(X, rank = 3.1, center = FALSE, scale = FALSE),
+        paste0(
+            sQuote("rank"),
+            "should be a positive integer smaller than the minimum-dimension of the data matrix."
+        )
+    )
+    expect_error(
+        SFPCA$new(X, rank = 5, center = FALSE, scale = FALSE),
         paste0(
             sQuote("rank"),
             "should be a positive integer smaller than the minimum-dimension of the data matrix."
