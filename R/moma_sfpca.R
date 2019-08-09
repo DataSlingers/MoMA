@@ -75,6 +75,8 @@ SFPCA <- R6::R6Class("SFPCA",
         p = NULL,
         X = NULL,
         fixed_list = NULL,
+        X_coln = NULL,
+        X_rown = NULL,
         initialize = function(X, ...,
                                       center = TRUE, scale = FALSE,
                                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
@@ -87,35 +89,23 @@ SFPCA <- R6::R6Class("SFPCA",
             chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
-            if (!inherits(alpha_u, c("numeric", "integer")) ||
-                !inherits(alpha_v, c("numeric", "integer")) ||
-                !inherits(lambda_u, c("numeric", "integer")) ||
-                !inherits(lambda_v, c("numeric", "integer"))) {
-                moma_error(paste0(
-                    "All penalty levels (",
-                    sQuote("lambda_u"), ", ",
-                    sQuote("lambda_v"), ", ",
-                    sQuote("alpha_u"), ", ",
-                    sQuote("alpha_v"),
-                    ") must be numeric."
-                ))
-            }
+            error_if_not_valid_parameters(alpha_u)
+            error_if_not_valid_parameters(alpha_v)
+            error_if_not_valid_parameters(lambda_u)
+            error_if_not_valid_parameters(lambda_v)
+
             self$alpha_u <- alpha_u
             self$alpha_v <- alpha_v
             self$lambda_u <- lambda_u
             self$lambda_v <- lambda_v
 
             # Step 1.2: matrix
-            X <- as.matrix(X)
-            if (!is.double(X)) {
-                moma_error("X must contain numbers only.")
-            }
-            if (any(!is.finite(X))) {
-                moma_error("X must not have NaN, NA, or Inf.")
-            }
+            error_if_not_valid_data_matrix(X)
             n <- dim(X)[1]
             p <- dim(X)[2]
             X <- scale(X, center = center, scale = scale)
+            self$X_coln <- colnames(X) %||% paste0("Xcol_", seq_len(p))
+            self$X_rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             cen <- attr(X, "scaled:center")
             sc <- attr(X, "scaled:scale")
@@ -130,24 +120,13 @@ SFPCA <- R6::R6Class("SFPCA",
             self$X <- X
 
             # Step 1.3: sparsity
-            if (!inherits(u_sparsity, "moma_sparsity") || !inherits(v_sparsity, "moma_sparsity")) {
-                moma_error(
-                    "Sparse penalty should be of class ",
-                    sQuote("moma_sparsity"),
-                    ". Try using, for example, `u_sparsity = lasso()`."
-                )
-            }
+            error_if_not_of_class(u_sparsity, "moma_sparsity")
+            error_if_not_of_class(v_sparsity, "moma_sparsity")
             self$u_sparsity <- u_sparsity
             self$v_sparsity <- v_sparsity
 
             # Step 1.4: PG loop settings
-            if (!inherits(pg_setting, "moma_pg_settings")) {
-                moma_error(
-                    "pg_setting penalty should be of class ",
-                    sQuote("moma_pg_settings"),
-                    ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
-                )
-            }
+            error_if_not_of_class(pg_setting, "moma_pg_settings")
             self$pg_setting <- pg_setting
 
             # Step 1.5: smoothness
@@ -254,21 +233,15 @@ SFPCA <- R6::R6Class("SFPCA",
                 chkDots(...)
             }
 
-            # they should be of length 1
-            if (any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1 ||
-                !all(is.wholenumber(alpha_u), is.wholenumber(alpha_v), is.wholenumber(lambda_u), is.wholenumber(lambda_v)))) {
-                moma_error("Non-integer input in SFPCA::get_mat_by_index.")
-            }
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
 
-            # indices should be integers
-            if (!all(
-                is.wholenumber(alpha_u),
-                is.wholenumber(alpha_v),
-                is.wholenumber(lambda_u),
-                is.wholenumber(lambda_v)
-            )) {
-                moma_error("SFPCA::get_mat_by_index takes integer indices.")
-            }
+            error_if_not_wholenumber(alpha_u)
+            error_if_not_wholenumber(alpha_v)
+            error_if_not_wholenumber(lambda_u)
+            error_if_not_wholenumber(lambda_v)
 
             # A "fixed" parameter should not be specified
             # at all (this is a bit stringent, can be improved later).
@@ -310,12 +283,10 @@ SFPCA <- R6::R6Class("SFPCA",
                 d[i] <- rank_i_result$d
             }
 
-            coln <- colnames(self$X) %||% paste0("Xcol_", seq_len(p))
-            rown <- rownames(self$X) %||% paste0("Xrow_", seq_len(n))
             dimnames(V) <-
-                list(coln, paste0("PC", seq_len(rank)))
+                list(self$X_coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
-                list(rown, paste0("PC", seq_len(rank)))
+                list(self$X_rown, paste0("PC", seq_len(rank)))
             return(list(U = U, V = V, d = d))
         },
 
@@ -328,11 +299,10 @@ SFPCA <- R6::R6Class("SFPCA",
             }
 
             # Reject inputs like alpha_u = "1" or "alpha_u" = c(1,2,3)
-            if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
-                any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
-                moma_error("Non-scalar input in SFPCA::interpolate.")
-            }
-
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
 
             # Parameters that are specified explictly is not "fixed".
             # Parameters that are "fixed" must not be specified.
@@ -534,10 +504,15 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
-            if (any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1 ||
-                !all(is.wholenumber(alpha_u), is.wholenumber(alpha_v), is.wholenumber(lambda_u), is.wholenumber(lambda_v)))) {
-                moma_error("Non-integer input in SFPCA::left_project.")
-            }
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
+
+            error_if_not_wholenumber(alpha_u)
+            error_if_not_wholenumber(alpha_v)
+            error_if_not_wholenumber(lambda_u)
+            error_if_not_wholenumber(lambda_v)
 
             V <- private$private_get_mat_by_index(
                 alpha_u = alpha_u,
@@ -608,24 +583,11 @@ moma_sfpca <- function(X, ...,
                        max_bic_iter = 5,
                        rank = 1) {
     chkDots(...)
-    if (!inherits(u_sparse, "moma_sparsity_type") ||
-        !inherits(v_sparse, "moma_sparsity_type")) {
-        moma_error(
-            "Invalid argument: ",
-            sQuote("u_sparse / v_sparse"),
-            ". They should be of class `moma_sparsity_type`."
-        )
-    }
 
-    if (!inherits(u_smooth, "moma_smoothness_type") ||
-        !inherits(v_smooth, "moma_smoothness_type")) {
-        moma_error(
-            "Invalid argument: ",
-            sQuote("u_smooth / v_smooth"),
-            ". They should be of class `moma_smoothness_type`."
-        )
-    }
-
+    error_if_not_of_class(u_sparse, "moma_sparsity_type")
+    error_if_not_of_class(v_sparse, "moma_sparsity_type")
+    error_if_not_of_class(u_smooth, "moma_smoothness_type")
+    error_if_not_of_class(v_smooth, "moma_smoothness_type")
 
     return(SFPCA$new(
         X,

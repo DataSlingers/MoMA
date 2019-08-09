@@ -6,12 +6,45 @@
     }
 }
 
+is_valid_data_matrix <- function(x) {
+    return(is.double(x) && all(is.finite(x)))
+}
+error_if_not_valid_data_matrix <- function(x) {
+    nm <- deparse(substitute(x))
+    if (!is_valid_data_matrix(x)) {
+        moma_error(
+            sQuote(nm),
+            " must contain numbers only and must not have NaN, NA, or Inf."
+        )
+    }
+}
+
 is_finite_numeric_scalar <- function(x) {
     (length(x) == 1L) && is.numeric(x) && (!is.na(x)) && is.finite(x)
 }
+error_if_not_finite_numeric_scalar <- function(x) {
+    nm <- deparse(substitute(x))
+    if (!is_finite_numeric_scalar(x)) {
+        moma_error(
+            sQuote(nm),
+            " must be a finite scalar."
+        )
+    }
+}
+
 is_valid_parameters <- function(x) {
     length(x) >= 1 && all(sapply(x, is_finite_numeric_scalar))
 }
+error_if_not_valid_parameters <- function(x) {
+    nm <- deparse(substitute(x))
+    if (!is_valid_parameters(x)) {
+        moma_error(
+            sQuote(nm),
+            " is not a valid grid."
+        )
+    }
+}
+
 is_valid_select_str <- function(x) {
     is.character(x) && nchar(x) == 1 && x %in% c("b", "g")
 }
@@ -22,6 +55,18 @@ is_logical_scalar <- function(x) {
 # Credit: clustRviz
 is_square <- function(x) {
     is.matrix(x) && (NROW(x) == NCOL(x))
+}
+
+error_if_not_of_class <- function(x, cl) {
+    nm <- deparse(substitute(x))
+    if (!inherits(x, cl)) {
+        moma_error(
+            sQuote(nm),
+            " must be of class ",
+            sQuote(cl),
+            "."
+        )
+    }
 }
 
 MOMA_EMPTYMAT <- matrix() # the default `w` arguemnt for unordered fusion
@@ -59,6 +104,15 @@ add_default_prox_args <- function(sparsity_type) {
 
 is.wholenumber <-
     function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
+error_if_not_wholenumber <- function(x) {
+    nm <- deparse(substitute(x))
+    if (!is.wholenumber(x)) {
+        moma_error(
+            sQuote(nm),
+            " must be a whole number."
+        )
+    }
+}
 
 # This function checks the validity of Omega and alpha
 check_omega <- function(Omega, alpha, n) {

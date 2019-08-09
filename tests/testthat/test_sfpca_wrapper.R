@@ -27,11 +27,23 @@ test_that("SFPCA object: X contains strings", {
     set.seed(12)
     X <- matrix(seq(1:12), 4, 3)
     X[1, 1] <- "abc"
-    expect_error(SFPCA$new(X), "X must contain numbers only")
+    expect_error(
+        SFPCA$new(X),
+        paste0(
+            sQuote("X"),
+            " must contain numbers only and must not have NaN, NA, or Inf"
+        )
+    )
 
     X <- matrix(seq(1:12), 4, 3)
     X[1, 1] <- Inf
-    expect_error(SFPCA$new(X), "X must not have NaN, NA, or Inf")
+    expect_error(
+        SFPCA$new(X),
+        paste0(
+            sQuote("X"),
+            " must contain numbers only and must not have NaN, NA, or Inf"
+        )
+    )
 })
 
 test_that("SFPCA object: correct arguments", {
@@ -367,9 +379,9 @@ test_that("Special-case functions: moma_spca", {
             v_sparse = lasso() # it should be moma_lasso()
         ),
         paste0(
-            "Invalid argument: ",
-            sQuote("u_sparse / v_sparse"),
-            ". They should be of class `moma_sparsity_type`."
+            sQuote("v_sparse"),
+            " must be of class ",
+            sQuote("moma_sparsity_type")
         )
     )
 
@@ -822,7 +834,10 @@ test_that("Special-case functions: get_mat_by_index and left_project takes non-i
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 2.1),
-        "Non-integer input in SFPCA::get_mat_by_index"
+        paste0(
+            sQuote("alpha_u"),
+            " must be a whole number"
+        )
     )
 
     expect_no_error(
@@ -830,7 +845,10 @@ test_that("Special-case functions: get_mat_by_index and left_project takes non-i
     )
     expect_error(
         a$left_project(X, alpha_u = 2.1),
-        "Non-integer input in SFPCA::left_project"
+        paste0(
+            sQuote("alpha_u"),
+            " must be a whole number"
+        )
     )
 })
 
