@@ -99,7 +99,6 @@ test_that("Test DP approach buffer size", {
         for (p in c(10000000)) {
             # Repeat 10 times
             for (i in 1:10) {
-                print(i)
                 x <- 10 * runif(p)
                 # Path algorithm takes 10 seconds to solve each.
                 # DP takes 0.5 seconds.

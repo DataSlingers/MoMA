@@ -75,6 +75,8 @@ SFPCA <- R6::R6Class("SFPCA",
         p = NULL,
         X = NULL,
         fixed_list = NULL,
+        X_coln = NULL,
+        X_rown = NULL,
         initialize = function(X, ...,
                                       center = TRUE, scale = FALSE,
                                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
@@ -83,38 +85,26 @@ SFPCA <- R6::R6Class("SFPCA",
                                       selection_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1) {
-
+            chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
-            if (!inherits(alpha_u, c("numeric", "integer")) ||
-                !inherits(alpha_v, c("numeric", "integer")) ||
-                !inherits(lambda_u, c("numeric", "integer")) ||
-                !inherits(lambda_v, c("numeric", "integer"))) {
-                moma_error(paste0(
-                    "All penalty levels (",
-                    sQuote("lambda_u"), ", ",
-                    sQuote("lambda_v"), ", ",
-                    sQuote("alpha_u"), ", ",
-                    sQuote("alpha_v"),
-                    ") must be numeric."
-                ))
-            }
+            error_if_not_valid_parameters(alpha_u)
+            error_if_not_valid_parameters(alpha_v)
+            error_if_not_valid_parameters(lambda_u)
+            error_if_not_valid_parameters(lambda_v)
+
             self$alpha_u <- alpha_u
             self$alpha_v <- alpha_v
             self$lambda_u <- lambda_u
             self$lambda_v <- lambda_v
 
             # Step 1.2: matrix
-            X <- as.matrix(X)
-            if (!is.double(X)) {
-                moma_error("X must contain numbers only.")
-            }
-            if (any(!is.finite(X))) {
-                moma_error("X must not have NaN, NA, or Inf.")
-            }
+            error_if_not_valid_data_matrix(X)
             n <- dim(X)[1]
             p <- dim(X)[2]
             X <- scale(X, center = center, scale = scale)
+            self$X_coln <- colnames(X) %||% paste0("Xcol_", seq_len(p))
+            self$X_rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             cen <- attr(X, "scaled:center")
             sc <- attr(X, "scaled:scale")
@@ -129,24 +119,13 @@ SFPCA <- R6::R6Class("SFPCA",
             self$X <- X
 
             # Step 1.3: sparsity
-            if (!inherits(u_sparsity, "moma_sparsity") || !inherits(v_sparsity, "moma_sparsity")) {
-                moma_error(
-                    "Sparse penalty should be of class ",
-                    sQuote("moma_sparsity"),
-                    ". Try using, for example, `u_sparsity = lasso()`."
-                )
-            }
+            error_if_not_of_class(u_sparsity, "moma_sparsity")
+            error_if_not_of_class(v_sparsity, "moma_sparsity")
             self$u_sparsity <- u_sparsity
             self$v_sparsity <- v_sparsity
 
             # Step 1.4: PG loop settings
-            if (!inherits(pg_setting, "moma_pg_settings")) {
-                moma_error(
-                    "pg_setting penalty should be of class ",
-                    sQuote("moma_pg_settings"),
-                    ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
-                )
-            }
+            error_if_not_of_class(pg_setting, "moma_pg_settings")
             self$pg_setting <- pg_setting
 
             # Step 1.5: smoothness
@@ -157,21 +136,17 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(selection_scheme_str, "character") || nchar(selection_scheme_str) != 4 ||
-                !all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-                moma_error(
-                    "Invalid selection_scheme_str ", selection_scheme_str,
-                    ". It should be a four-char string containing only 'b' or 'g'."
-                )
-            }
+            error_if_not_fourchar_bg_string(selection_scheme_str)
 
             # turn "b"/"g" to 1/0
+            # `selection_scheme_list` will be passed to C++ functions
             selection_scheme_list <- list(
                 selection_criterion_alpha_u = 0,
                 selection_criterion_alpha_v = 0,
                 selection_criterion_lambda_u = 0,
                 selection_criterion_lambda_v = 0
             )
+            # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
                 # "Fixed" parameters are those
                 # i) that are chosen by BIC, or
@@ -182,27 +157,31 @@ SFPCA <- R6::R6Class("SFPCA",
                 is_lambda_u_fixed = FALSE,
                 is_lambda_v_fixed = FALSE
             )
-
-            parameter_list <- list(
+            parameter_length_list <- vapply(FUN = length, list(
                 self$alpha_u,
                 self$alpha_v,
                 self$lambda_u,
                 self$lambda_v
-            )
+            ), integer(1))
+
             for (i in 1:4) {
-                selection_scheme_list[[i]] <- ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
-                fixed_list[[i]] <- substr(selection_scheme_str, i, i) == "b" || length(parameter_list[[i]]) == 1
+                para_select_str_i <- substr(selection_scheme_str, i, i)
+                selection_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
+                fixed_list[[i]] <- para_select_str_i == "b" || parameter_length_list[[i]] == 1
             }
             self$selection_scheme_list <- selection_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
-            is.wholenumber <-
-                function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
-            if (!inherits(rank, "numeric") || !is.wholenumber(rank) || rank <= 0
-            || rank > min(p, n)) {
-                moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
+            if (!inherits(rank, "numeric") ||
+                !is.wholenumber(rank) ||
+                rank <= 0 ||
+                rank > min(p, n)) {
+                moma_error(
+                    sQuote("rank"),
+                    " should be a positive integer smaller than the minimum-dimension of the data matrix."
+                )
             }
             self$rank <- rank
 
@@ -246,21 +225,15 @@ SFPCA <- R6::R6Class("SFPCA",
                 chkDots(...)
             }
 
-            # they should be of length 1
-            if (any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1 ||
-                !all(is.wholenumber(alpha_u), is.wholenumber(alpha_v), is.wholenumber(lambda_u), is.wholenumber(lambda_v)))) {
-                moma_error("Non-integer input in SFPCA::get_mat_by_index.")
-            }
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
 
-            # indices should be integers
-            if (!all(
-                is.wholenumber(alpha_u),
-                is.wholenumber(alpha_v),
-                is.wholenumber(lambda_u),
-                is.wholenumber(lambda_v)
-            )) {
-                moma_error("SFPCA::get_mat_by_index takes integer indices.")
-            }
+            error_if_not_wholenumber(alpha_u)
+            error_if_not_wholenumber(alpha_v)
+            error_if_not_wholenumber(lambda_u)
+            error_if_not_wholenumber(lambda_v)
 
             # A "fixed" parameter should not be specified
             # at all (this is a bit stringent, can be improved later).
@@ -302,12 +275,10 @@ SFPCA <- R6::R6Class("SFPCA",
                 d[i] <- rank_i_result$d
             }
 
-            coln <- colnames(self$X) %||% paste0("Xcol_", seq_len(p))
-            rown <- rownames(self$X) %||% paste0("Xrow_", seq_len(n))
             dimnames(V) <-
-                list(coln, paste0("PC", seq_len(rank)))
+                list(self$X_coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
-                list(rown, paste0("PC", seq_len(rank)))
+                list(self$X_rown, paste0("PC", seq_len(rank)))
             return(list(U = U, V = V, d = d))
         },
 
@@ -320,11 +291,10 @@ SFPCA <- R6::R6Class("SFPCA",
             }
 
             # Reject inputs like alpha_u = "1" or "alpha_u" = c(1,2,3)
-            if (!is.numeric(c(alpha_u, alpha_v, lambda_u, lambda_v)) ||
-                any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1)) {
-                moma_error("Non-scalar input in SFPCA::interpolate.")
-            }
-
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
 
             # Parameters that are specified explictly is not "fixed".
             # Parameters that are "fixed" must not be specified.
@@ -501,7 +471,7 @@ SFPCA <- R6::R6Class("SFPCA",
 
             cat(paste0("alpha_u: ", selection_list_str[1]), "\n")
             print(self$alpha_u)
-            cat(paste0("alpha_u: ", selection_list_str[2]), "\n")
+            cat(paste0("alpha_v: ", selection_list_str[2]), "\n")
             print(self$alpha_v)
             cat(paste0("lambda_u: ", selection_list_str[3]), "\n")
             print(self$lambda_u)
@@ -526,10 +496,15 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
-            if (any(c(length(alpha_u), length(alpha_v), length(lambda_u), length(lambda_v)) > 1 ||
-                !all(is.wholenumber(alpha_u), is.wholenumber(alpha_v), is.wholenumber(lambda_u), is.wholenumber(lambda_v)))) {
-                moma_error("Non-integer input in SFPCA::left_project.")
-            }
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
+
+            error_if_not_wholenumber(alpha_u)
+            error_if_not_wholenumber(alpha_v)
+            error_if_not_wholenumber(lambda_u)
+            error_if_not_wholenumber(lambda_v)
 
             V <- private$private_get_mat_by_index(
                 alpha_u = alpha_u,
@@ -577,54 +552,55 @@ SFPCA <- R6::R6Class("SFPCA",
 #' Defaults to \code{TRUE}.
 #' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
 #' Defaults to \code{FALSE}.
-#' @param u_sparsity,v_sparsity an object of class inheriting from "\code{moma_sparsity}". Most conveniently
-#' specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
-#' penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
-#' specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
-#' @param lambda_u,lambda_v a numeric vector or a number that specifies the penalty level of sparsity.
-#' Note that for \code{moma_spca}, these two parameter must not be
-#' specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
-#' @param Omega_u,Omega_v a positive definite matrix that encourages smoothness.  Note that for \code{moma_fpca}, these two parameter must not be
-#' specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
-#' @param alpha_u,alpha_v v a numeric vector or a number that specifies the penalty level of smoothness.
-#' Note that for \code{moma_fpca}, these two parameter must not be
-#' specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
+#' @param u_sparse,v_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
+#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
+#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
+#'        specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
+#' @param u_smooth,v_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
+#'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
+#           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
+#'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
 #' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
-#' specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
-#' used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
-#' @param selection_scheme_str a one-letter, two-letter or four-letter string that specifies selection schemes for tuning
-#' parameters, containing only "b" and "g". "b" stands for greedy nested BIC selection, and "g"
-#' stands for exhaustive grid search. For \code{moma_sfpca}, it is a four-letter string, and selection schemes for the tuning parameters,
-#' alpha_u, alpha_v, lambda_u and lambda_v are specified by the four letters of the string, respectively. For
-#' \code{moma_spca} and \code{moma_fpca}, it is a one-leter string that specifies the selection scheme
-#' for the paramter of interest. For \code{moma_twspca}, it is a two-letter string, and
-#' selection schemes for lambda_u and lambda_v are specified by the two letters respectively. For
-#' \code{moma_twfpca}, it is a two-letter string, and selection schemes for alpha_u and alpha_v
-#' are specified by the two letters respectively.
+#'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
+#'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
 #' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
 #' in nested greedy BIC selection scheme.
 #' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
 #' @export
 moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
-                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
-                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
+                       u_sparse = moma_empty(), v_sparse = moma_lasso(),
+                       u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                        pg_setting = moma_pg_settings(),
-                       selection_scheme_str = "gggg",
                        max_bic_iter = 5,
                        rank = 1) {
     chkDots(...)
+
+    error_if_not_of_class(u_sparse, "moma_sparsity_type")
+    error_if_not_of_class(v_sparse, "moma_sparsity_type")
+    error_if_not_of_class(u_smooth, "moma_smoothness_type")
+    error_if_not_of_class(v_smooth, "moma_smoothness_type")
+
     return(SFPCA$new(
         X,
         center = center, scale = scale,
         # sparsity
-        u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        lambda_u = lambda_u, lambda_v = lambda_v,
+        u_sparsity = u_sparse$sparsity_type,
+        v_sparsity = v_sparse$sparsity_type,
+        lambda_u = u_sparse$lambda,
+        lambda_v = v_sparse$lambda,
         # smoothness
-        Omega_u = Omega_u, Omega_v = Omega_v,
-        alpha_u = alpha_u, alpha_v = alpha_v,
+        Omega_u = u_smooth$Omega,
+        Omega_v = v_smooth$Omega,
+        alpha_u = u_smooth$alpha,
+        alpha_v = v_smooth$alpha,
         pg_setting = pg_setting,
-        selection_scheme_str = selection_scheme_str,
+        selection_scheme_str = paste0( # the order is important
+            u_smooth$select_scheme,
+            v_smooth$select_scheme,
+            u_sparse$select_scheme,
+            v_sparse$select_scheme
+        ),
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -637,47 +613,28 @@ moma_sfpca <- function(X, ...,
 #' @describeIn moma_sfpca a function for one-way sparse PCA
 moma_spca <- function(X, ...,
                       center = TRUE, scale = FALSE,
-                      u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
+                      u_sparse = moma_empty(), v_sparse = moma_lasso(),
+                      #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                       pg_setting = moma_pg_settings(),
-                      selection_scheme_str = "g",
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(u_sparsity) && missing(lambda_u))
-    v_penalized <- !(missing(v_sparsity) && missing(lambda_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_sparse)
+    is_v_penalized <- !missing(v_sparse)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No sparsity is imposed!")
     }
 
-    if (u_penalized && v_penalized) {
+    if (is_u_penalized && is_v_penalized) {
         moma_error("Please use `moma_twspca` if both sides are penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 1 || !selection_scheme_str %in% c("g", "b")) {
-        moma_error("`selection_scheme_str` should be either 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <-
-        if (u_penalized) {
-            paste0("gg", selection_scheme_str, "g")
-        }
-        else if (v_penalized) {
-            paste0("ggg", selection_scheme_str)
-        }
-        else {
-            "gggg"
-        }
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        lambda_u = lambda_u, lambda_v = lambda_v,
-        #  Omega_u = Omega_u, Omega_v = Omega_v,
-        #  alpha_u = alpha_u, alpha_v = alpha_v,
+        u_sparse = u_sparse, v_sparse = v_sparse,
+        # u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -692,41 +649,28 @@ moma_spca <- function(X, ...,
 #' @describeIn moma_sfpca a function for two-way sparse PCA
 moma_twspca <- function(X, ...,
                         center = TRUE, scale = FALSE,
-                        u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
+                        u_sparse = moma_lasso(), v_sparse = moma_lasso(),
+                        #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                         pg_setting = moma_pg_settings(),
-                        selection_scheme_str = "gg",
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(u_sparsity) && missing(lambda_u))
-    v_penalized <- !(missing(v_sparsity) && missing(lambda_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_sparse)
+    is_v_penalized <- !missing(v_sparse)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No sparsity is imposed!")
     }
 
-    if (!u_penalized || !v_penalized) {
+    if (is_u_penalized != is_v_penalized) {
         moma_warning("Please use `moma_spca` if only one side is penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 2) {
-        moma_error("`selection_scheme_str` should be of length two.")
-    }
-    if (!all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-        moma_error("`selection_scheme_str` should consist of 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <- paste0("gg", selection_scheme_str)
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        lambda_u = lambda_u, lambda_v = lambda_v,
-        # Omega_u = Omega_u, Omega_v = Omega_v,
-        # alpha_u = alpha_u, alpha_v = alpha_v,
+        u_sparse = u_sparse, v_sparse = v_sparse,
+        # u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -739,47 +683,28 @@ moma_twspca <- function(X, ...,
 #' @describeIn moma_sfpca a function for one-way functional PCA
 moma_fpca <- function(X, ...,
                       center = TRUE, scale = FALSE,
-                      Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0,
+                      #    u_sparse = moma_empty(), v_sparse = moma_empty(),
+                      u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                       pg_setting = moma_pg_settings(),
-                      selection_scheme_str = "g",
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(Omega_u) && missing(alpha_u))
-    v_penalized <- !(missing(Omega_v) && missing(alpha_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_smooth)
+    is_v_penalized <- !missing(v_smooth)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No smoothness is imposed!")
     }
 
-    if (u_penalized && v_penalized) {
+    if (is_u_penalized && is_v_penalized) {
         moma_error("Please use `moma_twfpca` if both sides are penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 1 || !selection_scheme_str %in% c("g", "b")) {
-        moma_error("`selection_scheme_str` should be either 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <-
-        if (u_penalized) {
-            paste0(selection_scheme_str, "ggg")
-        }
-        else if (v_penalized) {
-            paste0("g", selection_scheme_str, "gg")
-        }
-        else {
-            "gggg"
-        }
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        #   u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        #   lambda_u = lambda_u, lambda_v = lambda_v,
-        Omega_u = Omega_u, Omega_v = Omega_v,
-        alpha_u = alpha_u, alpha_v = alpha_v,
+        u_sparse = moma_empty(), v_sparse = moma_empty(),
+        u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -792,41 +717,28 @@ moma_fpca <- function(X, ...,
 #' @describeIn moma_sfpca a function for two-way functional PCA
 moma_twfpca <- function(X, ...,
                         center = TRUE, scale = FALSE,
-                        Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0,
+                        #    u_sparse = moma_empty(), v_sparse = moma_empty(),
+                        u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
                         pg_setting = moma_pg_settings(),
-                        selection_scheme_str = "gg",
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
-    u_penalized <- !(missing(Omega_u) && missing(alpha_u))
-    v_penalized <- !(missing(Omega_v) && missing(alpha_v))
-    if (!u_penalized && !v_penalized) {
+    is_u_penalized <- !missing(u_smooth)
+    is_v_penalized <- !missing(v_smooth)
+    if (!is_u_penalized && !is_v_penalized) {
         moma_warning("No smoothness is imposed!")
     }
 
-    if (!u_penalized || !v_penalized) {
+    if (!is_u_penalized || !is_v_penalized) {
         moma_warning("Please use `moma_fpca` if only one side is penalized.")
     }
-
-    if (nchar(selection_scheme_str) != 2) {
-        moma_error("`selection_scheme_str` should be of length two.")
-    }
-    if (!all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-        moma_error("`selection_scheme_str` should consist of 'g' or 'b'")
-    }
-
-    # selection_scheme_str is in order of alpha_u/v, lambda_u/v
-    full_selection_scheme_str <- paste0(selection_scheme_str, "gg")
 
     return(moma_sfpca(
         X,
         center = center, scale = scale,
-        #   u_sparsity = u_sparsity, v_sparsity = v_sparsity,
-        #   lambda_u = lambda_u, lambda_v = lambda_v,
-        Omega_u = Omega_u, Omega_v = Omega_v,
-        alpha_u = alpha_u, alpha_v = alpha_v,
+        u_sparse = moma_empty(), v_sparse = moma_empty(),
+        u_smooth = u_smooth, v_smooth = v_smooth,
         pg_setting = pg_setting,
-        selection_scheme_str = full_selection_scheme_str,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))

@@ -12,7 +12,6 @@ test_that("Test for lasso BIC", {
     y <- c(1, 2, 3)
     y_est <- c(2, 2, 2)
     p <- length(y)
-    print(y_est)
     expect_equal(test_BIC(
         y, y_est,
         "ISTA",

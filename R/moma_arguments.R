@@ -15,11 +15,6 @@
 #' @name moma_sparsity
 NULL
 
-# Check whether `x` is a boolean value
-is_logical_scalar <- function(x) {
-    return(is.logical(x) && (length(x) == 1) && !is.na(x))
-}
-
 empty <- function() {
     arglist <- list()
     class(arglist) <- "moma_sparsity"
@@ -358,4 +353,68 @@ moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
     )
     class(arglist) <- "moma_pg_settings"
     return(arglist)
+}
+
+create_moma_sparsity_func <- function(f) {
+    # Given f, we want to generate a new function, which
+    # 1. contains all arguments in f;
+    # 2. has two extra arguments `lambda` and `select_scheme`;
+    # 3. returns a list that contains ( f(...), lambda = ..., select_scheme = ... ).
+    aug_f <- function(..., lambda = 0, select_scheme = "g") {
+        chkDots(...)
+
+        # Step 2: check lambda
+        error_if_not_valid_parameters(lambda)
+
+        # Step 3: check select_scheme
+        error_if_not_valid_select_str(select_scheme)
+
+        # step 4: return
+        # WARNING: do not define local variables before
+        # `mget(ls())`
+        arg_for_f <- mget(ls())
+        arg_for_f <- arg_for_f[
+            names(arg_for_f) %in% c("lambda", "select_scheme") == FALSE
+        ] # fetch arguments for the function `f`
+        a <- list(
+            sparsity_type = do.call(f, arg_for_f),
+            lambda = lambda,
+            select_scheme = select_scheme
+        )
+        class(a) <- "moma_sparsity_type"
+        return(a)
+    }
+    formals(aug_f) <- c(formals(f), formals(aug_f))
+    aug_f
+}
+
+moma_empty <- create_moma_sparsity_func(empty)
+moma_lasso <- create_moma_sparsity_func(lasso)
+moma_mcp <- create_moma_sparsity_func(mcp)
+moma_scad <- create_moma_sparsity_func(scad)
+moma_slope <- create_moma_sparsity_func(slope)
+moma_grplasso <- create_moma_sparsity_func(grplasso)
+moma_fusedlasso <- create_moma_sparsity_func(fusedlasso)
+moma_l1tf <- create_moma_sparsity_func(l1tf)
+moma_spfusedlasso <- create_moma_sparsity_func(spfusedlasso)
+moma_cluster <- create_moma_sparsity_func(cluster)
+
+# What this function does now is just wrap three arguement
+# into a list.
+# TODO: `Omega` could be a user-defined function
+moma_smoothness <- function(Omega = NULL, ..., alpha = 0, select_scheme = "g") {
+
+    # Step 2: check lambda
+    error_if_not_valid_parameters(alpha)
+
+    # Step 3: check select_scheme
+    error_if_not_valid_select_str(select_scheme)
+
+    a <- list(
+        Omega = Omega,
+        alpha = alpha,
+        select_scheme = select_scheme
+    )
+    class(a) <- "moma_smoothness_type"
+    return(a)
 }
