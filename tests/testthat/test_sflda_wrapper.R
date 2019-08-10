@@ -28,9 +28,16 @@ test_that("Error when Y is not a factor", {
     )
 
     # it should be `Y_factor`
-    expect_error(
-        SFLDA$new(X = X, Y = as.factor(Y)),
-        "argument \"Y_factor\" is missing, with no default"
+    expect_warning(
+        expect_error(
+            SFLDA$new(X = X, Y = as.factor(Y)),
+            "argument \"Y_factor\" is missing, with no default"
+        ),
+        paste0(
+            "extra argument ",
+            sQuote("Y"),
+            " will be disregarded"
+        )
     )
 })
 
