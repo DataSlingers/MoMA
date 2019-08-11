@@ -8,6 +8,7 @@ before_install <- function() {
     roxygen2::roxygenize()
     Rcpp::compileAttributes(verbose = TRUE)
     devtools::document()
+    shinytest::installDependencies()
 
     ## GitHash as used by moma:::moma_git_hash()
     dir.create("inst", showWarnings = FALSE)
