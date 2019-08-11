@@ -116,6 +116,7 @@ SFPCA <- R6::R6Class("SFPCA",
             self$lambda_v <- lambda_v
 
             # Step 1.2: matrix
+            X <- as.matrix(X)
             error_if_not_valid_data_matrix(X)
             n <- dim(X)[1]
             p <- dim(X)[2]
