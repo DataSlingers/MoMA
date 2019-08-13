@@ -755,7 +755,7 @@ SFPCA <- R6::R6Class("SFPCA",
 #' Using terminology in the reference, they are Hotelling's deflation,
 #' two-way projection deflation, and Schur complement deflation.
 #'
-#' See the parameter \code{\link{deflation_scheme}} arguemnt in the function
+#' See the parameter \code{deflation_scheme} arguemnt in the function
 #' \code{moma_sfpca}. Also refer to the reference below
 #' for theoretical properties.
 #'
