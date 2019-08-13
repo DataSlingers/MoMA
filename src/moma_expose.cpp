@@ -174,13 +174,13 @@ Rcpp::List cpp_multirank_BIC_grid_search(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
-    int deflation_scheme             = 1,  // Defaults to 1 = PCA_Hotelling
-    int selection_criterion_alpha_u  = 0,  // 0 means grid, 1 means BIC search
-    int selection_criterion_alpha_v  = 0,
-    int selection_criterion_lambda_u = 0,
-    int selection_criterion_lambda_v = 0,
-    int max_bic_iter                 = 5,
-    int rank                         = 1)
+    int deflation_scheme       = 1,  // Defaults to 1 = PCA_Hotelling
+    int select_scheme_alpha_u  = 0,  // 0 means grid, 1 means BIC search
+    int select_scheme_alpha_v  = 0,
+    int select_scheme_lambda_u = 0,
+    int select_scheme_lambda_v = 0,
+    int max_bic_iter           = 5,
+    int rank                   = 1)
 {
     int n_lambda_u = lambda_u.n_elem;
     int n_lambda_v = lambda_v.n_elem;
@@ -203,9 +203,9 @@ Rcpp::List cpp_multirank_BIC_grid_search(
                  EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver,
                  static_cast<DeflationScheme>(deflation_scheme));
 
-    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, selection_criterion_alpha_u,
-                                selection_criterion_alpha_v, selection_criterion_lambda_u,
-                                selection_criterion_lambda_v, max_bic_iter, rank);
+    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, select_scheme_alpha_u,
+                                select_scheme_alpha_v, select_scheme_lambda_u,
+                                select_scheme_lambda_v, max_bic_iter, rank);
 }
 
 // [[Rcpp::export]]
@@ -224,13 +224,13 @@ Rcpp::List cca(const arma::mat &X,  // We should not change any variable in R, s
                double EPS_inner,
                long MAX_ITER_inner,
                std::string solver,
-               int deflation_scheme,                  // PCA = 1, CCA = 2, LDA = 3, PLS = 4
-               int selection_criterion_alpha_u  = 0,  // 0 means grid, 1 means BIC search
-               int selection_criterion_alpha_v  = 0,
-               int selection_criterion_lambda_u = 0,
-               int selection_criterion_lambda_v = 0,
-               int max_bic_iter                 = 5,
-               int rank                         = 1)
+               int deflation_scheme,            // PCA = 1, CCA = 2, LDA = 3, PLS = 4
+               int select_scheme_alpha_u  = 0,  // 0 means grid, 1 means BIC search
+               int select_scheme_alpha_v  = 0,
+               int select_scheme_lambda_u = 0,
+               int select_scheme_lambda_v = 0,
+               int max_bic_iter           = 5,
+               int rank                   = 1)
 {
     int n_lambda_u = lambda_u.n_elem;
     int n_lambda_v = lambda_v.n_elem;
@@ -253,7 +253,7 @@ Rcpp::List cca(const arma::mat &X,  // We should not change any variable in R, s
                  EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver,
                  static_cast<DeflationScheme>(deflation_scheme));
 
-    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, selection_criterion_alpha_u,
-                                selection_criterion_alpha_v, selection_criterion_lambda_u,
-                                selection_criterion_lambda_v, max_bic_iter, rank);
+    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, select_scheme_alpha_u,
+                                select_scheme_alpha_v, select_scheme_lambda_u,
+                                select_scheme_lambda_v, max_bic_iter, rank);
 }

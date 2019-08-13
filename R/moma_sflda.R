@@ -162,10 +162,10 @@ SFLDA <- R6::R6Class("SFLDA",
             # turn "b"/"g" to 1/0
             # `select_scheme_list` will be passed to C++ functions
             select_scheme_list <- list(
-                selection_criterion_alpha_x = 0,
-                selection_criterion_alpha_y = 0,
-                selection_criterion_lambda_x = 0,
-                selection_criterion_lambda_y = 0
+                select_scheme_alpha_x = 0,
+                select_scheme_alpha_y = 0,
+                select_scheme_lambda_x = 0,
+                select_scheme_lambda_y = 0
             )
             # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
@@ -223,10 +223,10 @@ SFLDA <- R6::R6Class("SFLDA",
                 ),
                 pg_settings,
                 list(
-                    selection_criterion_alpha_u = select_scheme_list$selection_criterion_alpha_x,
-                    selection_criterion_alpha_v = select_scheme_list$selection_criterion_alpha_y,
-                    selection_criterion_lambda_u = select_scheme_list$selection_criterion_lambda_x,
-                    selection_criterion_lambda_v = select_scheme_list$selection_criterion_lambda_y
+                    select_scheme_alpha_u = select_scheme_list$select_scheme_alpha_x,
+                    select_scheme_alpha_v = select_scheme_list$select_scheme_alpha_y,
+                    select_scheme_lambda_u = select_scheme_list$select_scheme_lambda_x,
+                    select_scheme_lambda_v = select_scheme_list$select_scheme_lambda_y
                 ),
                 list(
                     max_bic_iter = max_bic_iter

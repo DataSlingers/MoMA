@@ -40,10 +40,10 @@ test_that("Returns correct-sized grid: four grid requests", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 0, # grid
-                selection_criterion_alpha_v = 0, # grid
-                selection_criterion_lambda_u = 0, # grid
-                selection_criterion_lambda_v = 0 # grid
+                select_scheme_alpha_u = 0, # grid
+                select_scheme_alpha_v = 0, # grid
+                select_scheme_lambda_u = 0, # grid
+                select_scheme_lambda_v = 0 # grid
             )
         )
     )
@@ -69,10 +69,10 @@ test_that("Returns correct-sized grid: three grid requests", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 0, # grid
-                selection_criterion_alpha_v = 0, # grid
-                selection_criterion_lambda_u = 0, # grid
-                selection_criterion_lambda_v = 1
+                select_scheme_alpha_u = 0, # grid
+                select_scheme_alpha_v = 0, # grid
+                select_scheme_lambda_u = 0, # grid
+                select_scheme_lambda_v = 1
             )
         )
     )
@@ -94,10 +94,10 @@ test_that("Returns correct-sized grid: three grid requests", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 1,
-                selection_criterion_alpha_v = 0, # grid
-                selection_criterion_lambda_u = 0, # grid
-                selection_criterion_lambda_v = 0
+                select_scheme_alpha_u = 1,
+                select_scheme_alpha_v = 0, # grid
+                select_scheme_lambda_u = 0, # grid
+                select_scheme_lambda_v = 0
             )
         )
     ) # grid
@@ -121,10 +121,10 @@ test_that("Returns correct-sized grid: two grid requests on u", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 0, # grid
-                selection_criterion_lambda_u = 0, # grid
-                selection_criterion_alpha_v = 1,
-                selection_criterion_lambda_v = 1
+                select_scheme_alpha_u = 0, # grid
+                select_scheme_lambda_u = 0, # grid
+                select_scheme_alpha_v = 1,
+                select_scheme_lambda_v = 1
             )
         )
     )
@@ -148,10 +148,10 @@ test_that("Returns correct-sized grid: two grid requests on different sides", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 1,
-                selection_criterion_lambda_u = 0, # grid
-                selection_criterion_alpha_v = 1,
-                selection_criterion_lambda_v = 0
+                select_scheme_alpha_u = 1,
+                select_scheme_lambda_u = 0, # grid
+                select_scheme_alpha_v = 1,
+                select_scheme_lambda_v = 0
             )
         )
     ) # grid
@@ -175,10 +175,10 @@ test_that("Returns correct-sized grid: one grid", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 1,
-                selection_criterion_lambda_u = 1,
-                selection_criterion_alpha_v = 1,
-                selection_criterion_lambda_v = 0
+                select_scheme_alpha_u = 1,
+                select_scheme_lambda_u = 1,
+                select_scheme_alpha_v = 1,
+                select_scheme_lambda_v = 0
             )
         )
     ) # grid
@@ -201,10 +201,10 @@ test_that("Returns correct-sized grid: four BIC search", {
         c(
             public_arg_list_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 1,
-                selection_criterion_lambda_u = 1,
-                selection_criterion_alpha_v = 1,
-                selection_criterion_lambda_v = 1
+                select_scheme_alpha_u = 1,
+                select_scheme_lambda_u = 1,
+                select_scheme_alpha_v = 1,
+                select_scheme_lambda_v = 1
             )
         )
     )
@@ -227,10 +227,10 @@ test_that("`cpp_multirank_BIC_grid_search` receives a vector of length 0", {
             list(lambda_u = vector())
         ),
         list(
-            selection_criterion_alpha_u = 1,
-            selection_criterion_lambda_u = 1,
-            selection_criterion_alpha_v = 1,
-            selection_criterion_lambda_v = 1
+            select_scheme_alpha_u = 1,
+            select_scheme_lambda_u = 1,
+            select_scheme_alpha_v = 1,
+            select_scheme_lambda_v = 1
         )
     )
 

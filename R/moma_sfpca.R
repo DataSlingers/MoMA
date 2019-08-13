@@ -20,10 +20,10 @@
 #'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
 #' The numeric centering and scalings used (if any) of the data matrix.}
 #'   \item{\code{grid_result}}{A 5-D list containing the results evaluated on the paramter grid.}
-#'   \item{\code{select_scheme_list}}{A list with elements \code{selection_criterion_alpha_u},
-#'            \code{selection_criterion_alpha_v},
-#'            \code{selection_criterion_lambda_u},
-#'            \code{selection_criterion_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
+#'   \item{\code{select_scheme_list}}{A list with elements \code{select_scheme_alpha_u},
+#'            \code{select_scheme_alpha_v},
+#'            \code{select_scheme_lambda_u},
+#'            \code{select_scheme_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
 #' and 1 stands for BIC search. TODO: descibe the mixed selection procedure.}
 #' }
 #' @section Methods:
@@ -162,10 +162,10 @@ SFPCA <- R6::R6Class("SFPCA",
             # turn "b"/"g" to 1/0
             # `select_scheme_list` will be passed to C++ functions
             select_scheme_list <- list(
-                selection_criterion_alpha_u = 0,
-                selection_criterion_alpha_v = 0,
-                selection_criterion_lambda_u = 0,
-                selection_criterion_lambda_v = 0
+                select_scheme_alpha_u = 0,
+                select_scheme_alpha_v = 0,
+                select_scheme_lambda_u = 0,
+                select_scheme_lambda_v = 0
             )
             # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
