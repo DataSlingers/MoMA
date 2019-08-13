@@ -174,19 +174,19 @@ test_that("SFPCA object: as SVD", {
     # A bit stringent though.
     expect_error(
         a$get_mat_by_index(alpha_u = 1),
-        "Invalid index in SFPCA::get_mat_by_index."
+        "Invalid index: alpha_u"
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 1),
-        "Invalid index in SFPCA::get_mat_by_index."
+        "Invalid index: alpha_v"
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 1),
-        "Invalid index in SFPCA::get_mat_by_index."
+        "Invalid index: lambda_u"
     )
     expect_error(
         a$get_mat_by_index(lambda_v = 1),
-        "Invalid index in SFPCA::get_mat_by_index."
+        "Invalid index: lambda_v"
     )
     expect_no_error(
         a$get_mat_by_index(),
@@ -288,14 +288,6 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     set.seed(113)
     X <- matrix(runif(17 * 8), 17, 8) * 10
 
-    invalid_indices_error <-
-        paste0(
-            "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
-            "i) that are chosen by BIC, or ",
-            "ii) that are not specified during initialization of the SFPCA object, or ",
-            "iii) that are scalars during initialization of the SFPCA object."
-        )
-
     # case 1:
     # parameters that did not appear in initialization
     # should not appear in `SFPCA::get_mat_by_index` at all
@@ -305,7 +297,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 1),
-        invalid_indices_error
+        "Invalid index: alpha_u"
     )
     # when an unused argument is given, or a typo.
     expect_warning(
@@ -323,15 +315,15 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 1),
-        invalid_indices_error
+        "Invalid index: alpha_u"
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 2),
-        invalid_indices_error
+        "Invalid index: alpha_v"
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 1),
-        invalid_indices_error
+        "Invalid index: lambda_u"
     )
 
 
@@ -351,11 +343,11 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 0),
-        invalid_indices_error
+        "Invalid index: alpha_v"
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 0),
-        invalid_indices_error
+        "Invalid index: lambda_u"
     )
 
     a <- SFPCA$new(
@@ -370,15 +362,15 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     )
     expect_error(
         a$get_mat_by_index(alpha_u = 2, alpha_v = 0),
-        invalid_indices_error
+        "Invalid index: alpha_v"
     )
     expect_error(
         a$get_mat_by_index(alpha_v = 0),
-        invalid_indices_error
+        "Invalid index: alpha_v"
     )
     expect_error(
         a$get_mat_by_index(lambda_u = 0),
-        invalid_indices_error
+        "Invalid index: lambda_u"
     )
 })
 
@@ -943,25 +935,25 @@ test_that("Special-case functions: interpolate, exact mode", {
         a$interpolate(
             alpha_u = 1, exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: alpha_u."
+        "Invalid index: alpha_u"
     )
     expect_error(
         a$interpolate(
             alpha_v = 1, exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: alpha_v."
+        "Invalid index: alpha_v"
     )
     expect_error(
         a$interpolate(
             lambda_u = 1, exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: lambda_u."
+        "Invalid index: lambda_u"
     )
     expect_error(
         a$interpolate(
             lambda_v = 1, exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: lambda_v."
+        "Invalid index: lambda_v."
     )
 
 
@@ -986,7 +978,7 @@ test_that("Special-case functions: interpolate, exact mode", {
             lambda_v = 1, alpha_v = 1, alpha_u = 1,
             exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: alpha_u."
+        "Invalid index: alpha_u"
     )
     # alpha_v too large
     expect_error(
@@ -1015,14 +1007,14 @@ test_that("Special-case functions: interpolate, exact mode", {
             lambda_v = 1, alpha_v = 1, alpha_u = 1,
             exact = TRUE
         ),
-        "Invalid index in SFPCA::interpolate: alpha_u, alpha_v."
+        "Invalid index: alpha_u, alpha_v"
     )
     # alpha_v must not be specified
     expect_error(
         a$interpolate(
             lambda_v = 0.21, alpha_v = 0.09
         ),
-        "Invalid index in SFPCA::interpolate: alpha_v."
+        "Invalid index: alpha_v"
     )
 })
 
@@ -1056,17 +1048,17 @@ test_that("Special-case functions: interpolate, inexact mode", {
     # error because alpha_u is a scalar during initialization
     expect_error(
         a$interpolate(alpha_u = 0.2323),
-        "Invalid index in SFPCA::interpolate: alpha_u"
+        "Invalid index: alpha_u"
     )
 
     # error because alpha_u should not be specified
     expect_error(
         a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1),
-        "Invalid index in SFPCA::interpolate: alpha_u"
+        "Invalid index: alpha_u"
     )
     expect_error(
         a$interpolate(alpha_v = 0.23, lambda_v = 0.121, alpha_u = 1, lambda_u = 1.3),
-        "Invalid index in SFPCA::interpolate: alpha_u, lambda_u."
+        "Invalid index: alpha_u, lambda_u"
     )
 
     # unsorted alpha_v
