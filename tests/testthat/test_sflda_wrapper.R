@@ -276,7 +276,7 @@ test_that("SFLDA object: print", {
     expect_equal(expected_message, print_message)
 })
 
-test_that("SFLDA object: selection_scheme", {
+test_that("SFLDA object: select_scheme", {
     px <- 4
     n <- 6
     X <- matrix(runif(n * px), n, px) * 10
@@ -299,7 +299,7 @@ test_that("SFLDA object: selection_scheme", {
 
     # check the default selection scheme is grid search
     expect_true(all(
-        a$selection_scheme_list == c(0, 0, 0, 0)
+        a$select_scheme_list == c(0, 0, 0, 0)
     ))
 
 
@@ -309,13 +309,13 @@ test_that("SFLDA object: selection_scheme", {
         alpha_y = seq(0, 1, 0.4),
         lambda_x = seq(0, 1, 0.41),
         lambda_y = seq(0, 1, 0.42),
-        selection_scheme_str = "bgbg"
+        select_scheme_str = "bgbg"
     )
 
     # check the selection scheme has been correctly
     # specified
     expect_true(all(
-        a$selection_scheme_list == c(1, 0, 1, 0)
+        a$select_scheme_list == c(1, 0, 1, 0)
     ))
 
 
@@ -325,13 +325,13 @@ test_that("SFLDA object: selection_scheme", {
         alpha_y = seq(0, 1, 0.4),
         lambda_x = seq(0, 1, 0.41),
         lambda_y = seq(0, 1, 0.42),
-        selection_scheme_str = "bbbb"
+        select_scheme_str = "bbbb"
     )
 
     # check the selection scheme has been correctly
     # specified
     expect_true(all(
-        a$selection_scheme_list == c(1, 1, 1, 1)
+        a$select_scheme_list == c(1, 1, 1, 1)
     ))
 })
 
@@ -354,6 +354,6 @@ test_that("SFLDA special-case functions", {
     )
 
     expect_true(all(
-        a$selection_scheme_list == c(0, 1, 0, 0)
+        a$select_scheme_list == c(0, 1, 0, 0)
     ))
 })

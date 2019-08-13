@@ -58,7 +58,7 @@ SFCCA <- R6::R6Class("SFCCA",
         alpha_y = NULL,
         lambda_x = NULL,
         lambda_y = NULL,
-        selection_scheme_list = NULL,
+        select_scheme_list = NULL,
         pg_settings = NULL,
         n = NULL,
         px = NULL,
@@ -74,7 +74,7 @@ SFCCA <- R6::R6Class("SFCCA",
                                       x_sparsity = empty(), y_sparsity = empty(), lambda_x = 0, lambda_y = 0, # lambda_x/_y is a vector or scalar
                                       Omega_x = NULL, Omega_y = NULL, alpha_x = 0, alpha_y = 0, # so is alpha_x/_y
                                       pg_settings = moma_pg_settings(),
-                                      selection_scheme_str = "gggg",
+                                      select_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1) {
             chkDots(...)
@@ -171,18 +171,18 @@ SFCCA <- R6::R6Class("SFCCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(selection_scheme_str, "character") ||
-                nchar(selection_scheme_str) != 4 ||
-                !all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
+            if (!inherits(select_scheme_str, "character") ||
+                nchar(select_scheme_str) != 4 ||
+                !all(strsplit(select_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
                 moma_error(
-                    "Invalid selection_scheme_str ", selection_scheme_str,
+                    "Invalid select_scheme_str ", select_scheme_str,
                     ". It should be a four-char string containing only 'b' or 'g'."
                 )
             }
 
             # turn "b"/"g" to 1/0
-            # `selection_scheme_list` will be passed to C++ functions
-            selection_scheme_list <- list(
+            # `select_scheme_list` will be passed to C++ functions
+            select_scheme_list <- list(
                 selection_criterion_alpha_x = 0,
                 selection_criterion_alpha_y = 0,
                 selection_criterion_lambda_x = 0,
@@ -207,13 +207,13 @@ SFCCA <- R6::R6Class("SFCCA",
                 self$lambda_y
             ))
             for (i in 1:4) {
-                selection_scheme_list[[i]] <-
-                    ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
+                select_scheme_list[[i]] <-
+                    ifelse(substr(select_scheme_str, i, i) == "g", 0, 1)
 
                 fixed_list[[i]] <-
-                    substr(selection_scheme_str, i, i) == "b" || parameter_length_list[i] == 1
+                    substr(select_scheme_str, i, i) == "b" || parameter_length_list[i] == 1
             }
-            self$selection_scheme_list <- selection_scheme_list
+            self$select_scheme_list <- select_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
@@ -247,10 +247,10 @@ SFCCA <- R6::R6Class("SFCCA",
                 ),
                 pg_settings,
                 list(
-                    selection_criterion_alpha_u = selection_scheme_list$selection_criterion_alpha_x,
-                    selection_criterion_alpha_v = selection_scheme_list$selection_criterion_alpha_y,
-                    selection_criterion_lambda_u = selection_scheme_list$selection_criterion_lambda_x,
-                    selection_criterion_lambda_v = selection_scheme_list$selection_criterion_lambda_y
+                    selection_criterion_alpha_u = select_scheme_list$selection_criterion_alpha_x,
+                    selection_criterion_alpha_v = select_scheme_list$selection_criterion_alpha_y,
+                    selection_criterion_lambda_u = select_scheme_list$selection_criterion_lambda_x,
+                    selection_criterion_lambda_v = select_scheme_list$selection_criterion_lambda_y
                 ),
                 list(
                     max_bic_iter = max_bic_iter
@@ -371,7 +371,7 @@ SFCCA <- R6::R6Class("SFCCA",
         },
 
         print = function() {
-            selection_list_str <- lapply(self$selection_scheme_list, function(x) {
+            selection_list_str <- lapply(self$select_scheme_list, function(x) {
                 if (x == 0) {
                     return("grid search")
                 }
@@ -795,7 +795,7 @@ moma_sfcca <- function(X, ..., Y,
         alpha_x = x_smooth$alpha,
         alpha_y = y_smooth$alpha,
         pg_settings = pg_settings,
-        selection_scheme_str = paste0( # the order is important
+        select_scheme_str = paste0( # the order is important
             x_smooth$select_scheme,
             y_smooth$select_scheme,
             x_sparse$select_scheme,

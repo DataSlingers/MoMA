@@ -19,8 +19,8 @@
 #' \describe{
 #'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
 #' The numeric centering and scalings used (if any) of the data matrix.}
-#'   \item{\code{grid_result}}{a 5-D list containing the results evaluated on the paramter grid.}
-#'   \item{\code{selection_scheme_list}}{a list with elements \code{selection_criterion_alpha_u},
+#'   \item{\code{grid_result}}{A 5-D list containing the results evaluated on the paramter grid.}
+#'   \item{\code{select_scheme_list}}{A list with elements \code{selection_criterion_alpha_u},
 #'            \code{selection_criterion_alpha_v},
 #'            \code{selection_criterion_lambda_u},
 #'            \code{selection_criterion_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
@@ -86,7 +86,7 @@ SFPCA <- R6::R6Class("SFPCA",
         alpha_v = NULL,
         lambda_u = NULL,
         lambda_v = NULL,
-        selection_scheme_list = NULL,
+        select_scheme_list = NULL,
         pg_settings = NULL,
         n = NULL,
         p = NULL,
@@ -99,7 +99,7 @@ SFPCA <- R6::R6Class("SFPCA",
                                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
                                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
                                       pg_settings = moma_pg_settings(),
-                                      selection_scheme_str = "gggg",
+                                      select_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1,
                                       deflation_scheme = "PCA_Hotelling") {
@@ -157,11 +157,11 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            error_if_not_fourchar_bg_string(selection_scheme_str)
+            error_if_not_fourchar_bg_string(select_scheme_str)
 
             # turn "b"/"g" to 1/0
-            # `selection_scheme_list` will be passed to C++ functions
-            selection_scheme_list <- list(
+            # `select_scheme_list` will be passed to C++ functions
+            select_scheme_list <- list(
                 selection_criterion_alpha_u = 0,
                 selection_criterion_alpha_v = 0,
                 selection_criterion_lambda_u = 0,
@@ -186,11 +186,11 @@ SFPCA <- R6::R6Class("SFPCA",
             ), integer(1))
 
             for (i in 1:4) {
-                para_select_str_i <- substr(selection_scheme_str, i, i)
-                selection_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
+                para_select_str_i <- substr(select_scheme_str, i, i)
+                select_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
                 fixed_list[[i]] <- para_select_str_i == "b" || parameter_length_list[[i]] == 1
             }
-            self$selection_scheme_list <- selection_scheme_list
+            self$select_scheme_list <- select_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
@@ -224,7 +224,7 @@ SFPCA <- R6::R6Class("SFPCA",
                     prox_arg_list_v = add_default_prox_args(v_sparsity)
                 ),
                 pg_settings,
-                selection_scheme_list,
+                select_scheme_list,
                 list(
                     max_bic_iter = max_bic_iter
                 ),
@@ -330,7 +330,7 @@ SFPCA <- R6::R6Class("SFPCA",
             chkDots(...)
 
             # If BIC scheme has been used for any parameters, exit.
-            if (any(self$selection_scheme_list != 0)) {
+            if (any(self$select_scheme_list != 0)) {
                 moma_error("R6 object SFPCA do not support interpolation when BIC selection scheme has been used.")
             }
 
@@ -500,7 +500,7 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         print = function() {
-            selection_list_str <- lapply(self$selection_scheme_list, function(x) {
+            selection_list_str <- lapply(self$select_scheme_list, function(x) {
                 if (x == 0) {
                     return("grid search")
                 }
@@ -809,7 +809,7 @@ moma_sfpca <- function(X, ...,
         alpha_u = u_smooth$alpha,
         alpha_v = v_smooth$alpha,
         pg_settings = pg_settings,
-        selection_scheme_str = paste0( # the order is important
+        select_scheme_str = paste0( # the order is important
             u_smooth$select_scheme,
             v_smooth$select_scheme,
             u_sparse$select_scheme,
