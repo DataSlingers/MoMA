@@ -43,7 +43,7 @@ SFLDA <- R6::R6Class("SFLDA",
         lambda_x = NULL,
         lambda_y = NULL,
         selection_scheme_list = NULL,
-        pg_setting = NULL,
+        pg_settings = NULL,
         n = NULL,
         px = NULL,
         py = NULL, # LDA_SPECIAL_PART, number of groups
@@ -57,7 +57,7 @@ SFLDA <- R6::R6Class("SFLDA",
                                       center = TRUE, scale = FALSE,
                                       x_sparsity = empty(), y_sparsity = empty(), lambda_x = 0, lambda_y = 0, # lambda_x/_y is a vector or scalar
                                       Omega_x = NULL, Omega_y = NULL, alpha_x = 0, alpha_y = 0, # so is alpha_x/_y
-                                      pg_setting = moma_pg_settings(),
+                                      pg_settings = moma_pg_settings(),
                                       selection_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1) {
@@ -133,14 +133,14 @@ SFLDA <- R6::R6Class("SFLDA",
             self$y_sparsity <- y_sparsity
 
             # Step 1.4: PG loop settings
-            if (!inherits(pg_setting, "moma_pg_settings")) {
+            if (!inherits(pg_settings, "moma_pg_settings")) {
                 moma_error(
-                    "pg_setting penalty should be of class ",
+                    "pg_settings penalty should be of class ",
                     sQuote("moma_pg_settings"),
-                    ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
+                    ". Try using, for example, `pg_settings = moma_pg_settings(MAX_ITER=1e+4)`."
                 )
             }
-            self$pg_setting <- pg_setting
+            self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
             Omega_x <- check_omega(Omega_x, alpha_x, px)
@@ -221,7 +221,7 @@ SFLDA <- R6::R6Class("SFLDA",
                     prox_arg_list_u = add_default_prox_args(x_sparsity),
                     prox_arg_list_v = add_default_prox_args(y_sparsity)
                 ),
-                pg_setting,
+                pg_settings,
                 list(
                     selection_criterion_alpha_u = selection_scheme_list$selection_criterion_alpha_x,
                     selection_criterion_alpha_v = selection_scheme_list$selection_criterion_alpha_y,
@@ -643,7 +643,7 @@ moma_sflda <- function(X, ..., Y_factor,
                        center = TRUE, scale = FALSE,
                        x_sparse = moma_empty(), y_sparse = moma_empty(),
                        x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                       pg_setting = moma_pg_settings(),
+                       pg_settings = moma_pg_settings(),
                        max_bic_iter = 5,
                        rank = 1) {
     chkDots(...)
@@ -680,7 +680,7 @@ moma_sflda <- function(X, ..., Y_factor,
         Omega_y = y_smooth$Omega,
         alpha_x = x_smooth$alpha,
         alpha_y = y_smooth$alpha,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         selection_scheme_str = paste0( # the order is important
             x_smooth$select_scheme,
             y_smooth$select_scheme,
@@ -721,7 +721,7 @@ moma_slda <- function(X, ..., Y_factor,
         center = center, scale = scale,
         x_sparse = x_sparse, y_sparse = y_sparse,
         # x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -758,7 +758,7 @@ moma_twslda <- function(X, ..., Y_factor,
         center = center, scale = scale,
         x_sparse = x_sparse, y_sparse = y_sparse,
         # x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -793,7 +793,7 @@ moma_flda <- function(X, ..., Y_factor,
         center = center, scale = scale,
         # x_sparse = x_sparse, y_sparse = y_sparse,
         x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -808,7 +808,7 @@ moma_twflda <- function(X, ..., Y_factor,
                         center = TRUE, scale = FALSE,
                         #    x_sparse = moma_empty(), y_sparse = moma_empty(),
                         x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
@@ -828,7 +828,7 @@ moma_twflda <- function(X, ..., Y_factor,
         center = center, scale = scale,
         # x_sparse = x_sparse, y_sparse = y_sparse,
         x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))

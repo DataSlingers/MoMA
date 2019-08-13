@@ -87,7 +87,7 @@ SFPCA <- R6::R6Class("SFPCA",
         lambda_u = NULL,
         lambda_v = NULL,
         selection_scheme_list = NULL,
-        pg_setting = NULL,
+        pg_settings = NULL,
         n = NULL,
         p = NULL,
         X = NULL,
@@ -98,7 +98,7 @@ SFPCA <- R6::R6Class("SFPCA",
                                       center = TRUE, scale = FALSE,
                                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
                                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
-                                      pg_setting = moma_pg_settings(),
+                                      pg_settings = moma_pg_settings(),
                                       selection_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1,
@@ -146,8 +146,8 @@ SFPCA <- R6::R6Class("SFPCA",
             self$v_sparsity <- v_sparsity
 
             # Step 1.4: PG loop settings
-            error_if_not_of_class(pg_setting, "moma_pg_settings")
-            self$pg_setting <- pg_setting
+            error_if_not_of_class(pg_settings, "moma_pg_settings")
+            self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
             Omega_u <- check_omega(Omega_u, alpha_u, n)
@@ -223,7 +223,7 @@ SFPCA <- R6::R6Class("SFPCA",
                     prox_arg_list_u = add_default_prox_args(u_sparsity),
                     prox_arg_list_v = add_default_prox_args(v_sparsity)
                 ),
-                pg_setting,
+                pg_settings,
                 selection_scheme_list,
                 list(
                     max_bic_iter = max_bic_iter
@@ -383,7 +383,7 @@ SFPCA <- R6::R6Class("SFPCA",
                     # sparsity
                     Omega_u = self$Omega_u, Omega_v = self$Omega_v,
                     alpha_u = alpha_u, alpha_v = alpha_v,
-                    pg_setting = self$pg_setting,
+                    pg_settings = self$pg_settings,
                     k = self$rank
                 )
                 return(list(U = a$u, V = a$v))
@@ -784,7 +784,7 @@ moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
                        u_sparse = moma_empty(), v_sparse = moma_lasso(),
                        u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                       pg_setting = moma_pg_settings(),
+                       pg_settings = moma_pg_settings(),
                        max_bic_iter = 5,
                        rank = 1,
                        deflation_scheme = "PCA_Hotelling") {
@@ -808,7 +808,7 @@ moma_sfpca <- function(X, ...,
         Omega_v = v_smooth$Omega,
         alpha_u = u_smooth$alpha,
         alpha_v = v_smooth$alpha,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         selection_scheme_str = paste0( # the order is important
             u_smooth$select_scheme,
             v_smooth$select_scheme,
@@ -850,7 +850,7 @@ moma_spca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = u_sparse, v_sparse = v_sparse,
         # u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
@@ -888,7 +888,7 @@ moma_twspca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = u_sparse, v_sparse = v_sparse,
         # u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
@@ -924,7 +924,7 @@ moma_fpca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = moma_empty(), v_sparse = moma_empty(),
         u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
@@ -960,7 +960,7 @@ moma_twfpca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = moma_empty(), v_sparse = moma_empty(),
         u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
