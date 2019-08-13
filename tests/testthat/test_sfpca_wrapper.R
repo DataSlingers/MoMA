@@ -872,7 +872,10 @@ test_that("Special-case functions: get_mat_by_index and left_project takes non-i
     )
     expect_error(
         a$get_mat_by_index(alpha_u = c(1, 2, 3)),
-        "Non-length-one input in SFPCA::get_mat_by_index"
+        paste0(
+            sQuote("alpha_u"),
+            " must be a finite scalar"
+        )
     )
 
     # test `left_project`

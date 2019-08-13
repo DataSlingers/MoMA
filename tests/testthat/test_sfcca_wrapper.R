@@ -12,10 +12,10 @@ test_that("Solve a penalized CCA with three canonical covariates", {
         X = X, Y = Y, rank = 3,
         center = FALSE, scale = FALSE,
         alpha_x = 1, alpha_y = 1,
-        Omega_u = second_diff_mat(px),
-        Omega_v = second_diff_mat(py),
+        Omega_x = second_diff_mat(px),
+        Omega_y = second_diff_mat(py),
         lambda_x = 1, lambda_y = 1,
-        u_sparsity = lasso(), v_sparsity = scad()
+        x_sparsity = lasso(), y_sparsity = scad()
     )
 
     # contains X and Y
@@ -89,10 +89,10 @@ test_that("Evaluate on a grid", {
         X = X, Y = Y,
         center = FALSE, scale = FALSE,
         alpha_x = alpha_x, alpha_y = alpha_y,
-        Omega_u = second_diff_mat(px),
-        Omega_v = second_diff_mat(py),
+        Omega_x = second_diff_mat(px),
+        Omega_y = second_diff_mat(py),
         lambda_x = lambda_x, lambda_y = lambda_y,
-        u_sparsity = lasso(), v_sparsity = scad()
+        x_sparsity = lasso(), y_sparsity = scad()
     )
 
     for (av in 1:length(alpha_y)) {
@@ -105,12 +105,12 @@ test_that("Evaluate on a grid", {
                             center = FALSE, scale = FALSE,
                             alpha_x = alpha_x[au],
                             alpha_y = alpha_y[av],
-                            Omega_u = second_diff_mat(px),
-                            Omega_v = second_diff_mat(py),
+                            Omega_x = second_diff_mat(px),
+                            Omega_y = second_diff_mat(py),
                             lambda_x = lambda_x[lu],
                             lambda_y = lambda_y[lv],
-                            u_sparsity = lasso(),
-                            v_sparsity = scad()
+                            x_sparsity = lasso(),
+                            y_sparsity = scad()
                         )$grid_result[[1]]
 
                     target <- get_5Dlist_elem(
