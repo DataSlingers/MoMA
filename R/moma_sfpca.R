@@ -1,7 +1,7 @@
 #' \code{R6} objects for storing and accessing the results of SFPCA / SFLDA /
 #' SFCCA
 #'
-#' During initialziation of an \code{SFPCA} object, \code{R}
+#' During initialization of an \code{SFPCA} object, \code{R}
 #' calls the \code{C++}-side function, \code{cpp_multirank_BIC_grid_search}, and
 #' wraps the results returned. The \code{SFPCA} object also records penalty levels
 #' and selection schemes of tuning parameters. Several helper
@@ -16,7 +16,7 @@
 #' \describe{
 #'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
 #' The numeric centering and scalings used (if any) of the data matrix.}
-#'   \item{\code{grid_result}}{A 5-D list containing the results evaluated on the paramter grid.}
+#'   \item{\code{grid_result}}{A 5-D list containing the results evaluated on the parameter grid.}
 #'   \item{\code{select_scheme_list}}{A list with elements \code{select_scheme_alpha_u},
 #'            \code{select_scheme_alpha_v},
 #'            \code{select_scheme_lambda_u},
@@ -749,19 +749,52 @@ SFPCA <- R6::R6Class("SFPCA",
     )
 )
 
+#' Deflation Schemes for PCA
+#'
+#' In \code{MoMA} three deflation schemes are provided for PCA.
+#' Using terminology in the reference, they are Hotelling's deflation,
+#' two-way projection deflation, and Schur complement deflation.
+#'
+#' See the parameter \code{\link{deflation_scheme}} arguemnt in the function
+#' \code{moma_sfpca}. Also refer to the reference below
+#' for theoretical properties.
+#'
+#' @references Michael Weylandt. "Multi-Rank Sparse and Functional PCA: Manifold Optimization and
+#' Iterative Deflation Techniques." arXiv:1907.12012v1, 2019.
+#' @name PCA_deflation
+NULL
+
 #' Sparse and functional PCA
 #'
 #' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns it.
 #' @param u_sparse,v_sparse An object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
 #'        specified by functions described in \code{\link{moma_sparsity_options}}. It specifies the type of sparsity-inducing
-#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
+#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameters must not be
 #'        specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
 #' @param u_smooth,v_smooth An object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
 #'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#'           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
+#'           terms used in the model. Note that for \code{moma_fpca}, these two parameters must not be
 #'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
 #' @param deflation_scheme A string specifying the deflation scheme.
 #'          It should be one of \code{"PCA_Hotelling", "PCA_Schur_complement", "PCA_Projection"}.
+#'
+#' In the discussion below, let \eqn{u,v} be the normalized vectors obtained by
+#' scaling the penalized singular vectors.
+#'
+#' When \code{deflation_scheme = "Hotelling_deflation"} is specified, the following deflation
+#' scheme is used. \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-d_{t} \boldsymbol{u}_{t} \boldsymbol{v}_{t}^{T}},
+#' where \eqn{d_{t}=\boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}.
+#'
+#' When \code{deflation_scheme = "PCA_Schur_complement"} is specified, the following deflation
+#' scheme is used: \eqn{\boldsymbol{X}_{t} :=\left(\boldsymbol{I}_{n}-
+#' \boldsymbol{u}_{t} \boldsymbol{u}_{t}^{T}\right) \boldsymbol{X}_{t-1}
+#' \left(\boldsymbol{I}_{p}-\boldsymbol{v}_{t} \boldsymbol{v}_{t}^{T}\right)}.
+#'
+#' When \code{deflation_scheme = "PCA_Projection"} is specified, the following deflation
+#' scheme is used:
+#' \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-\frac{\boldsymbol{X}_{t-1}
+#' \boldsymbol{v}_{t} \boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1}}{\boldsymbol{u}_{t}^{T}
+#' \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}}.
 #' @return An R6 object which provides helper functions to access the results. See \code{\link{moma_R6}}.
 #' @inheritParams moma_sfcca
 #' @name moma_sfpca

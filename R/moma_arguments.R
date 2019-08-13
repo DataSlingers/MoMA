@@ -29,7 +29,7 @@
 #' To explain nested BIC search, we need to look into how the algorithm runs.
 #' To find an (approximate) solution to a penalized SVD (Singular Value Decomposition) problem is to solve two
 #' penalized regression problems iteratively. Let's call them problem u and problem v, which give
-#' improving estimates of the right singular vector, \emph{u}, and the left singular vector, \emph{v}, repectively.
+#' improving estimates of the right singular vector, \emph{u}, and the left singular vector, \emph{v}, respectively.
 #' For each regression problem, we can select the optimal parameters
 #' based on BIC.
 #'
@@ -61,7 +61,7 @@ lasso <- function(..., non_negative = FALSE) {
     }
 
     if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a boolean value.")
+        moma_error(sQuote("non_negative"), " should be a Boolean value.")
     }
     arglist <- list(nonneg = non_negative, P = "LASSO")
     class(arglist) <- "_moma_sparsity_type"
@@ -74,7 +74,7 @@ mcp <- function(..., gamma = 3, non_negative = FALSE) {
     }
 
     if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a boolean value.")
+        moma_error(sQuote("non_negative"), " should be a Boolean value.")
     }
     if (gamma <= 1) {
         moma_error(
@@ -94,7 +94,7 @@ scad <- function(..., gamma = 3.7, non_negative = FALSE) {
     }
 
     if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a boolean value.")
+        moma_error(sQuote("non_negative"), " should be a Boolean value.")
     }
     if (gamma <= 2) {
         moma_error(
@@ -120,7 +120,7 @@ grplasso <- function(..., g, non_negative = FALSE) {
     }
 
     if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a boolean value.")
+        moma_error(sQuote("non_negative"), " should be a Boolean value.")
     }
     if (!(inherits(g, c("character", "numeric", "factor", "integer")))) {
         moma_error("Please provide a vector as an indicator of grouping.")
@@ -265,7 +265,7 @@ moma_empty <- create_moma_sparsity_func(empty)
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
 #'
 #' @param ... Forces users to specify all arguments by name.
-#' @param non_negative A boolean value. Set \code{TRUE} to add non-negativity
+#' @param non_negative A Boolean value. Set \code{TRUE} to add non-negativity
 #' constraint.
 #'
 #' @return A \code{moma_sparsity_type} object, which is a list containing the value of \code{non_negative}
@@ -275,6 +275,7 @@ moma_empty <- create_moma_sparsity_func(empty)
 #' @name lasso
 #' @inheritParams moma_sparsity_options
 #' @export
+
 moma_lasso <- create_moma_sparsity_func(lasso)
 
 #' MCP (minimax concave penalty)
@@ -285,7 +286,7 @@ moma_lasso <- create_moma_sparsity_func(lasso)
 #' determined by \eqn{\gamma}.
 #' @param ... Forces users to specify all arguments by name.
 #' @param gamma Non-convexity. Must be larger than 1.
-#' @param non_negative A boolean value. Set to \code{TRUE} to add non-negativity
+#' @param non_negative A Boolean value. Set to \code{TRUE} to add non-negativity
 #' constraint.
 #'
 #' @return A \code{moma_sparsity_type} object, which is a list containing the value of \code{non_negative}
@@ -307,7 +308,7 @@ moma_mcp <- create_moma_sparsity_func(mcp)
 #'
 #' @param ... Forces users to specify all arguments by name.
 #' @param gamma Non-convexity. Must be larger than 2.
-#' @param non_negative A boolean value. Set to \code{TRUE} to add non-negativity
+#' @param non_negative A Boolean value. Set to \code{TRUE} to add non-negativity
 #'                  constraint.
 #'
 #' @return A \code{moma_sparsity_type} object, which is a list containing the values of \code{non_negative}
@@ -340,12 +341,12 @@ moma_slope <- create_moma_sparsity_func(slope)
 #' Use this function to set the penalty function to group lasso
 #' \deqn{\lambda \sum_{g \in Group} \| x_g \|,}
 #' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}, \eqn{\|x_g\|} is
-#' the vector comprised of elements of \eqn{x} picked out by indeces set \eqn{g}.
+#' the vector comprised of elements of \eqn{x} picked out by the indices set \eqn{g}.
 #'
 #' @param ... Forces users to specify all arguments by name.
 #' @param g A vector of integer or characters, or a factor itself. It gets transformed
 #' to factor eventually to indicate grouping.
-#' @param non_negative A boolean value. Set it to \code{TRUE} to add non-negativity
+#' @param non_negative A Boolean value. Set it to \code{TRUE} to add non-negativity
 #' constraint.
 #'
 #' @return A \code{moma_sparsity_type} object, which is a list containing the values of \code{non_negative}
@@ -439,8 +440,8 @@ moma_spfusedlasso <- create_moma_sparsity_func(spfusedlasso)
 #'
 #' @param ... Forces users to specify all arguments by name.
 #' @param w A symmetric square matrix. \code{w[i, j]} is the \eqn{w_{ij}} described above.
-#' @param ADMM A boolean value. Set to \code{TRUE} to use ADMM, set to \code{FALSE} to use AMA. Defaults to FALSE.
-#' @param acc A boolean value. Set to \code{TRUE} to use the accelereated version of the algorithm.
+#' @param ADMM A Boolean value. Set to \code{TRUE} to use ADMM, set to \code{FALSE} to use AMA. Defaults to FALSE.
+#' @param acc A Boolean value. Set to \code{TRUE} to use the accelerated version of the algorithm.
 #'          Currently we support accelerated AMA only.
 #' @param eps A small numeric value. The precision used when solving the proximal operator.
 #'

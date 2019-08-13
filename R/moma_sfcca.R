@@ -673,10 +673,36 @@ SFCCA <- R6::R6Class("SFCCA",
     )
 )
 
+#' The Deflation Scheme for CCA
+#'
+#' In \code{MoMA} one deflation scheme is provided for CCA.
+#'
+#' Let \eqn{X,Y} be two data matrices (properly scaled and centered) of the same number of
+#' rows. Each row represents a sample. The penalized CCA problem is formulated as
+#'
+#' \eqn{ \min_{u,v} \, u^T X^T Y v + \lambda_u P_u(u) + \lambda_v P_v(v)  }
+#'
+#' \eqn{ \text{s.t. } \| u \|_{I+\alpha_u \Omega_u} \leq 1, \| v \|_{I + \alpha_v \Omega_v} \leq 1.  }
+#'
+#' In the discussion below, let \eqn{u,v} be the solution to the above problem.
+#' Let \eqn{c_x = Xu, c_y = Yv}. The deflation scheme is as follow:
+#'
+#' \eqn{X \leftarrow  { X } -  { c_x } \left(  { c_x } ^ { T }  { c_x } \right) ^ { - 1 }  { c_x } ^ { T }  { X }
+#' = ( I - { c_x } \left(  { c_x } ^ { T }  { c_x } \right) ^ { - 1 }  { c_x } ^ { T } )X,}
+#'
+#' \eqn{ Y \leftarrow { Y } -  { c_y } \left(  { c_y } ^ { T }  { c_y } \right) ^ { - 1 }  { c_y } ^ { T }  { Y }
+#' = (I -  { c_y } \left(  { c_y } ^ { T }  { c_y } \right) ^ { - 1 }  { c_y } ^ { T } ) Y}.
+#'
+#' @references De Bie T., Cristianini N., Rosipal R. (2005) Eigenproblems
+#' in Pattern Recognition. In: Handbook of Geometric Computing. Springer, Berlin, Heidelberg
+#' @name CCA_deflation
+NULL
 
 #' Sparse and functional CCA
 #'
-#' \code{moma_sfcca} creates an \code{SFCCA} R6 object and returns it.
+#' \code{moma_sfcca} creates an \code{SFCCA} R6 object and returns it. Type \code{?CCA_deflation} for
+#' description of problem formulation and deflation scheme.
+#'
 #' @param X,Y A data matrix, each row representing a sample, and each column a feature.
 #' @param ... Force users to specify arguments by names.
 #' @param center A logical value indicating whether the variables should be shifted to be zero centered.
@@ -685,11 +711,11 @@ SFCCA <- R6::R6Class("SFCCA",
 #' Defaults to \code{FALSE}.
 #' @param x_sparse,y_sparse An object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
 #'        specified by functions described in \code{\link{moma_sparsity_options}}. It specifies the type of sparsity-inducing
-#'        penalty function used in the model. Note that for \code{moma_scca}, these two parameter must not be
+#'        penalty function used in the model. Note that for \code{moma_scca}, these two parameters must not be
 #'        specified at the same time. For \code{moma_fcca} and \code{moma_twfcca}, they must not be specified.
 #' @param x_smooth,y_smooth An object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
 #'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#'           terms used in the model. Note that for \code{moma_fcca}, these two parameter must not be
+#'           terms used in the model. Note that for \code{moma_fcca}, these two parameters must not be
 #'          specified at the same time. For \code{moma_scca} and \code{moma_twscca}, they must not be specified.
 #' @param pg_settings An object of class inheriting from "\code{moma_pg_settings}". Most conviently
 #'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
@@ -698,6 +724,7 @@ SFCCA <- R6::R6Class("SFCCA",
 #' in nested greedy BIC selection scheme.
 #' @param rank A positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
 #' @export
+
 moma_sfcca <- function(X, ..., Y,
                        center = TRUE, scale = FALSE,
                        x_sparse = moma_empty(), y_sparse = moma_empty(),
@@ -753,9 +780,9 @@ moma_sfcca <- function(X, ..., Y,
 
 #' Perform one-way sparse CCA
 #'
-#' \code{moma_scca} is a function for performing performing one-way sparse CCA.
+#' \code{moma_scca} is a function for performing one-way sparse CCA.
 #' @export
-#' @describeIn moma_sfcca a function for performing performing one-way sparse CCA.
+#' @describeIn moma_sfcca a function for performing one-way sparse CCA.
 moma_scca <- function(X, ..., Y,
                       center = TRUE, scale = FALSE,
                       x_sparse = moma_empty(), y_sparse = moma_empty(),

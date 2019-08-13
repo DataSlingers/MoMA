@@ -16,7 +16,7 @@ reference:
   - title: Sparsity Choices
     desc: ~
     contents:
-    - '`moma_sparsity_options`'
+    - 'moma_sparsity_options'
     - '`lasso`'
     - '`mcp`'
     - '`scad`'
@@ -35,6 +35,12 @@ reference:
     desc: ~
     contents:
     - '`select_scheme`'
+  - title: Deflation Schemes
+    desc: ~
+    contents: 
+      - '`PCA_deflation`'
+      - '`CCA_deflation`'
+      - '`LDA_deflation`'
   - title: Multivariate Models
     desc: ~
     contents:
