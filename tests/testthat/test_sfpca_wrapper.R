@@ -78,19 +78,19 @@ test_that("SFPCA object: correct arguments", {
 
     expect_error(
         SFPCA$new(matrix(runif(12), 3, 4),
-            selection_scheme_str = "bbba"
+            select_scheme_str = "bbba"
         ),
         paste0(
-            sQuote("selection_scheme_str"),
+            sQuote("select_scheme_str"),
             " should be a four-char string containing only 'b's and 'g's"
         )
     )
 
     a <- SFPCA$new(matrix(runif(12), 3, 4),
-        selection_scheme_str = "ggbb"
+        select_scheme_str = "ggbb"
     ) # in order of alpha_u/v, lambda_u/v
 
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 1, 1)))
     expect_equal(dim(a$grid_result), c(1, 1, 1, 1, 1))
 })
 
@@ -196,9 +196,9 @@ test_that("SFPCA object: as SVD", {
     # test selection with BIC seach and grid search
     a <- SFPCA$new(X,
         rank = 3, center = FALSE, scale = FALSE,
-        alpha_u = seq(0, 2, 0.2), selection_scheme_str = "bggg"
+        alpha_u = seq(0, 2, 0.2), select_scheme_str = "bggg"
     )
-    expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(1, 0, 0, 0)))
 
     expect_equal(dim(a$grid_result), c(1, 1, 1, 1, 3))
 })
@@ -213,7 +213,7 @@ test_that("SFPCA object: print fucntion", {
         lambda_u = c(2, 3),
         alpha_v = c(3, 4),
         lambda_v = c(6, 7),
-        selection_scheme_str = "bgbg"
+        select_scheme_str = "bgbg"
     )
     print_message <- capture.output(print(a))
 
@@ -244,7 +244,7 @@ test_that("SFPCA object: left-project fucntion", {
         lambda_u = c(2),
         alpha_v = c(3),
         lambda_v = c(6),
-        selection_scheme_str = "bbbb"
+        select_scheme_str = "bbbb"
     )
     expect_error(
         a$left_project(matrix(0, 4, 1)),
@@ -272,7 +272,7 @@ test_that("SFPCA object: left-project fucntion", {
         lambda_u = c(2),
         alpha_v = c(1, 2, 3), # grid search
         lambda_v = c(6),
-        selection_scheme_str = "bgbb"
+        select_scheme_str = "bgbb"
     )
     for (i in 1:3) {
         V_left_prejct <- a$left_project(new_data, alpha_v = i, rank = 3)$V
@@ -341,7 +341,7 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     a <- SFPCA$new(X,
         alpha_u = c(1, 2),
         alpha_v = c(1, 2, 3), # selected by BIC
-        selection_scheme_str = "gbgg"
+        select_scheme_str = "gbgg"
     )
     expect_no_error(
         a$get_mat_by_index()
@@ -452,26 +452,26 @@ test_that("Special-case functions: moma_spca", {
         a <- moma_spca(X),
         "No sparsity is imposed!"
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_spca(X, u_sparse = moma_empty())
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_spca(X, u_sparse = moma_lasso(select_scheme = "g"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_spca(X, u_sparse = moma_lasso(select_scheme = "b"))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 1, 0)))
 
     a <- moma_spca(X,
         v_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "g")
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_spca(X,
         v_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "b")
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 1)))
 })
 
 test_that("Special-case functions: moma_twspca", {
@@ -559,7 +559,7 @@ test_that("Special-case functions: moma_twspca", {
 
 
     expect_warning(a <- moma_twspca(X))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     expect_no_warning(
         a <- moma_twspca(X,
@@ -567,7 +567,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 2, 0.2), select_scheme = "b")
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 1, 1)))
 
     expect_no_warning(
         a <- moma_twspca(X,
@@ -575,7 +575,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2))
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
 
     expect_no_warning(
@@ -584,7 +584,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2))
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 1, 0)))
 
     expect_no_warning(
         a <- moma_twspca(X,
@@ -592,7 +592,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b")
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 1)))
 
 
     expect_no_warning(
@@ -601,7 +601,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b")
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 1)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 1, 1)))
 
     expect_no_warning(
         a <- moma_twspca(X,
@@ -609,7 +609,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "g")
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     expect_no_warning(
         a <- moma_twspca(X,
@@ -617,7 +617,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "b")
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 1)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 1)))
 
     expect_no_warning(
         a <- moma_twspca(X,
@@ -625,7 +625,7 @@ test_that("Special-case functions: moma_twspca", {
             v_sparse = moma_lasso(lambda = seq(0, 1, 0.2), select_scheme = "g")
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 1, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 1, 0)))
 })
 
 test_that("Special-case functions: moma_fpca", {
@@ -683,7 +683,7 @@ test_that("Special-case functions: moma_fpca", {
 
 
     # test selection schemes
-    # error when nchar(selection_scheme_str) != 1
+    # error when nchar(select_scheme_str) != 1
     expect_error(
         moma_fpca(X,
             u_smooth = moma_smoothness(
@@ -717,24 +717,24 @@ test_that("Special-case functions: moma_fpca", {
         a <- moma_fpca(X),
         "No smoothness is imposed!"
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
 
     a <- moma_fpca(X, u_smooth = moma_smoothness(alpha = seq(0, 2, 0.2)))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     a <- moma_fpca(X, u_smooth = moma_smoothness(
         alpha = seq(0, 2, 0.2),
         select_scheme = "b"
     ))
 
-    expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(1, 0, 0, 0)))
     expect_equal(a$Omega_u, second_diff_mat(17))
 
     a <- moma_fpca(X,
         v_smooth = moma_smoothness(alpha = seq(0, 2, 0.2))
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
     expect_equal(a$Omega_v, second_diff_mat(8))
     expect_equal(a$Omega_u, diag(17))
 
@@ -745,7 +745,7 @@ test_that("Special-case functions: moma_fpca", {
             select_scheme = "b"
         )
     )
-    expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 1, 0, 0)))
 })
 
 test_that("Special-case functions: moma_twfpca", {
@@ -803,7 +803,7 @@ test_that("Special-case functions: moma_twfpca", {
 
 
     expect_warning(a <- moma_twfpca(X))
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
 
     expect_no_error(
         a <- moma_twfpca(X,
@@ -830,22 +830,22 @@ test_that("Special-case functions: moma_twfpca", {
         u_smooth = moma_smoothness(select_scheme = "g"),
         v_smooth = moma_smoothness(select_scheme = "b")
     )
-    expect_true(all(a$selection_scheme_list == c(0, 1, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 1, 0, 0)))
     a <- moma_twfpca(X,
         u_smooth = moma_smoothness(select_scheme = "b"),
         v_smooth = moma_smoothness(select_scheme = "b")
     )
-    expect_true(all(a$selection_scheme_list == c(1, 1, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(1, 1, 0, 0)))
     a <- moma_twfpca(X,
         u_smooth = moma_smoothness(select_scheme = "g"),
         v_smooth = moma_smoothness(select_scheme = "g")
     )
-    expect_true(all(a$selection_scheme_list == c(0, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(0, 0, 0, 0)))
     a <- moma_twfpca(X,
         u_smooth = moma_smoothness(select_scheme = "b"),
         v_smooth = moma_smoothness(select_scheme = "g")
     )
-    expect_true(all(a$selection_scheme_list == c(1, 0, 0, 0)))
+    expect_true(all(a$select_scheme_list == c(1, 0, 0, 0)))
 })
 
 test_that("Special-case functions: get_mat_by_index and left_project takes non-ingeters", {

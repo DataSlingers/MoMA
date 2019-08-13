@@ -19,11 +19,11 @@
 #' \describe{
 #'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
 #' The numeric centering and scalings used (if any) of the data matrix.}
-#'   \item{\code{grid_result}}{a 5-D list containing the results evaluated on the paramter grid.}
-#'   \item{\code{selection_scheme_list}}{a list with elements \code{selection_criterion_alpha_u},
-#'            \code{selection_criterion_alpha_v},
-#'            \code{selection_criterion_lambda_u},
-#'            \code{selection_criterion_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
+#'   \item{\code{grid_result}}{A 5-D list containing the results evaluated on the paramter grid.}
+#'   \item{\code{select_scheme_list}}{A list with elements \code{select_scheme_alpha_u},
+#'            \code{select_scheme_alpha_v},
+#'            \code{select_scheme_lambda_u},
+#'            \code{select_scheme_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
 #' and 1 stands for BIC search. TODO: descibe the mixed selection procedure.}
 #' }
 #' @section Methods:
@@ -86,8 +86,8 @@ SFPCA <- R6::R6Class("SFPCA",
         alpha_v = NULL,
         lambda_u = NULL,
         lambda_v = NULL,
-        selection_scheme_list = NULL,
-        pg_setting = NULL,
+        select_scheme_list = NULL,
+        pg_settings = NULL,
         n = NULL,
         p = NULL,
         X = NULL,
@@ -98,8 +98,8 @@ SFPCA <- R6::R6Class("SFPCA",
                                       center = TRUE, scale = FALSE,
                                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
                                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
-                                      pg_setting = moma_pg_settings(),
-                                      selection_scheme_str = "gggg",
+                                      pg_settings = moma_pg_settings(),
+                                      select_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1,
                                       deflation_scheme = "PCA_Hotelling") {
@@ -140,14 +140,14 @@ SFPCA <- R6::R6Class("SFPCA",
             self$rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             # Step 1.3: sparsity
-            error_if_not_of_class(u_sparsity, "moma_sparsity")
-            error_if_not_of_class(v_sparsity, "moma_sparsity")
+            error_if_not_of_class(u_sparsity, "_moma_sparsity_type")
+            error_if_not_of_class(v_sparsity, "_moma_sparsity_type")
             self$u_sparsity <- u_sparsity
             self$v_sparsity <- v_sparsity
 
             # Step 1.4: PG loop settings
-            error_if_not_of_class(pg_setting, "moma_pg_settings")
-            self$pg_setting <- pg_setting
+            error_if_not_of_class(pg_settings, "moma_pg_settings")
+            self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
             Omega_u <- check_omega(Omega_u, alpha_u, n)
@@ -157,15 +157,15 @@ SFPCA <- R6::R6Class("SFPCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            error_if_not_fourchar_bg_string(selection_scheme_str)
+            error_if_not_fourchar_bg_string(select_scheme_str)
 
             # turn "b"/"g" to 1/0
-            # `selection_scheme_list` will be passed to C++ functions
-            selection_scheme_list <- list(
-                selection_criterion_alpha_u = 0,
-                selection_criterion_alpha_v = 0,
-                selection_criterion_lambda_u = 0,
-                selection_criterion_lambda_v = 0
+            # `select_scheme_list` will be passed to C++ functions
+            select_scheme_list <- list(
+                select_scheme_alpha_u = 0,
+                select_scheme_alpha_v = 0,
+                select_scheme_lambda_u = 0,
+                select_scheme_lambda_v = 0
             )
             # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
@@ -186,11 +186,11 @@ SFPCA <- R6::R6Class("SFPCA",
             ), integer(1))
 
             for (i in 1:4) {
-                para_select_str_i <- substr(selection_scheme_str, i, i)
-                selection_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
+                para_select_str_i <- substr(select_scheme_str, i, i)
+                select_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
                 fixed_list[[i]] <- para_select_str_i == "b" || parameter_length_list[[i]] == 1
             }
-            self$selection_scheme_list <- selection_scheme_list
+            self$select_scheme_list <- select_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
@@ -223,8 +223,8 @@ SFPCA <- R6::R6Class("SFPCA",
                     prox_arg_list_u = add_default_prox_args(u_sparsity),
                     prox_arg_list_v = add_default_prox_args(v_sparsity)
                 ),
-                pg_setting,
-                selection_scheme_list,
+                pg_settings,
+                select_scheme_list,
                 list(
                     max_bic_iter = max_bic_iter
                 ),
@@ -330,7 +330,7 @@ SFPCA <- R6::R6Class("SFPCA",
             chkDots(...)
 
             # If BIC scheme has been used for any parameters, exit.
-            if (any(self$selection_scheme_list != 0)) {
+            if (any(self$select_scheme_list != 0)) {
                 moma_error("R6 object SFPCA do not support interpolation when BIC selection scheme has been used.")
             }
 
@@ -383,7 +383,7 @@ SFPCA <- R6::R6Class("SFPCA",
                     # sparsity
                     Omega_u = self$Omega_u, Omega_v = self$Omega_v,
                     alpha_u = alpha_u, alpha_v = alpha_v,
-                    pg_setting = self$pg_setting,
+                    pg_settings = self$pg_settings,
                     k = self$rank
                 )
                 return(list(U = a$u, V = a$v))
@@ -500,7 +500,7 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         print = function() {
-            selection_list_str <- lapply(self$selection_scheme_list, function(x) {
+            selection_list_str <- lapply(self$select_scheme_list, function(x) {
                 if (x == 0) {
                     return("grid search")
                 }
@@ -624,7 +624,7 @@ moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
                        u_sparse = moma_empty(), v_sparse = moma_lasso(),
                        u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                       pg_setting = moma_pg_settings(),
+                       pg_settings = moma_pg_settings(),
                        max_bic_iter = 5,
                        rank = 1,
                        deflation_scheme = "PCA_Hotelling") {
@@ -648,8 +648,8 @@ moma_sfpca <- function(X, ...,
         Omega_v = v_smooth$Omega,
         alpha_u = u_smooth$alpha,
         alpha_v = v_smooth$alpha,
-        pg_setting = pg_setting,
-        selection_scheme_str = paste0( # the order is important
+        pg_settings = pg_settings,
+        select_scheme_str = paste0( # the order is important
             u_smooth$select_scheme,
             v_smooth$select_scheme,
             u_sparse$select_scheme,
@@ -690,7 +690,7 @@ moma_spca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = u_sparse, v_sparse = v_sparse,
         # u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
@@ -728,7 +728,7 @@ moma_twspca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = u_sparse, v_sparse = v_sparse,
         # u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
@@ -764,7 +764,7 @@ moma_fpca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = moma_empty(), v_sparse = moma_empty(),
         u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme
@@ -800,7 +800,7 @@ moma_twfpca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = moma_empty(), v_sparse = moma_empty(),
         u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank,
         deflation_scheme = deflation_scheme

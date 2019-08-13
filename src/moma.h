@@ -172,11 +172,11 @@ class MoMA
                             const arma::vec &alpha_v,
                             const arma::vec &lambda_u,
                             const arma::vec &lambda_v,
-                            int selection_criterion_alpha_u,  // flags; = 0 means grid, = 01
-                                                              // means BIC search
-                            int selection_criterion_alpha_v,
-                            int selection_criterion_lambda_u,
-                            int selection_criterion_lambda_v,
+                            int select_scheme_alpha_u,  // flags; = 0 means grid, = 01
+                                                        // means BIC search
+                            int select_scheme_alpha_v,
+                            int select_scheme_lambda_u,
+                            int select_scheme_lambda_v,
                             int max_bic_iter = 5,
                             int rank         = 1);
 };

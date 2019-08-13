@@ -40,10 +40,10 @@ test_that("Returns correct vectors for chosen parameters", {
         c(
             public_arglist_wo_rank_and_selection,
             list(
-                selection_criterion_alpha_u = 0, # grid
-                selection_criterion_alpha_v = 0, # grid
-                selection_criterion_lambda_u = 1, # bic
-                selection_criterion_lambda_v = 1 # bic
+                select_scheme_alpha_u = 0, # grid
+                select_scheme_alpha_v = 0, # grid
+                select_scheme_lambda_u = 1, # bic
+                select_scheme_lambda_v = 1 # bic
             )
         )
     )

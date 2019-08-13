@@ -26,12 +26,12 @@ test_that("Using cpp_moma_grid_search is equivalent to run MoMA::solve multiple 
         ista.cv <- moma_svd(X,
             Omega_u = O_u, Omega_v = O_v, alpha_u = 0, alpha_v = sm_set,
             lambda_u = 0, lambda_v = sp_set, u_sparsity = lasso(), v_sparsity = sptype(),
-            pg_setting = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "ista", EPS_inner = 1e-9)
+            pg_settings = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "ista", EPS_inner = 1e-9)
         )
         fista.cv <- moma_svd(X,
             Omega_u = O_u, Omega_v = O_v, alpha_u = 0, alpha_v = sm_set,
             lambda_u = 0, lambda_v = sp_set, u_sparsity = lasso(), v_sparsity = sptype(),
-            pg_setting = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "fista", EPS_inner = 1e-9)
+            pg_settings = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "fista", EPS_inner = 1e-9)
         )
         cnt <- 1
         for (sp in sp_set) {
@@ -39,12 +39,12 @@ test_that("Using cpp_moma_grid_search is equivalent to run MoMA::solve multiple 
                 ista <- moma_svd(X,
                     Omega_u = O_u, Omega_v = O_v, alpha_u = 0, alpha_v = sm,
                     lambda_u = 0, lambda_v = sp, u_sparsity = lasso(), v_sparsity = sptype(),
-                    pg_setting = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "ista", EPS_inner = 1e-9)
+                    pg_settings = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "ista", EPS_inner = 1e-9)
                 )
                 fista <- moma_svd(X,
                     Omega_u = O_u, Omega_v = O_v, alpha_u = 0, alpha_v = sm,
                     lambda_u = 0, lambda_v = sp, u_sparsity = lasso(), v_sparsity = sptype(),
-                    pg_setting = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "fista", EPS_inner = 1e-9)
+                    pg_settings = moma_pg_settings(EPS = 1e-14, MAX_ITER = 1e+5, solver = "fista", EPS_inner = 1e-9)
                 )
 
                 # Cannot use expect_equal here due to numerical error

@@ -58,8 +58,8 @@ SFCCA <- R6::R6Class("SFCCA",
         alpha_y = NULL,
         lambda_x = NULL,
         lambda_y = NULL,
-        selection_scheme_list = NULL,
-        pg_setting = NULL,
+        select_scheme_list = NULL,
+        pg_settings = NULL,
         n = NULL,
         px = NULL,
         py = NULL, # CCA_SPECIAL_PART, number of groups
@@ -73,8 +73,8 @@ SFCCA <- R6::R6Class("SFCCA",
                                       center = TRUE, scale = FALSE,
                                       x_sparsity = empty(), y_sparsity = empty(), lambda_x = 0, lambda_y = 0, # lambda_x/_y is a vector or scalar
                                       Omega_x = NULL, Omega_y = NULL, alpha_x = 0, alpha_y = 0, # so is alpha_x/_y
-                                      pg_setting = moma_pg_settings(),
-                                      selection_scheme_str = "gggg",
+                                      pg_settings = moma_pg_settings(),
+                                      select_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1) {
             chkDots(...)
@@ -143,10 +143,10 @@ SFCCA <- R6::R6Class("SFCCA",
             self$y_coln <- colnames(Y) %||% paste0("Ycol_", seq_len(py))
 
             # Step 1.3: sparsity
-            if (!inherits(x_sparsity, "moma_sparsity") || !inherits(y_sparsity, "moma_sparsity")) {
+            if (!inherits(x_sparsity, "_moma_sparsity_type") || !inherits(y_sparsity, "_moma_sparsity_type")) {
                 moma_error(
                     "Sparse penalty should be of class ",
-                    sQuote("moma_sparsity"),
+                    sQuote("_moma_sparsity_type"),
                     ". Try using, for example, `x_sparsity = lasso()`."
                 )
             }
@@ -154,14 +154,14 @@ SFCCA <- R6::R6Class("SFCCA",
             self$y_sparsity <- y_sparsity
 
             # Step 1.4: PG loop settings
-            if (!inherits(pg_setting, "moma_pg_settings")) {
+            if (!inherits(pg_settings, "moma_pg_settings")) {
                 moma_error(
-                    "pg_setting penalty should be of class ",
+                    "pg_settings penalty should be of class ",
                     sQuote("moma_pg_settings"),
-                    ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
+                    ". Try using, for example, `pg_settings = moma_pg_settings(MAX_ITER=1e+4)`."
                 )
             }
-            self$pg_setting <- pg_setting
+            self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
             Omega_x <- check_omega(Omega_x, alpha_x, px)
@@ -171,22 +171,22 @@ SFCCA <- R6::R6Class("SFCCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(selection_scheme_str, "character") ||
-                nchar(selection_scheme_str) != 4 ||
-                !all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
+            if (!inherits(select_scheme_str, "character") ||
+                nchar(select_scheme_str) != 4 ||
+                !all(strsplit(select_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
                 moma_error(
-                    "Invalid selection_scheme_str ", selection_scheme_str,
+                    "Invalid select_scheme_str ", select_scheme_str,
                     ". It should be a four-char string containing only 'b' or 'g'."
                 )
             }
 
             # turn "b"/"g" to 1/0
-            # `selection_scheme_list` will be passed to C++ functions
-            selection_scheme_list <- list(
-                selection_criterion_alpha_x = 0,
-                selection_criterion_alpha_y = 0,
-                selection_criterion_lambda_x = 0,
-                selection_criterion_lambda_y = 0
+            # `select_scheme_list` will be passed to C++ functions
+            select_scheme_list <- list(
+                select_scheme_alpha_x = 0,
+                select_scheme_alpha_y = 0,
+                select_scheme_lambda_x = 0,
+                select_scheme_lambda_y = 0
             )
             # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
@@ -207,13 +207,13 @@ SFCCA <- R6::R6Class("SFCCA",
                 self$lambda_y
             ))
             for (i in 1:4) {
-                selection_scheme_list[[i]] <-
-                    ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
+                select_scheme_list[[i]] <-
+                    ifelse(substr(select_scheme_str, i, i) == "g", 0, 1)
 
                 fixed_list[[i]] <-
-                    substr(selection_scheme_str, i, i) == "b" || parameter_length_list[i] == 1
+                    substr(select_scheme_str, i, i) == "b" || parameter_length_list[i] == 1
             }
-            self$selection_scheme_list <- selection_scheme_list
+            self$select_scheme_list <- select_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
@@ -245,12 +245,12 @@ SFCCA <- R6::R6Class("SFCCA",
                     prox_arg_list_u = add_default_prox_args(x_sparsity),
                     prox_arg_list_v = add_default_prox_args(y_sparsity)
                 ),
-                pg_setting,
+                pg_settings,
                 list(
-                    selection_criterion_alpha_u = selection_scheme_list$selection_criterion_alpha_x,
-                    selection_criterion_alpha_v = selection_scheme_list$selection_criterion_alpha_y,
-                    selection_criterion_lambda_u = selection_scheme_list$selection_criterion_lambda_x,
-                    selection_criterion_lambda_v = selection_scheme_list$selection_criterion_lambda_y
+                    select_scheme_alpha_u = select_scheme_list$select_scheme_alpha_x,
+                    select_scheme_alpha_v = select_scheme_list$select_scheme_alpha_y,
+                    select_scheme_lambda_u = select_scheme_list$select_scheme_lambda_x,
+                    select_scheme_lambda_v = select_scheme_list$select_scheme_lambda_y
                 ),
                 list(
                     max_bic_iter = max_bic_iter
@@ -371,7 +371,7 @@ SFCCA <- R6::R6Class("SFCCA",
         },
 
         print = function() {
-            selection_list_str <- lapply(self$selection_scheme_list, function(x) {
+            selection_list_str <- lapply(self$select_scheme_list, function(x) {
                 if (x == 0) {
                     return("grid search")
                 }
@@ -571,7 +571,7 @@ moma_sfcca <- function(X, ..., Y,
                        center = TRUE, scale = FALSE,
                        x_sparse = moma_empty(), y_sparse = moma_empty(),
                        x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                       pg_setting = moma_pg_settings(),
+                       pg_settings = moma_pg_settings(),
                        max_bic_iter = 5,
                        rank = 1) {
     chkDots(...)
@@ -608,8 +608,8 @@ moma_sfcca <- function(X, ..., Y,
         Omega_y = y_smooth$Omega,
         alpha_x = x_smooth$alpha,
         alpha_y = y_smooth$alpha,
-        pg_setting = pg_setting,
-        selection_scheme_str = paste0( # the order is important
+        pg_settings = pg_settings,
+        select_scheme_str = paste0( # the order is important
             x_smooth$select_scheme,
             y_smooth$select_scheme,
             x_sparse$select_scheme,
@@ -629,7 +629,7 @@ moma_scca <- function(X, ..., Y,
                       center = TRUE, scale = FALSE,
                       x_sparse = moma_empty(), y_sparse = moma_empty(),
                       #    x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
@@ -649,7 +649,7 @@ moma_scca <- function(X, ..., Y,
         center = center, scale = scale,
         x_sparse = x_sparse, y_sparse = y_sparse,
         # x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -666,7 +666,7 @@ moma_twscca <- function(X, ..., Y,
                         center = TRUE, scale = FALSE,
                         x_sparse = moma_empty(), y_sparse = moma_empty(),
                         #    x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
@@ -686,7 +686,7 @@ moma_twscca <- function(X, ..., Y,
         center = center, scale = scale,
         x_sparse = x_sparse, y_sparse = y_sparse,
         # x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -701,7 +701,7 @@ moma_fcca <- function(X, ..., Y,
                       center = TRUE, scale = FALSE,
                       #    x_sparse = moma_empty(), y_sparse = moma_empty(),
                       x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
@@ -721,7 +721,7 @@ moma_fcca <- function(X, ..., Y,
         center = center, scale = scale,
         # x_sparse = x_sparse, y_sparse = y_sparse,
         x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
@@ -736,7 +736,7 @@ moma_twfcca <- function(X, ..., Y,
                         center = TRUE, scale = FALSE,
                         #    x_sparse = moma_empty(), y_sparse = moma_empty(),
                         x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
@@ -756,7 +756,7 @@ moma_twfcca <- function(X, ..., Y,
         center = center, scale = scale,
         # x_sparse = x_sparse, y_sparse = y_sparse,
         x_smooth = x_smooth, y_smooth = y_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
         rank = rank
     ))
