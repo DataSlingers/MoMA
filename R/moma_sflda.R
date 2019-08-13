@@ -122,10 +122,10 @@ SFLDA <- R6::R6Class("SFLDA",
             self$y_coln <- levels(Y_factor) # LDA_SPECIAL_PART
 
             # Step 1.3: sparsity
-            if (!inherits(x_sparsity, "moma_sparsity") || !inherits(y_sparsity, "moma_sparsity")) {
+            if (!inherits(x_sparsity, "_moma_sparsity_type") || !inherits(y_sparsity, "_moma_sparsity_type")) {
                 moma_error(
                     "Sparse penalty should be of class ",
-                    sQuote("moma_sparsity"),
+                    sQuote("_moma_sparsity_type"),
                     ". Try using, for example, `x_sparsity = lasso()`."
                 )
             }

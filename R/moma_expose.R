@@ -62,12 +62,11 @@ moma_svd <- function(
     }
 
     # Sparsity arguments
-    # "moma_sparsity" includes all penalty types, including fused lasso
-    # group lasso and so on.
-    if (!inherits(u_sparsity, "moma_sparsity") || !inherits(v_sparsity, "moma_sparsity")) {
+    # "_moma_sparsity_type" includes all penalty types
+    if (!inherits(u_sparsity, "_moma_sparsity_type") || !inherits(v_sparsity, "_moma_sparsity_type")) {
         moma_error(
             "Sparse penalty should be of class ",
-            sQuote("moma_sparsity"),
+            sQuote("_moma_sparsity_type"),
             ". Try using, for example, `u_sparsity = lasso()`."
         )
     }

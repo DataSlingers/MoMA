@@ -28,7 +28,7 @@ NULL
 
 empty <- function() {
     arglist <- list()
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -41,7 +41,7 @@ lasso <- function(..., non_negative = FALSE) {
         moma_error(sQuote("non_negative"), " should be a boolean value.")
     }
     arglist <- list(nonneg = non_negative, P = "LASSO")
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -80,7 +80,7 @@ mcp <- function(..., gamma = 3, non_negative = FALSE) {
         )
     }
     arglist <- list(gamma = gamma, nonneg = non_negative, P = "MCP")
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -120,7 +120,7 @@ scad <- function(..., gamma = 3.7, non_negative = FALSE) {
         )
     }
     arglist <- list(gamma = gamma, nonneg = non_negative, P = "SCAD")
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -140,7 +140,7 @@ scad <- function(..., gamma = 3.7, non_negative = FALSE) {
 #' @export
 slope <- function() {
     arglist <- list(P = "SLOPE")
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -176,7 +176,7 @@ grplasso <- function(..., g, non_negative = FALSE) {
         moma_error("Please provide a vector as an indicator of grouping.")
     }
     arglist <- list(group = as.factor(g), P = "GRPLASSO", nonneg = non_negative)
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -215,7 +215,7 @@ fusedlasso <- function(..., algo = c("path", "dp")) {
     algo <- match.arg(algo)
     prox_name <- ifelse(algo == "path", "ORDEREDFUSED", "ORDEREDFUSEDDP")
     arglist <- list(P = prox_name)
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -251,7 +251,7 @@ l1tf <- function(..., l1tf_k = 1) {
     }
     # l1 linear trend filtering
     arglist <- list(P = "L1TRENDFILTERING", l1tf_k = l1tf_k)
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -275,7 +275,7 @@ spfusedlasso <- function(..., lambda2) {
         moma_error("Please specify the correct argument by name.")
     }
     arglist <- list(P = "SPARSEFUSEDLASSO", lambda2 = lambda2)
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 
@@ -316,7 +316,7 @@ cluster <- function(..., w = NULL, ADMM = FALSE,
         acc = acc, prox_eps = eps,
         P = "UNORDEREDFUSION"
     )
-    class(arglist) <- "moma_sparsity"
+    class(arglist) <- "_moma_sparsity_type"
     return(arglist)
 }
 

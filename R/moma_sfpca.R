@@ -140,8 +140,8 @@ SFPCA <- R6::R6Class("SFPCA",
             self$rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             # Step 1.3: sparsity
-            error_if_not_of_class(u_sparsity, "moma_sparsity")
-            error_if_not_of_class(v_sparsity, "moma_sparsity")
+            error_if_not_of_class(u_sparsity, "_moma_sparsity_type")
+            error_if_not_of_class(v_sparsity, "_moma_sparsity_type")
             self$u_sparsity <- u_sparsity
             self$v_sparsity <- v_sparsity
 
