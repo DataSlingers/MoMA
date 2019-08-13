@@ -41,6 +41,36 @@ SFCCA <- R6::R6Class("SFCCA",
             )
             private$check_input_index <- TRUE
             return(res)
+        },
+        private_error_if_extra_arg = function(..., is_missing) {
+            is_fixed <- self$fixed_list
+            if (any(is_fixed == TRUE & is_missing == FALSE)) {
+                param_str_list <- c("alpha_x", "alpha_y", "lambda_x", "lambda_y")
+                output_para <- is_missing == FALSE & is_fixed == TRUE
+
+                moma_error(
+                    paste0(
+                        "Invalid index: ",
+                        paste(param_str_list[output_para], collapse = ", "),
+                        ". Do not specify indexes of parameters ",
+                        "i) that are chosen by BIC, or ",
+                        "ii) that are not specified during initialization of the SFCCA object, or ",
+                        "iii) that are scalars during initialization of the SFCCA object."
+                    )
+                )
+            }
+        },
+        private_error_if_not_indeces = function(...,
+                                                        alpha_x, alpha_y, lambda_x, lambda_y) {
+            error_if_not_finite_numeric_scalar(alpha_x)
+            error_if_not_finite_numeric_scalar(alpha_y)
+            error_if_not_finite_numeric_scalar(lambda_x)
+            error_if_not_finite_numeric_scalar(lambda_y)
+
+            error_if_not_wholenumber(alpha_x)
+            error_if_not_wholenumber(alpha_y)
+            error_if_not_wholenumber(lambda_x)
+            error_if_not_wholenumber(lambda_y)
         }
     ),
     public = list(
@@ -80,19 +110,11 @@ SFCCA <- R6::R6Class("SFCCA",
             chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
-            if (!inherits(alpha_x, c("numeric", "integer")) ||
-                !inherits(alpha_y, c("numeric", "integer")) ||
-                !inherits(lambda_x, c("numeric", "integer")) ||
-                !inherits(lambda_y, c("numeric", "integer"))) {
-                moma_error(paste0(
-                    "All penalty levels (",
-                    sQuote("lambda_x"), ", ",
-                    sQuote("lambda_y"), ", ",
-                    sQuote("alpha_x"), ", ",
-                    sQuote("alpha_y"),
-                    ") must be numeric."
-                ))
-            }
+            error_if_not_valid_parameters(alpha_x)
+            error_if_not_valid_parameters(alpha_y)
+            error_if_not_valid_parameters(lambda_x)
+            error_if_not_valid_parameters(lambda_y)
+
             self$alpha_x <- alpha_x
             self$alpha_y <- alpha_y
             self$lambda_x <- lambda_x
@@ -102,12 +124,8 @@ SFCCA <- R6::R6Class("SFCCA",
             # CCA_SPECIAL_PART
             X <- as.matrix(X)
             Y <- as.matrix(Y)
-            if (any(!is.finite(X))) {
-                moma_error("X must not have NaN, NA, or Inf.")
-            }
-            if (any(!is.finite(Y))) {
-                moma_error("Y must not have NaN, NA, or Inf.")
-            }
+            error_if_not_valid_data_matrix(X)
+            error_if_not_valid_data_matrix(Y)
             if (dim(X)[1] != dim(Y)[1]) {
                 moma_error("`X` and `Y` must have the same number of samples.")
             }
@@ -143,24 +161,13 @@ SFCCA <- R6::R6Class("SFCCA",
             self$y_coln <- colnames(Y) %||% paste0("Ycol_", seq_len(py))
 
             # Step 1.3: sparsity
-            if (!inherits(x_sparsity, "_moma_sparsity_type") || !inherits(y_sparsity, "_moma_sparsity_type")) {
-                moma_error(
-                    "Sparse penalty should be of class ",
-                    sQuote("_moma_sparsity_type"),
-                    ". Try using, for example, `x_sparsity = lasso()`."
-                )
-            }
+            error_if_not_of_class(x_sparsity, "_moma_sparsity_type")
+            error_if_not_of_class(y_sparsity, "_moma_sparsity_type")
             self$x_sparsity <- x_sparsity
             self$y_sparsity <- y_sparsity
 
             # Step 1.4: PG loop settings
-            if (!inherits(pg_settings, "moma_pg_settings")) {
-                moma_error(
-                    "pg_settings penalty should be of class ",
-                    sQuote("moma_pg_settings"),
-                    ". Try using, for example, `pg_settings = moma_pg_settings(MAX_ITER=1e+4)`."
-                )
-            }
+            error_if_not_of_class(pg_settings, "moma_pg_settings")
             self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
@@ -171,14 +178,7 @@ SFCCA <- R6::R6Class("SFCCA",
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(select_scheme_str, "character") ||
-                nchar(select_scheme_str) != 4 ||
-                !all(strsplit(select_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
-                moma_error(
-                    "Invalid select_scheme_str ", select_scheme_str,
-                    ". It should be a four-char string containing only 'b' or 'g'."
-                )
-            }
+            error_if_not_fourchar_bg_string(select_scheme_str)
 
             # turn "b"/"g" to 1/0
             # `select_scheme_list` will be passed to C++ functions
@@ -200,12 +200,13 @@ SFCCA <- R6::R6Class("SFCCA",
                 is_lambda_y_fixed = FALSE
             )
 
-            parameter_length_list <- sapply(FUN = length, list(
+            parameter_length_list <- vapply(FUN = length, list(
                 self$alpha_x,
                 self$alpha_y,
                 self$lambda_x,
                 self$lambda_y
-            ))
+            ), integer(1))
+
             for (i in 1:4) {
                 select_scheme_list[[i]] <-
                     ifelse(substr(select_scheme_str, i, i) == "g", 0, 1)
@@ -223,7 +224,7 @@ SFCCA <- R6::R6Class("SFCCA",
                 !is.wholenumber(rank) ||
                 rank <= 0 ||
                 rank > min(px, py, n)) { # CCA_SPECIAL_PART
-                moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
+                moma_error("`rank` should be a positive integer smaller than the minimum-dimension of the data matrix.")
             }
             self$rank <- rank
 
@@ -277,26 +278,15 @@ SFCCA <- R6::R6Class("SFCCA",
         get_mat_by_index = function(..., alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1) {
             chkDots(...)
 
-            # they should be of length 1
-            parameter_length_list <- sapply(FUN = length, list(
-                alpha_x,
-                alpha_y,
-                lambda_x,
-                lambda_y
-            ))
-            if (any(parameter_length_list > 1)) {
-                moma_error("Non-length-one input in SFCCA::get_mat_by_index.")
-            }
+            error_if_not_finite_numeric_scalar(alpha_x)
+            error_if_not_finite_numeric_scalar(alpha_y)
+            error_if_not_finite_numeric_scalar(lambda_x)
+            error_if_not_finite_numeric_scalar(lambda_y)
 
-            # indices should be integers
-            if (!all(
-                is.wholenumber(alpha_x),
-                is.wholenumber(alpha_y),
-                is.wholenumber(lambda_x),
-                is.wholenumber(lambda_y)
-            )) {
-                moma_error("Non-integer input in SFCCA::get_mat_by_index.")
-            }
+            error_if_not_wholenumber(alpha_x)
+            error_if_not_wholenumber(alpha_y)
+            error_if_not_wholenumber(lambda_x)
+            error_if_not_wholenumber(lambda_y)
 
             # A "fixed" parameter should not be specified
             # at all (this is a bit stringent, can be improved later).
@@ -309,17 +299,7 @@ SFCCA <- R6::R6Class("SFCCA",
             # we skip the input checking
             if (private$check_input_index) {
                 is_missing <- list(missing(alpha_x), missing(alpha_y), missing(lambda_x), missing(lambda_y))
-                is_fixed <- self$fixed_list
-                if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                    moma_error(
-                        paste0(
-                            "Invalid index in SFCCA::get_mat_by_index. Do not specify indexes of parameters ",
-                            "i) that are chosen by BIC, or ",
-                            "ii) that are not specified during initialization of the SFCCA object, or ",
-                            "iii) that are scalars during initialization of the SFCCA object."
-                        )
-                    )
-                }
+                private$private_error_if_extra_arg(is_missing = is_missing)
             }
 
             n <- self$n
@@ -400,38 +380,19 @@ SFCCA <- R6::R6Class("SFCCA",
             # check indexes
             if (private$check_input_index) {
                 is_missing <- list(missing(alpha_x), missing(alpha_y), missing(lambda_x), missing(lambda_y))
-                is_fixed <- self$fixed_list
-                if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                    moma_error(
-                        paste0(
-                            "Invalid index in SFCCA::left_project. Do not specify indexes of parameters ",
-                            "i) that are chosen by BIC, or ",
-                            "ii) that are not specified during initialization of the SFCCA object, or ",
-                            "iii) that are scalars during initialization of the SFCCA object."
-                        )
-                    )
-                }
+                private$private_error_if_extra_arg(is_missing = is_missing)
             }
 
             if (rank > self$rank) {
                 moma_error("Invalid `rank` in SFCCA::left_project.")
             }
 
-            parameter_length_list <- sapply(FUN = length, list(
-                alpha_x,
-                alpha_y,
-                lambda_x,
-                lambda_y
-            ))
-            if (any(parameter_length_list > 1) ||
-                !all(
-                    is.wholenumber(alpha_x),
-                    is.wholenumber(alpha_y),
-                    is.wholenumber(lambda_x),
-                    is.wholenumber(lambda_y)
-                )) {
-                moma_error("Non-integer input in SFCCA::left_project.")
-            }
+            private$private_error_if_not_indeces(
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y
+            )
 
             X_PC_loadings_rank_k <- private$private_get_mat_by_index(
                 alpha_x = alpha_x,
@@ -473,38 +434,22 @@ SFCCA <- R6::R6Class("SFCCA",
             # check indexes
             if (private$check_input_index) {
                 is_missing <- list(missing(alpha_x), missing(alpha_y), missing(lambda_x), missing(lambda_y))
-                is_fixed <- self$fixed_list
-                if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                    moma_error(
-                        paste0(
-                            "Invalid index in SFCCA::left_project. Do not specify indexes of parameters ",
-                            "i) that are chosen by BIC, or ",
-                            "ii) that are not specified during initialization of the SFCCA object, or ",
-                            "iii) that are scalars during initialization of the SFCCA object."
-                        )
-                    )
-                }
+                private$private_error_if_extra_arg(is_missing = is_missing)
             }
 
             if (rank > self$rank) {
                 moma_error("Invalid `rank` in SFCCA::left_project.")
             }
 
-            parameter_length_list <- sapply(FUN = length, list(
-                alpha_x,
-                alpha_y,
-                lambda_x,
-                lambda_y
-            ))
-            if (any(parameter_length_list > 1) ||
-                !all(
-                    is.wholenumber(alpha_x),
-                    is.wholenumber(alpha_y),
-                    is.wholenumber(lambda_x),
-                    is.wholenumber(lambda_y)
-                )) {
-                moma_error("Non-integer input in SFCCA::left_project.")
-            }
+            error_if_not_finite_numeric_scalar(alpha_x)
+            error_if_not_finite_numeric_scalar(alpha_y)
+            error_if_not_finite_numeric_scalar(lambda_x)
+            error_if_not_finite_numeric_scalar(lambda_y)
+
+            error_if_not_wholenumber(alpha_x)
+            error_if_not_wholenumber(alpha_y)
+            error_if_not_wholenumber(lambda_x)
+            error_if_not_wholenumber(lambda_y)
 
             Y_PC_loadings_rank_k <- private$private_get_mat_by_index(
                 alpha_x = alpha_x,
