@@ -7,3 +7,47 @@ navbar:
   right:
     - icon: fa-github fa-lg
       href: https://github.com/michaelweylandt/MoMA
+
+reference:
+  - title: Home Page
+    desc: ~
+    contents:
+    - 'MoMA'
+  - title: Sparsity Choices
+    desc: ~
+    contents:
+    - '`moma_sparsity_options`'
+    - '`lasso`'
+    - '`mcp`'
+    - '`scad`'
+    - '`fused_lasso`'
+    - '`sparse_fused_lasso`'
+    - '`slope`'
+    - '`group_lasso`'
+    - '`l1_trend_filtering`'
+    - '`cluster`'
+  - title: Smoothness Choices
+    desc: ~
+    contents: 
+    - '`moma_smoothness`'
+    - '`second_diff_mat`'
+  - title: Selection Scheme of Tuning Parameters
+    desc: ~
+    contents:
+    - '`select_scheme`'
+  - title: Multivariate Models
+    desc: ~
+    contents:
+    - '`moma_R6`'
+    - '`moma_sfcca`'
+    - '`moma_sflda`'
+    - '`moma_sfpca`'
+  - title: Logging
+    desc: ~
+    contents:
+    - '`moma_logger_level`'
+    - '`moma_session_info`'
+  - title: Algorithm Settings
+    desc: ~
+    contents:
+    - '`moma_pg_settings`'

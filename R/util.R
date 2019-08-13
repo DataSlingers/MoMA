@@ -180,6 +180,14 @@ check_omega <- function(Omega, alpha, n) {
     return(Omega)
 }
 
+
+#' Second difference matrix
+#'
+#' This function returns a second difference matrix of size \eqn{n}.
+#'
+#' @param n An integer. The size of the returned matrix.
+#' @name second_diff_mat
+#' @export
 second_diff_mat <- function(n) {
     return(crossprod(diff(diag(n))))
 }
