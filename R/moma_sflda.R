@@ -257,16 +257,12 @@ SFLDA <- R6::R6Class("SFLDA",
             chkDots(...)
 
             # they should be of length 1
-            error_if_not_finite_numeric_scalar(alpha_x)
-            error_if_not_finite_numeric_scalar(alpha_y)
-            error_if_not_finite_numeric_scalar(lambda_x)
-            error_if_not_finite_numeric_scalar(lambda_y)
-
-            error_if_not_wholenumber(alpha_x)
-            error_if_not_wholenumber(alpha_y)
-            error_if_not_wholenumber(lambda_x)
-            error_if_not_wholenumber(lambda_y)
-
+            private$private_error_if_not_indeces(
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y
+            )
             # A "fixed" parameter should not be specified
             # at all (this is a bit stringent, can be improved later).
             # "Fixed" parameters are those
@@ -621,23 +617,10 @@ moma_sflda <- function(X, ..., Y_factor,
                        max_bic_iter = 5,
                        rank = 1) {
     chkDots(...)
-    if (!inherits(x_sparse, "moma_sparsity_type") ||
-        !inherits(y_sparse, "moma_sparsity_type")) {
-        moma_error(
-            "Invalid argument: ",
-            sQuote("x_sparse / y_sparse"),
-            ". They should be of class `moma_sparsity_type`."
-        )
-    }
-
-    if (!inherits(x_smooth, "moma_smoothness_type") ||
-        !inherits(y_smooth, "moma_smoothness_type")) {
-        moma_error(
-            "Invalid argument: ",
-            sQuote("x_smooth / y_smooth"),
-            ". They should be of class `moma_smoothness_type`."
-        )
-    }
+    error_if_not_of_class(x_sparse, "moma_sparsity_type")
+    error_if_not_of_class(y_sparse, "moma_sparsity_type")
+    error_if_not_of_class(x_smooth, "moma_smoothness_type")
+    error_if_not_of_class(y_smooth, "moma_smoothness_type")
 
 
     return(SFLDA$new(
