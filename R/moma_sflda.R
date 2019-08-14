@@ -197,7 +197,7 @@ SFLDA <- R6::R6Class("SFLDA",
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
-            # w.r.t to certain numric precision
+            # w.r.t to certain numeric precision
             if (!inherits(rank, "numeric") ||
                 !is.wholenumber(rank) ||
                 rank <= 0 ||
