@@ -1,6 +1,6 @@
 template:
   params:
-    bootswatch: paper
+    bootswatch: flatly
 
 navbar:
   type: inverse
