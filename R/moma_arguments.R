@@ -13,10 +13,13 @@
 #'   \item{\code{\link{moma_l1tf}}}: piece-wise quadratic
 #'   \item{\code{\link{moma_cluster}}}: structured sparsity
 #' }
-#' These functions specify the value of the \code{u/v/x/y_sparse} argument in functions like
-#' \code{moma_sfpca}, \code{moma_sfcca} and \code{moma_sflda}. They should be called with
-#' prefix "\code{moma_}". All functions share
-#' two common parameters: \code{lambda} and \code{select_scheme}.
+#' These functions specify the value of the \code{u_sparse,v_sparse} arguments in the 
+#'  \code{moma_*pca} series of functions, and the \code{x_sparse,y_sparse} arguments
+#' in the \code{moma_*cca} and \code{moma_*lda} series of functions. 
+#' 
+#' All functions 
+#' above share two common parameters: \code{lambda} and \code{select_scheme}, which are
+#' described in the Arguments section below.
 #' @name moma_sparsity_options
 #' @param ... Force users to specify arguments by names.
 #' @param lambda A vector containing penalty values
@@ -459,8 +462,9 @@ moma_cluster <- create_moma_sparsity_func(cluster)
 
 #' Smoothness-inducing Term
 #'
-#' This function specifies the value of the \code{u/v/x/y_smooth} argument in functions like
-#' \code{moma_sfpca}, \code{moma_sfcca} and \code{moma_sflda}.
+#' This function specifies the value of the \code{u_smooth,v_smooth} arguments in the 
+#'  \code{moma_*pca} series of functions, and the \code{x_smooth,y_smooth} arguments
+#' in the \code{moma_*cca} and \code{moma_*lda} series of functions. 
 #' @param Omega A matrix of appropriate size. A common choice is the second difference matrix.
 #' See \code{\link{second_diff_mat}}.
 #' @param alpha A vector containing penalty values
