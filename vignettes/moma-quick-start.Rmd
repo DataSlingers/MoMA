@@ -12,14 +12,15 @@ vignette: >
 
 ```{r echo=FALSE,cache=FALSE}
 set.seed(1234)
-knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(cache = TRUE)
 ```
 
-TEXT GOES HERE
+The unified SFPCA (Sparse and Functional Principal Component Analysis) method enjoys many advantages over existing approaches to regularized PCA: i, because it allows for arbitrary degrees and forms of regularization, it is conducive to data-driven determination of the appropriate types and amount of regularization for a given problem; ii, because it unifies many existing methods, it inherits the desirable properties of both SPCA and FPCA, including superior signal recovery, automatic feature selection, and improved interpretability; and iii, it admits a tractable, efficient, and theoretically well-grounded algorithm. The problem is formulated as follows.
+
+$$\underset{{u} \in \overline{\mathbb{B}}_{{u}}^{n}, {v} \in \overline{\mathbb{B}}_{{S}_{v}}^{p}}\max{u}^{T} {X} {v}-\lambda_{{u}} P_{{u}}({u})-\lambda_{{v}} P_{{v}}({v})$$
+where $\overline{\mathbb{B}}_{S_{u}}^{n}=\left\{u \in \mathbb{R}^{n} :{u}^{T} {S}_{u} {u} \leq 1 \right\}$.
 
 `MoMA` uses the `Rcpp` and `RcppArmadillo` libraries for speed
 [@Eddelbuettel:2011; @Eddelbuettel:2014; @Sanderson:2016].
 
 ## References
-
-
