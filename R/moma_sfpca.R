@@ -150,6 +150,10 @@ SFPCA <- R6::R6Class("SFPCA",
             self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
+            # if alpha = 0: overwrite Omega_u to identity matrix whatever it was
+            # if alpha is a grid or a non-zero scalar:
+            #       if Omega missing: set to second-difference matrix
+            #       else check validity
             Omega_u <- check_omega(Omega_u, alpha_u, n)
             Omega_v <- check_omega(Omega_v, alpha_v, p)
             self$Omega_u <- Omega_u

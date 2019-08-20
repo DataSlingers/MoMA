@@ -147,6 +147,12 @@ check_omega <- function(Omega, alpha, n) {
         moma_error("Omega_u/v is not a matrix.")
     }
 
+    ## LOGIC:
+    # if alpha = 0: overwrite Omega_u to identity matrix whatever it was
+    # if alpha is a grid or a non-zero scalar:
+    #       if Omega missing: set to second-difference matrix
+    #       else check validity
+
     # TODO: store them as sparse matrices using the package Matrix
     if (length(alpha) == 1 && alpha == 0) {
         # discard the Omega matrix specified by users
@@ -155,7 +161,8 @@ check_omega <- function(Omega, alpha, n) {
     else if (is.null(Omega)) {
         # The user wants smooth penalty
         # but does not specify Omega matrix
-        Omega <- second_diff_mat(n) # TODO: should just prompt an error instead of giving Omega a value
+        Omega <- second_diff_mat(n)
+        moma_info("Use the second difference matrix as the default smoothing matrix.")
     }
     else {
         # At this point, users have specified an Omega and
