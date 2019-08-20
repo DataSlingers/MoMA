@@ -1,47 +1,3 @@
-#' \code{SFPCA} \code{R6} object
-#'
-#' An \code{R6} object for performing SFPCA and parameter selection
-#'
-#' During initialziation of an \code{SFPCA} object, \code{R}
-#' calls the \code{C++}-side function, \code{cpp_multirank_BIC_grid_search}, and
-#' wraps the results returned. The \code{SFPCA} object also records penalty levels
-#' and selection schemes of tuning parameters. Several helper
-#' methods are provivded to facilitate access to results.
-#' Initialization is delegated to \code{\link{moma_sfpca}}.
-#' @seealso \code{\link{moma_sfpca}},
-#' \code{\link{moma_spca}},
-#' \code{\link{moma_fpca}},
-#' \code{\link{moma_twspca}},
-#' \code{\link{moma_twfpca}}
-#'
-#' @section Members:
-#'
-#' \describe{
-#'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
-#' The numeric centering and scalings used (if any) of the data matrix.}
-#'   \item{\code{grid_result}}{A 5-D list containing the results evaluated on the paramter grid.}
-#'   \item{\code{select_scheme_list}}{A list with elements \code{select_scheme_alpha_u},
-#'            \code{select_scheme_alpha_v},
-#'            \code{select_scheme_lambda_u},
-#'            \code{select_scheme_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
-#' and 1 stands for BIC search. TODO: descibe the mixed selection procedure.}
-#' }
-#' @section Methods:
-#'
-#' \describe{
-#'   \item{\code{get_mat_by_index}}{Arguments: \code{alpha_u}, \code{alpha_v}, \code{lambda_u}, \code{lambda_v}
-#' are the indices of the parameters in the paramter grid, which is specified during initialization.
-#'
-#' Obtain the right and left sigular penalized vectors, which are packed into matrices \code{U} and \code{V}.}
-#'   \item{\code{print}}{Display tuning parameters and selection schemes.}
-#'   \item{\code{left_project}}{Arguments: \code{newX}, a matrix (un-centered and un-scaled) of
-#' the same number of columns as the original data matrix.
-#'
-#' Project the new data into the space spaned by the
-#' penalized left singular vectors, after scaling and centering as needed.}
-#' }
-#' @return an \code{SFPCA} R6 object.
-#' @export
 SFPCA <- R6::R6Class("SFPCA",
     private = list(
         check_input_index = TRUE,
@@ -161,6 +117,7 @@ SFPCA <- R6::R6Class("SFPCA",
             self$lambda_v <- lambda_v
 
             # Step 1.2: matrix
+            X <- as.matrix(X)
             error_if_not_valid_data_matrix(X)
             n <- dim(X)[1]
             p <- dim(X)[2]
@@ -179,8 +136,8 @@ SFPCA <- R6::R6Class("SFPCA",
             self$n <- n
             self$p <- p
             self$X <- X
-            self$coln <- colnames(X) %||% paste0("Xcol_", seq_len(p))
-            self$rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
+            self$X_coln <- colnames(X) %||% paste0("Xcol_", seq_len(p))
+            self$X_rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             # Step 1.3: sparsity
             error_if_not_of_class(u_sparsity, "_moma_sparsity_type")
@@ -589,31 +546,55 @@ SFPCA <- R6::R6Class("SFPCA",
     )
 )
 
-#' Perform two-way sparse and functional PCA
+#' Deflation Schemes for PCA
 #'
-#' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns.
-#' @param X data matrix.
-#' @param ... force users to specify arguments by names
-#' @param center a logical value indicating whether the variables should be shifted to be zero centered.
-#' Defaults to \code{TRUE}.
-#' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
-#' Defaults to \code{FALSE}.
-#' @param u_sparse,v_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
-#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
-#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
+#' In \code{MoMA} three deflation schemes are provided for PCA.
+#' Using terminology in the reference, they are Hotelling's deflation,
+#' two-way projection deflation, and Schur complement deflation.
+#'
+#' See the parameter \code{deflation_scheme} arguemnt in the function
+#' \code{moma_sfpca}. Also refer to the reference below
+#' for theoretical properties.
+#'
+#' @references Michael Weylandt. "Multi-Rank Sparse and Functional PCA: Manifold Optimization and
+#' Iterative Deflation Techniques." arXiv:1907.12012v1, 2019.
+#' @name PCA_deflation
+NULL
+
+#' Sparse and functional PCA
+#'
+#' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns it.
+#' @param u_sparse,v_sparse An object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
+#'        specified by functions described in \code{\link{moma_sparsity_options}}. It specifies the type of sparsity-inducing
+#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameters must not be
 #'        specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
-#' @param u_smooth,v_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
+#' @param u_smooth,v_smooth An object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
 #'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#'           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
+#'           terms used in the model. Note that for \code{moma_fpca}, these two parameters must not be
 #'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
-#' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
-#'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
-#'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
-#' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
-#' in nested greedy BIC selection scheme.
-#' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
 #' @param deflation_scheme A string specifying the deflation scheme.
 #'          It should be one of \code{"PCA_Hotelling", "PCA_Schur_complement", "PCA_Projection"}.
+#'
+#' In the discussion below, let \eqn{u,v} be the normalized vectors obtained by
+#' scaling the penalized singular vectors.
+#'
+#' When \code{deflation_scheme = "Hotelling_deflation"} is specified, the following deflation
+#' scheme is used. \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-d_{t} \boldsymbol{u}_{t} \boldsymbol{v}_{t}^{T}},
+#' where \eqn{d_{t}=\boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}.
+#'
+#' When \code{deflation_scheme = "PCA_Schur_complement"} is specified, the following deflation
+#' scheme is used: \eqn{\boldsymbol{X}_{t} :=\left(\boldsymbol{I}_{n}-
+#' \boldsymbol{u}_{t} \boldsymbol{u}_{t}^{T}\right) \boldsymbol{X}_{t-1}
+#' \left(\boldsymbol{I}_{p}-\boldsymbol{v}_{t} \boldsymbol{v}_{t}^{T}\right)}.
+#'
+#' When \code{deflation_scheme = "PCA_Projection"} is specified, the following deflation
+#' scheme is used:
+#' \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-\frac{\boldsymbol{X}_{t-1}
+#' \boldsymbol{v}_{t} \boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1}}{\boldsymbol{u}_{t}^{T}
+#' \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}}.
+#' @return An R6 object which provides helper functions to access the results. See \code{\link{moma_R6}}.
+#' @inheritParams moma_sfcca
+#' @name moma_sfpca
 #' @export
 moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
@@ -658,14 +639,14 @@ moma_sfpca <- function(X, ...,
 
 #' Perform one-way sparse PCA
 #'
-#' \code{moma_spca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_spca} is a function for performing one-way sparse PCA.
 #' @export
-#' @describeIn moma_sfpca a function for one-way sparse PCA
+#' @describeIn moma_sfpca a function for performing one-way sparse PCA
 moma_spca <- function(X, ...,
                       center = TRUE, scale = FALSE,
                       u_sparse = moma_empty(), v_sparse = moma_lasso(),
                       #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
                       rank = 1,
                       deflation_scheme = "PCA_Hotelling") {
@@ -696,14 +677,14 @@ moma_spca <- function(X, ...,
 
 #' Perform two-way sparse PCA
 #'
-#' \code{moma_twspca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_twspca} is a function for performing two-way sparse PCA.
 #' @export
-#' @describeIn moma_sfpca a function for two-way sparse PCA
+#' @describeIn moma_sfpca a function for performing two-way sparse PCA
 moma_twspca <- function(X, ...,
                         center = TRUE, scale = FALSE,
                         u_sparse = moma_lasso(), v_sparse = moma_lasso(),
                         #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
                         rank = 1,
                         deflation_scheme = "PCA_Hotelling") {
@@ -732,14 +713,14 @@ moma_twspca <- function(X, ...,
 
 #' Perform one-way functional PCA
 #'
-#' \code{moma_fpca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_fpca} is a function for performing one-way functional PCA.
 #' @export
-#' @describeIn moma_sfpca a function for one-way functional PCA
+#' @describeIn moma_sfpca a function for performing one-way functional PCA
 moma_fpca <- function(X, ...,
                       center = TRUE, scale = FALSE,
                       #    u_sparse = moma_empty(), v_sparse = moma_empty(),
                       u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
                       rank = 1,
                       deflation_scheme = "PCA_Hotelling") {
@@ -768,14 +749,14 @@ moma_fpca <- function(X, ...,
 
 #' Perform two-way functional PCA
 #'
-#' \code{moma_twfpca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_twfpca} is a function for performing two-way functional PCA.
 #' @export
-#' @describeIn moma_sfpca a function for two-way functional PCA
+#' @describeIn moma_sfpca a function for performing two-way functional PCA
 moma_twfpca <- function(X, ...,
                         center = TRUE, scale = FALSE,
                         #    u_sparse = moma_empty(), v_sparse = moma_empty(),
                         u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
                         rank = 1,
                         deflation_scheme = "PCA_Hotelling") {

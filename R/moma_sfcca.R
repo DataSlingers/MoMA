@@ -219,7 +219,7 @@ SFCCA <- R6::R6Class("SFCCA",
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
-            # w.r.t to certain numric precision
+            # w.r.t to certain numeric precision
             if (!inherits(rank, "numeric") ||
                 !is.wholenumber(rank) ||
                 rank <= 0 ||
@@ -483,31 +483,58 @@ SFCCA <- R6::R6Class("SFCCA",
     )
 )
 
-
-#' Perform two-way sparse and functional CCA
+#' The Deflation Scheme for CCA
 #'
-#' \code{moma_sfcca} creates an \code{SFCCA} R6 object and returns.
-#' @param X,Y data matrix.
-#' @param ... force users to specify arguments by names
-#' @param center a logical value indicating whether the variables should be shifted to be zero centered.
+#' In \code{MoMA} one deflation scheme is provided for CCA.
+#'
+#' Let \eqn{X,Y} be two data matrices (properly scaled and centered) of the same number of
+#' rows. Each row represents a sample. The penalized CCA problem is formulated as
+#'
+#' \eqn{ \min_{u,v} \, u^T X^T Y v + \lambda_u P_u(u) + \lambda_v P_v(v)  }
+#'
+#' \eqn{ \text{s.t. } \| u \|_{I+\alpha_u \Omega_u} \leq 1, \| v \|_{I + \alpha_v \Omega_v} \leq 1.  }
+#'
+#' In the discussion below, let \eqn{u,v} be the solution to the above problem.
+#' Let \eqn{c_x = Xu, c_y = Yv}. The deflation scheme is as follow:
+#'
+#' \eqn{X \leftarrow  { X } -  { c_x } \left(  { c_x } ^ { T }  { c_x } \right) ^ { - 1 }  { c_x } ^ { T }  { X }
+#' = ( I - { c_x } \left(  { c_x } ^ { T }  { c_x } \right) ^ { - 1 }  { c_x } ^ { T } )X,}
+#'
+#' \eqn{ Y \leftarrow { Y } -  { c_y } \left(  { c_y } ^ { T }  { c_y } \right) ^ { - 1 }  { c_y } ^ { T }  { Y }
+#' = (I -  { c_y } \left(  { c_y } ^ { T }  { c_y } \right) ^ { - 1 }  { c_y } ^ { T } ) Y}.
+#'
+#' @references De Bie T., Cristianini N., Rosipal R. (2005) Eigenproblems
+#' in Pattern Recognition. In: Handbook of Geometric Computing. Springer, Berlin, Heidelberg
+#' @name CCA_deflation
+NULL
+
+#' Sparse and functional CCA
+#'
+#' \code{moma_sfcca} creates an \code{SFCCA} R6 object and returns it. Type \code{?CCA_deflation} for
+#' description of problem formulation and deflation scheme.
+#'
+#' @param X,Y A data matrix, each row representing a sample, and each column a feature.
+#' @param ... Force users to specify arguments by names.
+#' @param center A logical value indicating whether the variables should be shifted to be zero centered.
 #' Defaults to \code{TRUE}.
-#' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
+#' @param scale A logical value indicating whether the variables should be scaled to have unit variance.
 #' Defaults to \code{FALSE}.
-#' @param x_sparse,y_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
-#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
-#'        penalty function used in the model. Note that for \code{moma_scca}, these two parameter must not be
+#' @param x_sparse,y_sparse An object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
+#'        specified by functions described in \code{\link{moma_sparsity_options}}. It specifies the type of sparsity-inducing
+#'        penalty function used in the model. Note that for \code{moma_scca}, these two parameters must not be
 #'        specified at the same time. For \code{moma_fcca} and \code{moma_twfcca}, they must not be specified.
-#' @param x_smooth,y_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
+#' @param x_smooth,y_smooth An object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
 #'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#'           terms used in the model. Note that for \code{moma_fcca}, these two parameter must not be
+#'           terms used in the model. Note that for \code{moma_fcca}, these two parameters must not be
 #'          specified at the same time. For \code{moma_scca} and \code{moma_twscca}, they must not be specified.
-#' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
+#' @param pg_settings An object of class inheriting from "\code{moma_pg_settings}". Most conviently
 #'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
 #'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
-#' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
+#' @param max_bic_iter A positive integer. Defaults to 5. The maximum number of iterations allowed
 #' in nested greedy BIC selection scheme.
-#' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
+#' @param rank A positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
 #' @export
+
 moma_sfcca <- function(X, ..., Y,
                        center = TRUE, scale = FALSE,
                        x_sparse = moma_empty(), y_sparse = moma_empty(),
@@ -549,9 +576,9 @@ moma_sfcca <- function(X, ..., Y,
 
 #' Perform one-way sparse CCA
 #'
-#' \code{moma_scca} is a wrapper around R6 object \code{SFCCA}
+#' \code{moma_scca} is a function for performing one-way sparse CCA.
 #' @export
-#' @describeIn moma_sfcca a function for one-way sparse CCA
+#' @describeIn moma_sfcca a function for performing one-way sparse CCA.
 moma_scca <- function(X, ..., Y,
                       center = TRUE, scale = FALSE,
                       x_sparse = moma_empty(), y_sparse = moma_empty(),
@@ -586,9 +613,9 @@ moma_scca <- function(X, ..., Y,
 
 #' Perform two-way sparse CCA
 #'
-#' \code{moma_twscca} is a wrapper around R6 object \code{SFCCA}
+#' \code{moma_twscca} is a function for performing two-way sparse CCA.
 #' @export
-#' @describeIn moma_sfcca a function for two-way sparse CCA
+#' @describeIn moma_sfcca a function for performing two-way sparse CCA
 moma_twscca <- function(X, ..., Y,
                         center = TRUE, scale = FALSE,
                         x_sparse = moma_empty(), y_sparse = moma_empty(),
@@ -621,9 +648,9 @@ moma_twscca <- function(X, ..., Y,
 
 #' Perform one-way functional CCA
 #'
-#' \code{moma_fcca} is a wrapper around R6 object \code{SFCCA}
+#' \code{moma_fcca} is a function for performing one-way functional CCA.
 #' @export
-#' @describeIn moma_sfcca a function for one-way functional CCA
+#' @describeIn moma_sfcca a function for performing one-way functional CCA
 moma_fcca <- function(X, ..., Y,
                       center = TRUE, scale = FALSE,
                       #    x_sparse = moma_empty(), y_sparse = moma_empty(),
@@ -656,9 +683,9 @@ moma_fcca <- function(X, ..., Y,
 
 #' Perform two-way functional CCA
 #'
-#' \code{moma_twfcca} is a wrapper around R6 object \code{SFCCA}
+#' \code{moma_twfcca} is a function for performing two-way functional CCA.
 #' @export
-#' @describeIn moma_sfcca a function for two-way functional CCA
+#' @describeIn moma_sfcca a function for performing two-way functional CCA
 moma_twfcca <- function(X, ..., Y,
                         center = TRUE, scale = FALSE,
                         #    x_sparse = moma_empty(), y_sparse = moma_empty(),

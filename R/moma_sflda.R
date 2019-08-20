@@ -197,7 +197,7 @@ SFLDA <- R6::R6Class("SFLDA",
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
-            # w.r.t to certain numric precision
+            # w.r.t to certain numeric precision
             if (!inherits(rank, "numeric") ||
                 !is.wholenumber(rank) ||
                 rank <= 0 ||
@@ -406,29 +406,39 @@ SFLDA <- R6::R6Class("SFLDA",
 )
 
 
-#' Perform two-way sparse and functional LDA
+#' The Deflation Scheme for LDA
 #'
-#' \code{moma_sflda} creates an \code{SFLDA} R6 object and returns.
-#' @param X,Y_factor data matrix.
-#' @param ... force users to specify arguments by names
-#' @param center a logical value indicating whether the variables should be shifted to be zero centered.
-#' Defaults to \code{TRUE}.
-#' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
-#' Defaults to \code{FALSE}.
-#' @param x_sparse,y_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
-#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
-#'        penalty function used in the model. Note that for \code{moma_slda}, these two parameter must not be
-#'        specified at the same time. For \code{moma_flda} and \code{moma_twflda}, they must not be specified.
-#' @param x_smooth,y_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
-#'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#'           terms used in the model. Note that for \code{moma_flda}, these two parameter must not be
-#'          specified at the same time. For \code{moma_slda} and \code{moma_twslda}, they must not be specified.
-#' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
-#'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
-#'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
-#' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
-#' in nested greedy BIC selection scheme.
-#' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
+#' In \code{MoMA} one deflation scheme is provided for LDA.
+#'
+#' Let \eqn{X} be a data matrix (properly scaled and centered), and \eqn{Y}
+#' be the indicator matrix showing which group a sample belongs to.
+#' \eqn{X} and \eqn{Y} should have the same number of columns. The penalized LDA problem is formulated as
+#'
+#' \eqn{ \min_{u,v} \, u^T X^T Y v + \lambda_u P_u(u) + \lambda_v P_v(v)  }
+#'
+#' \eqn{ \text{s.t. } \| u \|_{I+\alpha_u \Omega_u} \leq 1, \| v \|_{I + \alpha_v \Omega_v} \leq 1.  }
+#'
+#' In the discussion below, let \eqn{u,v} be the solution to the above problem.
+#' Let \eqn{c_x = Xu, c_y = Yv}. The deflation scheme is as follow:
+#'
+#' \eqn{X \leftarrow  { X } -  { c_x } \left(  { c_x } ^ { T }  { c_x } \right) ^ { - 1 }  { c_x } ^ { T }  { X }
+#' = ( I - { c_x } \left(  { c_x } ^ { T }  { c_x } \right) ^ { - 1 }  { c_x } ^ { T } )X,}
+#'
+#' \eqn{ Y \text{   remains unchanged.}}.
+#'
+#' @references De Bie T., Cristianini N., Rosipal R. (2005) Eigenproblems
+#' in Pattern Recognition. In: Handbook of Geometric Computing. Springer, Berlin, Heidelberg
+#' @name LDA_deflation
+
+
+NULL
+
+#' Sparse and functional LDA
+#'
+#' \code{moma_sflda} creates an \code{SFLDA} R6 object and returns it.
+#' @param Y_factor A factor representing which group a sample belongs to.
+#' @inheritParams moma_sfcca
+#' @name moma_sflda
 #' @export
 moma_sflda <- function(X, ..., Y_factor,
                        center = TRUE, scale = FALSE,
@@ -472,14 +482,14 @@ moma_sflda <- function(X, ..., Y_factor,
 
 #' Perform one-way sparse LDA
 #'
-#' \code{moma_slda} is a wrapper around R6 object \code{SFLDA}
+#' \code{moma_slda} is a function for performing one-way sparse LDA.
 #' @export
-#' @describeIn moma_sflda a function for one-way sparse LDA
+#' @describeIn moma_sflda a function for performing one-way sparse LDA
 moma_slda <- function(X, ..., Y_factor,
                       center = TRUE, scale = FALSE,
                       x_sparse = moma_empty(), y_sparse = moma_empty(),
                       #    x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
@@ -509,14 +519,14 @@ moma_slda <- function(X, ..., Y_factor,
 
 #' Perform two-way sparse LDA
 #'
-#' \code{moma_twslda} is a wrapper around R6 object \code{SFLDA}
+#' \code{moma_twslda} is a function for performing two-way sparse LDA.
 #' @export
-#' @describeIn moma_sflda a function for two-way sparse LDA
+#' @describeIn moma_sflda a function for performing two-way sparse LDA
 moma_twslda <- function(X, ..., Y_factor,
                         center = TRUE, scale = FALSE,
                         x_sparse = moma_empty(), y_sparse = moma_empty(),
                         #    x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
                         rank = 1) {
     chkDots(...)
@@ -544,14 +554,14 @@ moma_twslda <- function(X, ..., Y_factor,
 
 #' Perform one-way functional LDA
 #'
-#' \code{moma_flda} is a wrapper around R6 object \code{SFLDA}
+#' \code{moma_flda} is a function for performing one-way functional LDA.
 #' @export
-#' @describeIn moma_sflda a function for one-way functional LDA
+#' @describeIn moma_sflda a function for performing one-way functional LDA
 moma_flda <- function(X, ..., Y_factor,
                       center = TRUE, scale = FALSE,
                       #    x_sparse = moma_empty(), y_sparse = moma_empty(),
                       x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
                       rank = 1) {
     chkDots(...)
@@ -579,9 +589,9 @@ moma_flda <- function(X, ..., Y_factor,
 
 #' Perform two-way functional LDA
 #'
-#' \code{moma_twflda} is a wrapper around R6 object \code{SFLDA}
+#' \code{moma_twflda} is a function for performing two-way functional LDA.
 #' @export
-#' @describeIn moma_sflda a function for two-way functional LDA
+#' @describeIn moma_sflda a function for performing two-way functional LDA
 moma_twflda <- function(X, ..., Y_factor,
                         center = TRUE, scale = FALSE,
                         #    x_sparse = moma_empty(), y_sparse = moma_empty(),
