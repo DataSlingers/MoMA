@@ -94,7 +94,7 @@ error_if_not_fourchar_bg_string <- function(x) {
     }
 }
 
-MOMA_EMPTYMAT <- matrix() # the default `w` arguemnt for unordered fusion
+MOMA_EMPTYMAT <- matrix() # the default `w` argument for unordered fusion
 MOMA_EMPTYVEC <- vector(mode = "numeric") # the defautl `group` arguement for group lasso
 # MOMA_DEFAULT_PROX must be consistent with
 # the initializer of the C++ class ProxOp

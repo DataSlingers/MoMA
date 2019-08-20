@@ -46,7 +46,7 @@ SFLDA <- R6::R6Class("SFLDA",
                 )
             }
         },
-        private_error_if_not_indeces = function(...,
+        private_error_if_not_indices = function(...,
                                                         alpha_x, alpha_y, lambda_x, lambda_y) {
             error_if_not_finite_numeric_scalar(alpha_x)
             error_if_not_finite_numeric_scalar(alpha_y)
@@ -257,7 +257,7 @@ SFLDA <- R6::R6Class("SFLDA",
             chkDots(...)
 
             # they should be of length 1
-            private$private_error_if_not_indeces(
+            private$private_error_if_not_indices(
                 alpha_x = alpha_x,
                 alpha_y = alpha_y,
                 lambda_x = lambda_x,
@@ -362,7 +362,7 @@ SFLDA <- R6::R6Class("SFLDA",
                 moma_error("Invalid `rank` in SFLDA::left_project.")
             }
 
-            private$private_error_if_not_indeces(
+            private$private_error_if_not_indices(
                 alpha_x = alpha_x,
                 alpha_y = alpha_y,
                 lambda_x = lambda_x,

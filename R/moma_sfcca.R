@@ -60,7 +60,7 @@ SFCCA <- R6::R6Class("SFCCA",
                 )
             }
         },
-        private_error_if_not_indeces = function(...,
+        private_error_if_not_indices = function(...,
                                                         alpha_x, alpha_y, lambda_x, lambda_y) {
             error_if_not_finite_numeric_scalar(alpha_x)
             error_if_not_finite_numeric_scalar(alpha_y)
@@ -278,7 +278,7 @@ SFCCA <- R6::R6Class("SFCCA",
         get_mat_by_index = function(..., alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1) {
             chkDots(...)
 
-            private$private_error_if_not_indeces(
+            private$private_error_if_not_indices(
                 alpha_x = alpha_x,
                 alpha_y = alpha_y,
                 lambda_x = lambda_x,
@@ -383,7 +383,7 @@ SFCCA <- R6::R6Class("SFCCA",
                 moma_error("Invalid `rank` in SFCCA::left_project.")
             }
 
-            private$private_error_if_not_indeces(
+            private$private_error_if_not_indices(
                 alpha_x = alpha_x,
                 alpha_y = alpha_y,
                 lambda_x = lambda_x,

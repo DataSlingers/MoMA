@@ -28,7 +28,7 @@ SFPCA <- R6::R6Class("SFPCA",
             private$check_input_index <- TRUE
             return(res)
         },
-        private_error_if_not_indeces = function(...,
+        private_error_if_not_indices = function(...,
                                                         alpha_u, alpha_v, lambda_u, lambda_v) {
             error_if_not_finite_numeric_scalar(alpha_u)
             error_if_not_finite_numeric_scalar(alpha_v)
@@ -247,7 +247,7 @@ SFPCA <- R6::R6Class("SFPCA",
         get_mat_by_index = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
             chkDots(...)
 
-            private$private_error_if_not_indeces(
+            private$private_error_if_not_indices(
                 alpha_u = alpha_u,
                 alpha_v = alpha_v,
                 lambda_u = lambda_u,
@@ -501,7 +501,7 @@ SFPCA <- R6::R6Class("SFPCA",
                 moma_error("Invalid `rank` in SFPCA::left_project.")
             }
 
-            private$private_error_if_not_indeces(
+            private$private_error_if_not_indices(
                 alpha_u = alpha_u,
                 alpha_v = alpha_v,
                 lambda_u = lambda_u,
@@ -552,7 +552,7 @@ SFPCA <- R6::R6Class("SFPCA",
 #' Using terminology in the reference, they are Hotelling's deflation,
 #' two-way projection deflation, and Schur complement deflation.
 #'
-#' See the parameter \code{deflation_scheme} arguemnt in the function
+#' See the parameter \code{deflation_scheme} argument in the function
 #' \code{moma_sfpca}. Also refer to the reference below
 #' for theoretical properties.
 #'
