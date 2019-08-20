@@ -1,12 +1,43 @@
 SFCCA <- R6::R6Class("SFCCA",
     private = list(
         check_input_index = TRUE,
-        private_get_mat_by_index = function(alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+        private_get_mat_by_index = function(alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1) {
             # private functions can be called only by
             # internal functions
             private$check_input_index <- FALSE
             res <- self$get_mat_by_index(
-                alpha_u, alpha_v, lambda_u, lambda_v
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y
+            )
+            private$check_input_index <- TRUE
+            return(res)
+        },
+        private_X_project = function(newX, ...,
+                                             alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1, rank = 1) {
+            private$check_input_index <- FALSE
+            res <- self$X_project(
+                newX = newX,
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y,
+                rank = rank
+            )
+            private$check_input_index <- TRUE
+            return(res)
+        },
+        private_Y_project = function(newY, ...,
+                                             alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1, rank = 1) {
+            private$check_input_index <- FALSE
+            res <- self$Y_project(
+                newY = newY,
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y,
+                rank = rank
             )
             private$check_input_index <- TRUE
             return(res)
@@ -18,100 +49,109 @@ SFCCA <- R6::R6Class("SFCCA",
         center_Y = NULL,
         scale_Y = NULL,
         grid_result = NULL,
-        Omega_u = NULL, # maybe Omega_x
-        Omega_v = NULL, # maybe Omega_y
-        u_sparsity = NULL, # maybe x_sparsity
-        v_sparsity = NULL, # maybe y_sparsity
+        Omega_x = NULL,
+        Omega_y = NULL,
+        x_sparsity = NULL,
+        y_sparsity = NULL,
         rank = NULL,
-        alpha_u = NULL,
-        alpha_v = NULL,
-        lambda_u = NULL,
-        lambda_v = NULL,
+        alpha_x = NULL,
+        alpha_y = NULL,
+        lambda_x = NULL,
+        lambda_y = NULL,
         selection_scheme_list = NULL,
         pg_setting = NULL,
         n = NULL,
         px = NULL,
-        py = NULL,
+        py = NULL, # CCA_SPECIAL_PART, number of groups
         X = NULL,
-        Y = NULL,
+        Y = NULL, # CCA_SPECIAL_PART
+        x_coln = NULL,
+        x_rown = NULL,
+        y_coln = NULL, # CCA_SPECIAL_PART
         fixed_list = NULL,
-        initialize = function(X, Y, ...,
+        initialize = function(X, ..., Y, # CCA_SPECIAL_PART
                                       center = TRUE, scale = FALSE,
-                                      u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
-                                      Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
+                                      x_sparsity = empty(), y_sparsity = empty(), lambda_x = 0, lambda_y = 0, # lambda_x/_y is a vector or scalar
+                                      Omega_x = NULL, Omega_y = NULL, alpha_x = 0, alpha_y = 0, # so is alpha_x/_y
                                       pg_setting = moma_pg_settings(),
                                       selection_scheme_str = "gggg",
                                       max_bic_iter = 5,
                                       rank = 1) {
-            chkDots(...) # avoid typo in argument names, e.g. y = ...
+            chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
-            if (!inherits(alpha_u, c("numeric", "integer")) ||
-                !inherits(alpha_v, c("numeric", "integer")) ||
-                !inherits(lambda_u, c("numeric", "integer")) ||
-                !inherits(lambda_v, c("numeric", "integer"))) {
+            if (!inherits(alpha_x, c("numeric", "integer")) ||
+                !inherits(alpha_y, c("numeric", "integer")) ||
+                !inherits(lambda_x, c("numeric", "integer")) ||
+                !inherits(lambda_y, c("numeric", "integer"))) {
                 moma_error(paste0(
                     "All penalty levels (",
-                    sQuote("lambda_u"), ", ",
-                    sQuote("lambda_v"), ", ",
-                    sQuote("alpha_u"), ", ",
-                    sQuote("alpha_v"),
+                    sQuote("lambda_x"), ", ",
+                    sQuote("lambda_y"), ", ",
+                    sQuote("alpha_x"), ", ",
+                    sQuote("alpha_y"),
                     ") must be numeric."
                 ))
             }
-            self$alpha_u <- alpha_u
-            self$alpha_v <- alpha_v
-            self$lambda_u <- lambda_u
-            self$lambda_v <- lambda_v
+            self$alpha_x <- alpha_x
+            self$alpha_y <- alpha_y
+            self$lambda_x <- lambda_x
+            self$lambda_y <- lambda_y
 
             # Step 1.2: matrix
+            # CCA_SPECIAL_PART
             X <- as.matrix(X)
+            Y <- as.matrix(Y)
             if (any(!is.finite(X))) {
                 moma_error("X must not have NaN, NA, or Inf.")
             }
-            Y <- as.matrix(Y)
             if (any(!is.finite(Y))) {
-                moma_error("`Y` must not have NaN, NA, or Inf.")
+                moma_error("Y must not have NaN, NA, or Inf.")
             }
-
             if (dim(X)[1] != dim(Y)[1]) {
-                moma_error("`X` and `Y` must have the same number of rows.")
+                moma_error("`X` and `Y` must have the same number of samples.")
             }
 
             n <- dim(X)[1]
             px <- dim(X)[2]
-            py <- dim(Y)[2]
+            py <- dim(Y)[2] # number of groups   # CCA_SPECIAL_PART
             X <- scale(X, center = center, scale = scale)
             Y <- scale(Y, center = center, scale = scale)
 
             cen_X <- attr(X, "scaled:center")
-            cen_Y <- attr(Y, "scaled:center")
             sc_X <- attr(X, "scaled:scale")
+            cen_Y <- attr(Y, "scaled:center")
             sc_Y <- attr(Y, "scaled:scale")
-            if (any(sc_X == 0) || any(sc_Y == 0)) {
-                moma_error("cannot rescale a constant/zero column to unit variance")
+            if (any(sc_X == 0)) {
+                moma_error("Cannot rescale a constant/zero column to unit variance")
+            }
+            if (any(sc_Y == 0)) {
+                moma_error("Cannot rescale a constant/zero column to unit variance")
             }
 
             self$center_X <- cen_X %||% FALSE
-            self$center_Y <- cen_Y %||% FALSE
             self$scale_X <- sc_X %||% FALSE
+            self$center_Y <- cen_Y %||% FALSE
             self$scale_Y <- sc_Y %||% FALSE
-            self$n <- dim(X)[1]
+            self$n <- n
             self$py <- py
             self$px <- px
             self$X <- X
             self$Y <- Y
+            self$x_rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
+            self$x_coln <- colnames(X) %||% paste0("Xcol_", seq_len(px))
+            self$y_coln <- colnames(Y) %||% paste0("Ycol_", seq_len(py))
 
             # Step 1.3: sparsity
-            if (!inherits(u_sparsity, "moma_sparsity") || !inherits(v_sparsity, "moma_sparsity")) {
+            if (!inherits(x_sparsity, "moma_sparsity") || !inherits(y_sparsity, "moma_sparsity")) {
                 moma_error(
                     "Sparse penalty should be of class ",
                     sQuote("moma_sparsity"),
-                    ". Try using, for example, `u_sparsity = lasso()`."
+                    ". Try using, for example, `x_sparsity = lasso()`."
                 )
             }
-            self$u_sparsity <- u_sparsity
-            self$v_sparsity <- v_sparsity
+            self$x_sparsity <- x_sparsity
+            self$y_sparsity <- y_sparsity
 
             # Step 1.4: PG loop settings
             if (!inherits(pg_setting, "moma_pg_settings")) {
@@ -124,14 +164,15 @@ SFCCA <- R6::R6Class("SFCCA",
             self$pg_setting <- pg_setting
 
             # Step 1.5: smoothness
-            Omega_u <- check_omega(Omega_u, alpha_u, px)
-            Omega_v <- check_omega(Omega_v, alpha_v, py)
-            self$Omega_u <- Omega_u
-            self$Omega_v <- Omega_v
+            Omega_x <- check_omega(Omega_x, alpha_x, px)
+            Omega_y <- check_omega(Omega_y, alpha_y, py)
+            self$Omega_x <- Omega_x
+            self$Omega_y <- Omega_y
 
             # Step 1.6: check selection scheme string
             # "g" stands for grid search, "b" stands for BIC
-            if (!inherits(selection_scheme_str, "character") || nchar(selection_scheme_str) != 4 ||
+            if (!inherits(selection_scheme_str, "character") ||
+                nchar(selection_scheme_str) != 4 ||
                 !all(strsplit(selection_scheme_str, split = "")[[1]] %in% c("b", "g"))) {
                 moma_error(
                     "Invalid selection_scheme_str ", selection_scheme_str,
@@ -140,41 +181,48 @@ SFCCA <- R6::R6Class("SFCCA",
             }
 
             # turn "b"/"g" to 1/0
+            # `selection_scheme_list` will be passed to C++ functions
             selection_scheme_list <- list(
-                selection_criterion_alpha_u = 0,
-                selection_criterion_alpha_v = 0,
-                selection_criterion_lambda_u = 0,
-                selection_criterion_lambda_v = 0
+                selection_criterion_alpha_x = 0,
+                selection_criterion_alpha_y = 0,
+                selection_criterion_lambda_x = 0,
+                selection_criterion_lambda_y = 0
             )
+            # `fixed_list` will be stored in the R6 object
             fixed_list <- list(
                 # "Fixed" parameters are those
                 # i) that are chosen by BIC, or
-                # ii) that are not specified during initialization of the SFCPA object, or
-                # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
-                is_alpha_u_fixed = FALSE,
-                is_alpha_v_fixed = FALSE,
-                is_lambda_u_fixed = FALSE,
-                is_lambda_v_fixed = FALSE
+                # ii) that are not specified during initialization of the SFCCA object, or
+                # iii) that are scalars as opposed to vectors during initialization of the SFCCA object.
+                is_alpha_x_fixed = FALSE,
+                is_alpha_y_fixed = FALSE,
+                is_lambda_x_fixed = FALSE,
+                is_lambda_y_fixed = FALSE
             )
 
-            parameter_list <- list(
-                self$alpha_u,
-                self$alpha_v,
-                self$lambda_u,
-                self$lambda_v
-            )
+            parameter_length_list <- sapply(FUN = length, list(
+                self$alpha_x,
+                self$alpha_y,
+                self$lambda_x,
+                self$lambda_y
+            ))
             for (i in 1:4) {
-                selection_scheme_list[[i]] <- ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
-                fixed_list[[i]] <- substr(selection_scheme_str, i, i) == "b" || length(parameter_list[[i]]) == 1
+                selection_scheme_list[[i]] <-
+                    ifelse(substr(selection_scheme_str, i, i) == "g", 0, 1)
+
+                fixed_list[[i]] <-
+                    substr(selection_scheme_str, i, i) == "b" || parameter_length_list[i] == 1
             }
             self$selection_scheme_list <- selection_scheme_list
             self$fixed_list <- fixed_list
 
             # Step 1.7: check rank
-            is.wholenumber <-
-                function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
-            if (!inherits(rank, "numeric") || !is.wholenumber(rank) || rank <= 0
-            || rank > min(px, py)) {
+            # TODO: check that `rank` < min(rank(X), rank(Y))
+            # w.r.t to certain numric precision
+            if (!inherits(rank, "numeric") ||
+                !is.wholenumber(rank) ||
+                rank <= 0 ||
+                rank > min(px, py, n)) { # CCA_SPECIAL_PART
                 moma_error("`rank` should be a positive integer smaller than the rank of the data matrix.")
             }
             self$rank <- rank
@@ -183,27 +231,32 @@ SFCCA <- R6::R6Class("SFCCA",
             algo_settings_list <- c(
                 list(
                     X = X,
-                    Y = Y,
-                    lambda_u = lambda_u,
-                    lambda_v = lambda_v,
+                    Y = Y, # CCA_SPECIAL_PART
+                    lambda_u = lambda_x,
+                    lambda_v = lambda_y,
                     # smoothness
-                    alpha_u = alpha_u,
-                    alpha_v = alpha_v,
+                    alpha_u = alpha_x,
+                    alpha_v = alpha_y,
                     rank = rank
                 ),
                 list(
-                    Omega_u = Omega_u,
-                    Omega_v = Omega_v,
-                    prox_arg_list_u = add_default_prox_args(u_sparsity),
-                    prox_arg_list_v = add_default_prox_args(v_sparsity)
+                    Omega_u = Omega_x,
+                    Omega_v = Omega_y,
+                    prox_arg_list_u = add_default_prox_args(x_sparsity),
+                    prox_arg_list_v = add_default_prox_args(y_sparsity)
                 ),
                 pg_setting,
-                selection_scheme_list,
+                list(
+                    selection_criterion_alpha_u = selection_scheme_list$selection_criterion_alpha_x,
+                    selection_criterion_alpha_v = selection_scheme_list$selection_criterion_alpha_y,
+                    selection_criterion_lambda_u = selection_scheme_list$selection_criterion_lambda_x,
+                    selection_criterion_lambda_v = selection_scheme_list$selection_criterion_lambda_y
+                ),
                 list(
                     max_bic_iter = max_bic_iter
                 ),
                 list(
-                    deflation_scheme = DEFLATION_SCHEME["CCA"]
+                    deflation_scheme = DEFLATION_SCHEME["CCA"] # CCA_SPECIAL_PART
                 )
             )
             # make sure we explicitly specify ALL arguments
@@ -219,6 +272,492 @@ SFCCA <- R6::R6Class("SFCCA",
                 cca,
                 algo_settings_list
             )
+        },
+
+        get_mat_by_index = function(..., alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1) {
+            chkDots(...)
+
+            # they should be of length 1
+            parameter_length_list <- sapply(FUN = length, list(
+                alpha_x,
+                alpha_y,
+                lambda_x,
+                lambda_y
+            ))
+            if (any(parameter_length_list > 1)) {
+                moma_error("Non-length-one input in SFCCA::get_mat_by_index.")
+            }
+
+            # indices should be integers
+            if (!all(
+                is.wholenumber(alpha_x),
+                is.wholenumber(alpha_y),
+                is.wholenumber(lambda_x),
+                is.wholenumber(lambda_y)
+            )) {
+                moma_error("Non-integer input in SFCCA::get_mat_by_index.")
+            }
+
+            # A "fixed" parameter should not be specified
+            # at all (this is a bit stringent, can be improved later).
+            # "Fixed" parameters are those
+            # i) that are chosen by BIC, or
+            # ii) that are not specified during initialization of the SFCCA object, or
+            # iii) that are scalars as opposed to vectors during initialization of the SFCCA object.
+
+            # When `get_mat_by_index` is called internally
+            # we skip the input checking
+            if (private$check_input_index) {
+                is_missing <- list(missing(alpha_x), missing(alpha_y), missing(lambda_x), missing(lambda_y))
+                is_fixed <- self$fixed_list
+                if (any(is_fixed == TRUE & is_missing == FALSE)) {
+                    moma_error(
+                        paste0(
+                            "Invalid index in SFCCA::get_mat_by_index. Do not specify indexes of parameters ",
+                            "i) that are chosen by BIC, or ",
+                            "ii) that are not specified during initialization of the SFCCA object, or ",
+                            "iii) that are scalars during initialization of the SFCCA object."
+                        )
+                    )
+                }
+            }
+
+            n <- self$n
+            px <- self$px
+            py <- self$py
+            rank <- self$rank
+
+            U <- matrix(0, nrow = px, ncol = rank)
+            V <- matrix(0, nrow = py, ncol = rank)
+            d <- vector(mode = "numeric", length = rank)
+
+            chosen_lambda_x <- vector(mode = "numeric", length = rank)
+            chosen_alpha_x <- vector(mode = "numeric", length = rank)
+            chosen_lambda_y <- vector(mode = "numeric", length = rank)
+            chosen_alpha_y <- vector(mode = "numeric", length = rank)
+
+            for (i in (1:self$rank)) {
+                rank_i_result <- get_5Dlist_elem(self$grid_result,
+                    alpha_u_i = alpha_x,
+                    lambda_u_i = lambda_x,
+                    alpha_v_i = alpha_y,
+                    lambda_v_i = lambda_y, rank_i = i
+                )[[1]]
+
+                U[, i] <- rank_i_result$u$vector
+                V[, i] <- rank_i_result$v$vector
+                d[i] <- rank_i_result$d
+
+                chosen_lambda_x[i] <- rank_i_result$u$lambda
+                chosen_alpha_x[i] <- rank_i_result$u$alpha
+                chosen_lambda_y[i] <- rank_i_result$v$lambda
+                chosen_alpha_y[i] <- rank_i_result$v$alpha
+            }
+
+
+            dimnames(V) <-
+                list(self$y_coln, paste0("PC", seq_len(rank)))
+            dimnames(U) <-
+                list(self$x_coln, paste0("PC", seq_len(rank)))
+            return(list(
+                X_PC_loadings = U,
+                Y_PC_loadings = V,
+                d = d,
+                chosen_lambda_x = chosen_lambda_x,
+                chosen_lambda_y = chosen_lambda_y,
+                chosen_alpha_x = chosen_alpha_x,
+                chosen_alpha_y = chosen_alpha_y
+            ))
+        },
+
+        print = function() {
+            selection_list_str <- lapply(self$selection_scheme_list, function(x) {
+                if (x == 0) {
+                    return("grid search")
+                }
+                else if (x == 1) {
+                    return("BIC search")
+                }
+            })
+
+            cat("An <SFCCA> object containing solutions to the following settings\n")
+            cat("Rank: ", self$rank, "\n")
+            cat("Penalty and selection:\n")
+
+            cat(paste0("alpha_x: ", selection_list_str[1], ", range: "))
+            cat(self$alpha_x, "\n")
+            cat(paste0("alpha_y: ", selection_list_str[2], ", range: "))
+            cat(self$alpha_y, "\n")
+            cat(paste0("lambda_x: ", selection_list_str[3], ", range: "))
+            cat(self$lambda_x, "\n")
+            cat(paste0("lambda_y: ", selection_list_str[4], ", range: "))
+            cat(self$lambda_y, "\n")
+        },
+
+        X_project = function(newX, ...,
+                                     alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1, rank = 1) {
+            chkDots(...)
+            # check indexes
+            if (private$check_input_index) {
+                is_missing <- list(missing(alpha_x), missing(alpha_y), missing(lambda_x), missing(lambda_y))
+                is_fixed <- self$fixed_list
+                if (any(is_fixed == TRUE & is_missing == FALSE)) {
+                    moma_error(
+                        paste0(
+                            "Invalid index in SFCCA::left_project. Do not specify indexes of parameters ",
+                            "i) that are chosen by BIC, or ",
+                            "ii) that are not specified during initialization of the SFCCA object, or ",
+                            "iii) that are scalars during initialization of the SFCCA object."
+                        )
+                    )
+                }
+            }
+
+            if (rank > self$rank) {
+                moma_error("Invalid `rank` in SFCCA::left_project.")
+            }
+
+            parameter_length_list <- sapply(FUN = length, list(
+                alpha_x,
+                alpha_y,
+                lambda_x,
+                lambda_y
+            ))
+            if (any(parameter_length_list > 1) ||
+                !all(
+                    is.wholenumber(alpha_x),
+                    is.wholenumber(alpha_y),
+                    is.wholenumber(lambda_x),
+                    is.wholenumber(lambda_y)
+                )) {
+                moma_error("Non-integer input in SFCCA::left_project.")
+            }
+
+            X_PC_loadings_rank_k <- private$private_get_mat_by_index(
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y
+            )$X_PC_loadings[, 1:rank]
+
+
+            # newX should be uncencter and unscaled.
+            # check new X has same colnames
+            if (length(dim(newX)) != 2L) {
+                moma_error("'newX' must be a matrix or data frame")
+            }
+
+            if (dim(newX)[2] != self$px) {
+                moma_error(
+                    paste0(
+                        "`newX` is incompatible with orignal data. ",
+                        "It must have ", self$px, " columns."
+                    )
+                )
+            }
+
+
+            scaled_data <- scale(newX, self$center_X, self$scale_X)
+            result <- project(scaled_data, X_PC_loadings_rank_k)
+            colnames(result) <- paste0("PC", seq_len(rank))
+
+            return(list(
+                scaled_data = scaled_data,
+                proj_data = result
+            ))
+        },
+
+        Y_project = function(newY, ...,
+                                     alpha_x = 1, alpha_y = 1, lambda_x = 1, lambda_y = 1, rank = 1) {
+            chkDots(...)
+            # check indexes
+            if (private$check_input_index) {
+                is_missing <- list(missing(alpha_x), missing(alpha_y), missing(lambda_x), missing(lambda_y))
+                is_fixed <- self$fixed_list
+                if (any(is_fixed == TRUE & is_missing == FALSE)) {
+                    moma_error(
+                        paste0(
+                            "Invalid index in SFCCA::left_project. Do not specify indexes of parameters ",
+                            "i) that are chosen by BIC, or ",
+                            "ii) that are not specified during initialization of the SFCCA object, or ",
+                            "iii) that are scalars during initialization of the SFCCA object."
+                        )
+                    )
+                }
+            }
+
+            if (rank > self$rank) {
+                moma_error("Invalid `rank` in SFCCA::left_project.")
+            }
+
+            parameter_length_list <- sapply(FUN = length, list(
+                alpha_x,
+                alpha_y,
+                lambda_x,
+                lambda_y
+            ))
+            if (any(parameter_length_list > 1) ||
+                !all(
+                    is.wholenumber(alpha_x),
+                    is.wholenumber(alpha_y),
+                    is.wholenumber(lambda_x),
+                    is.wholenumber(lambda_y)
+                )) {
+                moma_error("Non-integer input in SFCCA::left_project.")
+            }
+
+            Y_PC_loadings_rank_k <- private$private_get_mat_by_index(
+                alpha_x = alpha_x,
+                alpha_y = alpha_y,
+                lambda_x = lambda_x,
+                lambda_y = lambda_y
+            )$Y_PC_loadings[, 1:rank]
+
+
+            # newY should be uncencter and unscaled.
+            # check new X has same colnames
+            if (length(dim(newY)) != 2L) {
+                moma_error("'newY' must be a matrix or data frame")
+            }
+
+            if (dim(newY)[2] != self$py) {
+                moma_error(
+                    paste0(
+                        "`newY` is incompatible with orignal data. ",
+                        "It must have ", self$py, " columns."
+                    )
+                )
+            }
+
+
+            scaled_data <- scale(newY, self$center_Y, self$scale_Y)
+            result <- project(scaled_data, Y_PC_loadings_rank_k)
+            colnames(result) <- paste0("PC", seq_len(rank))
+
+            return(list(
+                scaled_data = scaled_data,
+                proj_data = result
+            ))
         }
     )
 )
+
+
+#' Perform two-way sparse and functional CCA
+#'
+#' \code{moma_sfcca} creates an \code{SFCCA} R6 object and returns.
+#' @param X,Y data matrix.
+#' @param ... force users to specify arguments by names
+#' @param center a logical value indicating whether the variables should be shifted to be zero centered.
+#' Defaults to \code{TRUE}.
+#' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
+#' Defaults to \code{FALSE}.
+#' @param x_sparse,y_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
+#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
+#'        penalty function used in the model. Note that for \code{moma_scca}, these two parameter must not be
+#'        specified at the same time. For \code{moma_fcca} and \code{moma_twfcca}, they must not be specified.
+#' @param x_smooth,y_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
+#'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
+#'           terms used in the model. Note that for \code{moma_fcca}, these two parameter must not be
+#'          specified at the same time. For \code{moma_scca} and \code{moma_twscca}, they must not be specified.
+#' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
+#'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
+#'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
+#' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
+#' in nested greedy BIC selection scheme.
+#' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
+#' @export
+moma_sfcca <- function(X, ..., Y,
+                       center = TRUE, scale = FALSE,
+                       x_sparse = moma_empty(), y_sparse = moma_empty(),
+                       x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
+                       pg_setting = moma_pg_settings(),
+                       max_bic_iter = 5,
+                       rank = 1) {
+    chkDots(...)
+    if (!inherits(x_sparse, "moma_sparsity_type") ||
+        !inherits(y_sparse, "moma_sparsity_type")) {
+        moma_error(
+            "Invalid argument: ",
+            sQuote("x_sparse / y_sparse"),
+            ". They should be of class `moma_sparsity_type`."
+        )
+    }
+
+    if (!inherits(x_smooth, "moma_smoothness_type") ||
+        !inherits(y_smooth, "moma_smoothness_type")) {
+        moma_error(
+            "Invalid argument: ",
+            sQuote("x_smooth / y_smooth"),
+            ". They should be of class `moma_smoothness_type`."
+        )
+    }
+
+
+    return(SFCCA$new(
+        X,
+        Y = Y,
+        center = center, scale = scale,
+        # sparsity
+        x_sparsity = x_sparse$sparsity_type,
+        y_sparsity = y_sparse$sparsity_type,
+        lambda_x = x_sparse$lambda,
+        lambda_y = y_sparse$lambda,
+        # smoothness
+        Omega_x = x_smooth$Omega,
+        Omega_y = y_smooth$Omega,
+        alpha_x = x_smooth$alpha,
+        alpha_y = y_smooth$alpha,
+        pg_setting = pg_setting,
+        selection_scheme_str = paste0( # the order is important
+            x_smooth$select_scheme,
+            y_smooth$select_scheme,
+            x_sparse$select_scheme,
+            y_sparse$select_scheme
+        ),
+        max_bic_iter = max_bic_iter,
+        rank = rank
+    ))
+}
+
+#' Perform one-way sparse CCA
+#'
+#' \code{moma_scca} is a wrapper around R6 object \code{SFCCA}
+#' @export
+#' @describeIn moma_sfcca a function for one-way sparse CCA
+moma_scca <- function(X, ..., Y,
+                      center = TRUE, scale = FALSE,
+                      x_sparse = moma_empty(), y_sparse = moma_empty(),
+                      #    x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
+                      pg_setting = moma_pg_settings(),
+                      max_bic_iter = 5,
+                      rank = 1) {
+    chkDots(...)
+    is_x_penalized <- !missing(x_sparse)
+    is_y_penalized <- !missing(y_sparse)
+    if (!is_x_penalized && !is_y_penalized) {
+        moma_warning("No sparsity is imposed!")
+    }
+
+    if (is_x_penalized && is_y_penalized) {
+        moma_error("Please use `moma_twscca` if both sides are penalized.")
+    }
+
+    return(moma_sfcca(
+        X = X,
+        Y = Y,
+        center = center, scale = scale,
+        x_sparse = x_sparse, y_sparse = y_sparse,
+        # x_smooth = x_smooth, y_smooth = y_smooth,
+        pg_setting = pg_setting,
+        max_bic_iter = max_bic_iter,
+        rank = rank
+    ))
+    # moma_error("Not implemented: SCCA")
+}
+
+
+#' Perform two-way sparse CCA
+#'
+#' \code{moma_twscca} is a wrapper around R6 object \code{SFCCA}
+#' @export
+#' @describeIn moma_sfcca a function for two-way sparse CCA
+moma_twscca <- function(X, ..., Y,
+                        center = TRUE, scale = FALSE,
+                        x_sparse = moma_empty(), y_sparse = moma_empty(),
+                        #    x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
+                        pg_setting = moma_pg_settings(),
+                        max_bic_iter = 5,
+                        rank = 1) {
+    chkDots(...)
+    is_x_penalized <- !missing(x_sparse)
+    is_y_penalized <- !missing(y_sparse)
+    if (!is_x_penalized && !is_y_penalized) {
+        moma_warning("No sparsity is imposed!")
+    }
+
+    if (is_x_penalized != is_y_penalized) {
+        moma_warning("Please use `moma_scca` if only one side is penalized.")
+    }
+
+    return(moma_sfcca(
+        X = X,
+        Y = Y,
+        center = center, scale = scale,
+        x_sparse = x_sparse, y_sparse = y_sparse,
+        # x_smooth = x_smooth, y_smooth = y_smooth,
+        pg_setting = pg_setting,
+        max_bic_iter = max_bic_iter,
+        rank = rank
+    ))
+}
+
+#' Perform one-way functional CCA
+#'
+#' \code{moma_fcca} is a wrapper around R6 object \code{SFCCA}
+#' @export
+#' @describeIn moma_sfcca a function for one-way functional CCA
+moma_fcca <- function(X, ..., Y,
+                      center = TRUE, scale = FALSE,
+                      #    x_sparse = moma_empty(), y_sparse = moma_empty(),
+                      x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
+                      pg_setting = moma_pg_settings(),
+                      max_bic_iter = 5,
+                      rank = 1) {
+    chkDots(...)
+    is_x_penalized <- !missing(x_smooth)
+    is_y_penalized <- !missing(y_smooth)
+    if (!is_x_penalized && !is_y_penalized) {
+        moma_warning("No smoothness is imposed!")
+    }
+
+    if (is_x_penalized && is_y_penalized) {
+        moma_error("Please use `moma_twfcca` if both sides are penalized.")
+    }
+
+    return(moma_sfcca(
+        X = X,
+        Y = Y,
+        center = center, scale = scale,
+        # x_sparse = x_sparse, y_sparse = y_sparse,
+        x_smooth = x_smooth, y_smooth = y_smooth,
+        pg_setting = pg_setting,
+        max_bic_iter = max_bic_iter,
+        rank = rank
+    ))
+}
+
+#' Perform two-way functional CCA
+#'
+#' \code{moma_twfcca} is a wrapper around R6 object \code{SFCCA}
+#' @export
+#' @describeIn moma_sfcca a function for two-way functional CCA
+moma_twfcca <- function(X, ..., Y,
+                        center = TRUE, scale = FALSE,
+                        #    x_sparse = moma_empty(), y_sparse = moma_empty(),
+                        x_smooth = moma_smoothness(), y_smooth = moma_smoothness(),
+                        pg_setting = moma_pg_settings(),
+                        max_bic_iter = 5,
+                        rank = 1) {
+    chkDots(...)
+    is_x_penalized <- !missing(x_smooth)
+    is_y_penalized <- !missing(y_smooth)
+    if (!is_x_penalized && !is_y_penalized) {
+        moma_warning("No smoothness is imposed!")
+    }
+
+    if (!is_x_penalized || !is_y_penalized) {
+        moma_warning("Please use `moma_fcca` if only one side is penalized.")
+    }
+
+    return(moma_sfcca(
+        X = X,
+        Y = Y,
+        center = center, scale = scale,
+        # x_sparse = x_sparse, y_sparse = y_sparse,
+        x_smooth = x_smooth, y_smooth = y_smooth,
+        pg_setting = pg_setting,
+        max_bic_iter = max_bic_iter,
+        rank = rank
+    ))
+}

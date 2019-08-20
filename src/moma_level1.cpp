@@ -118,11 +118,13 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
     // A final run on the selected parameter
     if (final_run)
     {
-        MoMALogger::message("Start a final run on the chosen parameters.");
         double opt_lambda_u = u_result["lambda"];
         double opt_lambda_v = v_result["lambda"];
         double opt_alpha_u  = u_result["alpha"];
         double opt_alpha_v  = v_result["alpha"];
+        MoMALogger::message("Start a final run on the chosen parameters.")
+            << "[av, au, lu, lv] = [" << opt_alpha_v << ", " << opt_alpha_u << ", " << opt_lambda_u
+            << ", " << opt_lambda_v << "]";
 
         set_penalty(opt_lambda_u, opt_lambda_v, opt_alpha_u, opt_alpha_v);
         initialize_uv();

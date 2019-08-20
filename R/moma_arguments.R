@@ -1,4 +1,5 @@
 #' Sparsity-inducing penalty in \code{MoMA}
+#'
 #' In the package \code{MoMA}, we support the following sparsity-inducing
 #' penalty functions.
 #' \itemize{
@@ -12,7 +13,17 @@
 #'   \item{\code{\link{spfusedlasso}}} TODO
 #'   \item{\code{\link{cluster}}} TODO
 #' }
+#' These functions should be called with prefix "\code{moma_}". All functions share
+#' two common parameters \code{lambda} and \code{select_scheme}.
 #' @name moma_sparsity
+#' @param lambda a vector containing penalty values
+#' @param select_scheme a char being either "b" or "g". See \code{selection_scheme}.
+NULL
+
+#' Tuning parameters selection scheme
+#'
+#' TODO
+#' @name selection_scheme
 NULL
 
 empty <- function() {
@@ -21,21 +32,6 @@ empty <- function() {
     return(arglist)
 }
 
-#' LASSO
-#'
-#' Use this function to set the penalty function as lasso
-#' \deqn{\lambda \sum \| x_{i} \| ,}
-#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
-#'
-#' @param ... Forces users to specify all arguments by name.
-#' @param non_negative a boolean value. Set \code{TRUE} to add non-negativity
-#' constraint.
-#'
-#' @return a \code{moma_sparsity} object, which is a list containing \code{non_negative}
-#'
-#' @examples
-#' lasso(non_negative = FALSE)
-#' @export
 lasso <- function(..., non_negative = FALSE) {
     if (length(list(...)) != 0) {
         moma_error("Please specify the correct argument by name.")
@@ -337,7 +333,11 @@ cluster <- function(..., w = NULL, ADMM = FALSE,
 #' @param MAX_ITER the maximum number of iterations for outer loop
 #' @param EPS_inner precision for inner loop
 #' @param MAX_ITER_inner the maximum number of iterations for inner loop
-#' @param solver a string in \code{c("ista", "fista", "onestepista")}.
+#' @param solver a string in \code{c("ista", "fista", "onestepista")}, representing ISTA (Iterative Shrinkage-Thresholding Algorithm),
+#'              FISTA (Fast
+#'              Iterative Shrinkage-Thresholding Algorithm) and One-step ISTA (an approximated
+#'              version of ISTA) respectively.
+#' @return a \code{moma_pg_settings} object, which is a list containing the above parameters.
 #' @export
 moma_pg_settings <- function(..., EPS = 1e-10, MAX_ITER = 1000,
                              EPS_inner = 1e-10, MAX_ITER_inner = 1e+5,
@@ -389,7 +389,26 @@ create_moma_sparsity_func <- function(f) {
 }
 
 moma_empty <- create_moma_sparsity_func(empty)
+
+
+#' LASSO
+#'
+#' Use this function to set the penalty function as lasso
+#' \deqn{\lambda \sum \| x_{i} \| ,}
+#' where \eqn{\lambda} is set by \code{lambda_u/v} in the function \code{moma_svd}.
+#'
+#' @param ... Forces users to specify all arguments by name.
+#' @param non_negative a boolean value. Set \code{TRUE} to add non-negativity
+#' constraint.
+#'
+#' @return a \code{moma_sparsity} object, which is a list containing \code{non_negative}
+#'
+#' @examples
+#' lasso(non_negative = FALSE)
+#' @name lasso
+#' @export
 moma_lasso <- create_moma_sparsity_func(lasso)
+
 moma_mcp <- create_moma_sparsity_func(mcp)
 moma_scad <- create_moma_sparsity_func(scad)
 moma_slope <- create_moma_sparsity_func(slope)
