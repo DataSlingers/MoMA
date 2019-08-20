@@ -9,17 +9,53 @@ output:
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "figs/README-"
+    collapse = TRUE,
+    comment = "#>",
+    fig.path = "figs/"
 )
 ```
 
 # MoMA: Modern Multivariate Analysis
 
-[![Travis-CI Build Status](https://api.travis-ci.com/michaelweylandt/MoMA.svg)](https://travis-ci.com/michaelweylandt/MoMA) [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-brightgreen.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/MoMA)](https://cran.r-project.org/package=MoMA) [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
+<!-- badges: start -->
+[![Travis-CI Build Status](https://api.travis-ci.com/michaelweylandt/MoMA.svg)](https://travis-ci.com/michaelweylandt/MoMA) 
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-brightgreen.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/MoMA)](https://cran.r-project.org/package=MoMA) 
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
+<!-- badges: end -->
 
-**TODO -- PACKAGE TEXT GOES HERE**
+MoMA is a penalized SVD framework that supports a wide range of sparsity-inducing penalties. For a matrix _X_, MoMA gives the solution to the following optimization problem:
+
+<center><img src="man/figures/moma-formula.svg" style="width: 500; max-width: 100%; height: auto" title="MoMA formula" /><br></center>
+
+The penalties (the _P_ functions) we support so far include
+
+* `moma_lasso()`: LASSO (least absolute shrinkage and selection operator).
+
+* `moma_scad()`: SCAD (smoothly clipped absolute deviation).
+
+* `moma_mcp()` MCP (minimax concave penalty).
+
+* `moma_slope()`: SLOPE (sorted L-one penalized estimation).
+
+* `moma_grplasso()`: Group LASSO.
+
+* `moma_fusedlasso()`: Fused LASSO.
+
+* `moma_spfusedlasso()`: Sparse fused LASSO.
+
+* `moma_l1tf()`: L-one trend filtering.
+
+* `moma_cluster()`: Cluster penalty.
+
+With this at hand, we can easily extend classical multivariate models:
+
+* `moma_sfpca()` performs penalized principal component analysis.
+
+* `moma_sfcca()` performs penalized canonical component analysis.
+
+* `moma_sflda()` performs penalized linear discriminant analysis.
+
+We also provide Shiny App support to facilitate interaction with the results. If you are new to MoMA, the best place to start is `vignette("MoMA")`. 
 
 ## Installation
 
@@ -27,12 +63,37 @@ The newest version of the package can be installed from Github:
 
 ```{r, eval=FALSE}
 library(devtools)
-install_github("michaelweylandt/MoMA", ref="build")
+install_github("michaelweylandt/MoMA", ref = "build")
 ```
 
 ## Usage
 
-**TODO**
+Perform sparse linear discriminant analysis on the Iris data set.
+
+```{r eval=FALSE}
+library(MoMA)
+
+## collect data
+X <- iris[, 1:4]
+Y_factor <- as.factor(rep(c("s", "c", "v"), rep(50, 3)))
+
+## range of penalty
+lambda <- seq(0, 1, 0.1)
+
+## run!
+a <- moma_sflda(
+    X = X,
+    Y_factor = Y_factor,
+    x_sparse = moma_lasso(lambda = lambda),
+    rank = 3
+)
+
+plot(a) # start a Shiny app and play with it!
+```
+
+<center>
+<img src="man/figures/README-usage-ldademo.png" style="width: 500px; max-width: 100%; height: auto" title="Shiny app" />
+</center>
 
 ## Background
 
@@ -126,7 +187,7 @@ a unified and flexible platform for data-driven discovery in `R`.
 ## Acknowledgements
 
 * MW was funded by an NSF Graduate Research Fellowship 1450681.
-* LL was funded by Google Summer of Code 2018.
+* LL was funded by Google Summer of Code 2019.
 
 ## References
 

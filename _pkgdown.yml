@@ -1,12 +1,25 @@
 template:
   params:
-    bootswatch: paper
+    package: tidytemplate
 
 navbar:
   type: inverse
   right:
     - icon: fa-github fa-lg
       href: https://github.com/michaelweylandt/MoMA
+  left:
+    - text: Intro
+      href: articles/moma-quick-start.html
+    - text: Reference
+      href: reference/index.html
+    - text: Articles
+      menu:
+      - text: Funtional Data Analysis
+        href: articles/moma-functional-data-analysis.html
+      - text: Principal Component Anlaysis
+        href: articles/moma-PCA.html
+      - text: Linear Discriminant Analysis
+        href: articles/moma-LDA.html
 
 reference:
   - title: Home Page
