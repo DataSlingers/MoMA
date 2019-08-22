@@ -207,7 +207,7 @@ int MoMA::deflate()
         double d = arma::as_scalar(u.t() * X * v);
         if (d <= 0.0)
         {
-            MoMALogger::error("Error in Schur complement: devided by zero.");
+            MoMALogger::error("Error in Schur complement: devision by zero.");
         }
 
         // No need to scale u and v

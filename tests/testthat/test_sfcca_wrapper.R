@@ -325,6 +325,7 @@ test_that("SFCCA object: Correct deflation scheme", {
 
 
 test_that("SFCCA object: Column / row names of a named matrix is stored correctly", {
+    set.seed(123)
     px <- 4
     py <- 5
     n <- 6
@@ -354,6 +355,7 @@ test_that("SFCCA object: Column / row names of a named matrix is stored correctl
 
 
 test_that("SFLDA object: get_mat_by_id", {
+    set.seed(123)
     px <- 4
     py <- 5
     n <- 6
@@ -406,6 +408,7 @@ test_that("SFLDA object: get_mat_by_id", {
 
 
 test_that("SFCCA object: print", {
+    set.seed(123)
     px <- 4
     py <- 5
     n <- 6
@@ -432,6 +435,8 @@ test_that("SFCCA object: print", {
 })
 
 test_that("SFCCA special-case functions: get_mat_by_index", {
+    set.seed(123)
+
     px <- 4
     py <- 5
     n <- 6

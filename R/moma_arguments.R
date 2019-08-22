@@ -4,14 +4,14 @@
 #' penalty functions.
 #' \itemize{
 #'   \item{\code{\link{moma_lasso}}}: sparsity
-#'   \item{\code{\link{moma_mcp}}}: adaptive sparsity
-#'   \item{\code{\link{moma_scad}}}: adaptive sparsity
-#'   \item{\code{\link{moma_slope}}}: adaptive sparsity
+#'   \item{\code{\link{moma_mcp}}}: non-convex sparsity
+#'   \item{\code{\link{moma_scad}}}: non-convex sparsity
+#'   \item{\code{\link{moma_slope}}}: sparsity
 #'   \item{\code{\link{moma_grplasso}}}: group-wise sparsity
-#'   \item{\code{\link{moma_fusedlasso}}}: piece-wise constant
+#'   \item{\code{\link{moma_fusedlasso}}}: piecewise constant, or ordered fusion
 #'   \item{\code{\link{moma_spfusedlasso}}}: sparsity and piece-wise constant
-#'   \item{\code{\link{moma_l1tf}}}: piece-wise quadratic
-#'   \item{\code{\link{moma_cluster}}}: structured sparsity
+#'   \item{\code{\link{moma_l1tf}}}: piecewise polynomial (default to piecewise linear)
+#'   \item{\code{\link{moma_cluster}}}: unordered fusion
 #' }
 #' These functions specify the value of the \code{u_sparse,v_sparse} arguments in the
 #'  \code{moma_*pca} series of functions, and the \code{x_sparse,y_sparse} arguments
@@ -19,14 +19,18 @@
 #'
 #' All functions
 #' above share two common parameters: \code{lambda} and \code{select_scheme}, which are
-#' described in the Arguments section below.
+#' described in the Arguments section.
 #' @name moma_sparsity_options
 #' @param ... Force users to specify arguments by names.
 #' @param lambda A vector containing penalty values
 #' @param select_scheme A char being either "b" (nested BIC search) or "g" (grid search).
 #'
-#' Selection of tuning parameters (four parameters in our case, \code{alpha_u}, \code{alpha_v}, \code{lambda_u}, \code{lambda_v}) is a problem in MoMA. Currently we provide
-#' two modes: grid search ("g") and nested BIC search ("b"). Grid search means we solve the problem
+#' MoMA provides a flexible framework for regularized multivariate analysis
+#' with several tuning parameters for different forms of regularization.
+#' To assist the user in selecting these parameters (\code{alpha_u},
+#' \code{alpha_v}, \code{lambda_u}, \code{lambda_v}), we provide
+#' two selection modes: grid search ("g") and nested BIC search ("b").
+#' Grid search means we solve the problem
 #' for all combinations of parameter values provided by the user.
 #'
 #' To explain nested BIC search, we need to look into how the algorithm runs.
@@ -41,6 +45,13 @@
 #' current estimate of \emph{u}, and then do the same thing for problem v,
 #' that is, to find the optimal parameters for problem v given current estimate of \emph{u}. Repeat
 #' the above until convergence or the maximal number of iterations has been reached.
+#'
+#' Users are welcome to refer to section 3.1: Selection of Regularization Parameters
+#' in the paper cited below.
+#'
+#' @references G. I. Allen and M. Weylandt, "Sparse and Functional Principal
+#' Components Analysis," 2019 IEEE Data Science Workshop (DSW),
+#' Minneapolis, MN, USA, 2019, pp. 11-16. \doi{10.1109/DSW.2019.8755778}.
 NULL
 
 #' Introduction to selection schemes in MoMA
@@ -63,9 +74,8 @@ lasso <- function(..., non_negative = FALSE) {
         moma_error("Please specify the correct argument by name.")
     }
 
-    if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a Boolean value.")
-    }
+    error_if_not_logical_scalar(non_negative)
+
     arglist <- list(nonneg = non_negative, P = "LASSO")
     class(arglist) <- "_moma_sparsity_type"
     return(arglist)
@@ -76,9 +86,8 @@ mcp <- function(..., gamma = 3, non_negative = FALSE) {
         moma_error("Please specify the correct argument by name.")
     }
 
-    if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a Boolean value.")
-    }
+    error_if_not_logical_scalar(non_negative)
+
     if (gamma <= 1) {
         moma_error(
             "Non-convexity parameter of MCP (",
@@ -96,9 +105,8 @@ scad <- function(..., gamma = 3.7, non_negative = FALSE) {
         moma_error("Please specify the correct argument by name.")
     }
 
-    if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a Boolean value.")
-    }
+    error_if_not_logical_scalar(non_negative)
+
     if (gamma <= 2) {
         moma_error(
             "Non-convexity parameter of SCAD (",
@@ -122,9 +130,8 @@ grplasso <- function(..., g, non_negative = FALSE) {
         moma_error("Please specify the correct argument by name.")
     }
 
-    if (!is_logical_scalar(non_negative)) {
-        moma_error(sQuote("non_negative"), " should be a Boolean value.")
-    }
+    error_if_not_logical_scalar(non_negative)
+
     if (!(inherits(g, c("character", "numeric", "factor", "integer")))) {
         moma_error("Please provide a vector as an indicator of grouping.")
     }
@@ -195,8 +202,8 @@ cluster <- function(..., w = NULL, ADMM = FALSE,
 #' Algorithm settings for solving the penalized SVD problem
 #'
 #' This function is used to specify the \code{pg_settings} argument
-#' in the \code{moma_*pca}, \code{moma_*cca}, and \code{moma_*ldaa}
-#' types of functions.
+#' in the \code{moma_*pca}, \code{moma_*cca}, and \code{moma_*lda}
+#' family of functions.
 #'
 #' To find an (approximate) solution to a penalized SVD (Singular Value Decomposition) problem is to solve two
 #' penalized regression problems iteratively (outer loop). Each penalized regression (inner loop)
@@ -419,6 +426,10 @@ moma_fusedlasso <- create_moma_sparsity_func(fusedlasso)
 #'          piecewise quadratic etc.
 #' @references Tibshirani, Ryan J. "Adaptive Piecewise Polynomial Estimation via Trend
 #' Filtering." The Annals of Statistics 42.1 (2014): 285-323. \doi{10.1214/13-AOS1189}.
+#' @references Aaditya Ramdas & Ryan J. Tibshirani (2016) Fast and Flexible ADMM
+#' Algorithms for Trend Filtering, Journal of Computational and Graphical Statistics,
+#' 25:3, 839-858. \doi{10.1080/10618600.2015.1054033}.
+#'
 #' @return A \code{moma_sparsity_type} object, which is an empty list.
 #' @name l1_trend_filtering
 #' @inheritParams moma_sparsity_options
@@ -428,12 +439,16 @@ moma_l1tf <- create_moma_sparsity_func(l1tf)
 #' Sparse fused LASSO
 #'
 #' Use this function to set the penalty function to sparse fused lasso
-#' \deqn{\lambda_1 \sum | x_{i} - x_{i-1} | + \lambda_2 \sum |x_{i} | ,}
-#' where \eqn{\lambda_1} is set by the \code{lambda} argument below, and \eqn{\lambda_2}
+#' \deqn{\lambda \sum | x_{i} - x_{i-1} | + \lambda_2 \sum |x_{i} | ,}
+#' where \eqn{\lambda} is set by the \code{lambda} argument below, and \eqn{\lambda_2}
 #' is specified in by the \code{lambda_2} argument.
 #'
 #' @param ... Forces users to specify all arguments by name.
 #' @param lambda2 A scalar. The level of penalty on the absolute values of the coefficients.
+#'                Note that it remains fixed when searching over \code{lambda}, rather than
+#'                changes with \code{lambda} in a way that the \code{lambda} / \code{lambda_2}
+#'                ratio remains fixed (which is the defualt behavior in the package
+#'                \code{glmnet}).
 #'
 #' @return A \code{moma_sparsity_type} object, which is a list containing the value of \code{lambda_2}.
 #' @references Tibshirani, Robert, et al. "Sparsity and Smoothness via the Fused Lasso."

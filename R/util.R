@@ -61,6 +61,16 @@ error_if_not_valid_select_str <- function(x) {
 is_logical_scalar <- function(x) {
     return(is.logical(x) && (length(x) == 1) && !is.na(x))
 }
+error_if_not_logical_scalar <- function(x) {
+    nm <- deparse(substitute(x))
+    if (!is_logical_scalar(x)) {
+        moma_error(
+            sQuote(nm),
+            " should be a Boolean value."
+        )
+    }
+}
+
 # Credit: clustRviz
 is_square <- function(x) {
     is.matrix(x) && (NROW(x) == NCOL(x))

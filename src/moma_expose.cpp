@@ -174,8 +174,8 @@ Rcpp::List cpp_multirank_BIC_grid_search(
     double EPS_inner,
     long MAX_ITER_inner,
     std::string solver,
-    int deflation_scheme       = 1,  // Defaults to 1 = PCA_Hotelling
-    int select_scheme_alpha_u  = 0,  // 0 means grid, 1 means BIC search
+    int deflation_scheme       = 1,
+    int select_scheme_alpha_u  = 0,  // 0 = grid, 1 = bic
     int select_scheme_alpha_v  = 0,
     int select_scheme_lambda_u = 0,
     int select_scheme_lambda_v = 0,
@@ -224,7 +224,7 @@ Rcpp::List cca(const arma::mat &X,  // We should not change any variable in R, s
                double EPS_inner,
                long MAX_ITER_inner,
                std::string solver,
-               int deflation_scheme,            // PCA = 1, CCA = 2, LDA = 3, PLS = 4
+               int deflation_scheme,            // refer to `DeflationScheme` in moma_base.h
                int select_scheme_alpha_u  = 0,  // 0 means grid, 1 means BIC search
                int select_scheme_alpha_v  = 0,
                int select_scheme_lambda_u = 0,
