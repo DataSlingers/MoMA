@@ -12,7 +12,7 @@ vignette: >
 
 ```{r echo=FALSE,cache=FALSE}
 set.seed(222)
-knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(cache = FALSE)
 ```
 
 This section is based on the Simulation Study section in the paper Sparse and Functional Principal Component Analysis. Note this is not a complete replication of the Simulation Study section. Please refer to the paper for further details.
