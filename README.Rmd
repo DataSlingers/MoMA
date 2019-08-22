@@ -18,7 +18,8 @@ knitr::opts_chunk$set(
 # MoMA: Modern Multivariate Analysis
 
 <!-- badges: start -->
-[![Travis-CI Build Status](https://api.travis-ci.com/michaelweylandt/MoMA.svg)](https://travis-ci.com/michaelweylandt/MoMA) 
+[![TravisCI Build Status](https://travis-ci.com/DataSlingers/MoMA.svg?branch=develop)](https://travis-ci.com/DataSlingers/MoMA) 
+[![codecov Coverage Status](https://codecov.io/gh/DataSlingers/MoMA/branch/develop/graph/badge.svg)](https://codecov.io/gh/DataSlingers/MoMA/branch/develop)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-brightgreen.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) [![CRAN_Status_Badge](http://www.r-pkg.org/badges/version/MoMA)](https://cran.r-project.org/package=MoMA) 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](http://www.repostatus.org/badges/latest/wip.svg)](http://www.repostatus.org/#wip)
 <!-- badges: end -->
