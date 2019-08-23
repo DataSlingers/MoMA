@@ -18,5 +18,11 @@ src/*.so
 src/*.dll
 inst/doc
 
-# File in which current hash is stored (for error reporting)
-inst/GIT.HASH
+# VS Code configuration files
+.vscode/*
+
+# Development scripts
+.github/*
+script/*
+.clang-format
+.travis.yml

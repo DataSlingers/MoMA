@@ -31,8 +31,8 @@ after_success <- function() {
     ## Build pkgdown site
     pkgdown::build_site()
 
-    unlink(Sys.glob("moma.Rcheck"), recursive = TRUE, force = TRUE)
-    unlink(Sys.glob("moma*.tar.gz"), recursive = TRUE, force = TRUE)
+    unlink(Sys.glob("MoMA.Rcheck"), recursive = TRUE, force = TRUE)
+    unlink(Sys.glob("MoMA_*.tar.gz"), recursive = TRUE, force = TRUE)
     file.rename(".gitignore.deploy", ".gitignore")
     unlink(Sys.glob("src/*o"), force = TRUE)
 }
