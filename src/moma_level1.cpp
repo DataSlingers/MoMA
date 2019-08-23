@@ -3,25 +3,25 @@
 #include "moma.h"
 
 // auxiliary functions for MoMA::grid_BIC_mix
-const arma::vec &construct_grid_for_search(const arma::vec &grid, int want_grid)
+const arma::vec &construct_grid_for_search(const arma::vec &grid, SelectionScheme ss)
 {
-    if (want_grid == 1)
+    if (ss == SelectionScheme::grid)
     {
         return grid;
     }
-    else if (want_grid == 0)
+    else if (ss == SelectionScheme::BIC)
     {
         return MOMA_EMPTY_GRID_OF_LENGTH1;
     }
 }
 
-arma::vec construct_grid_no_search(const arma::vec &grid, int want_bic, int i)
+arma::vec construct_grid_no_search(const arma::vec &grid, SelectionScheme ss, int i)
 {
-    if (want_bic == 1)
+    if (ss == SelectionScheme::BIC)
     {
         return grid;
     }
-    else if (want_bic == 0)
+    else if (ss == SelectionScheme::grid)
     {
         return grid(i) * arma::ones<arma::vec>(1);
     }
@@ -118,13 +118,15 @@ Rcpp::List MoMA::criterion_search(const arma::vec &bic_au_grid,
     // A final run on the selected parameter
     if (final_run)
     {
-        MoMALogger::message("Start a final run on the chosen parameters.");
         double opt_lambda_u = u_result["lambda"];
         double opt_lambda_v = v_result["lambda"];
         double opt_alpha_u  = u_result["alpha"];
         double opt_alpha_v  = v_result["alpha"];
+        MoMALogger::message("Start a final run on the chosen parameters.")
+            << "[av, au, lu, lv] = [" << opt_alpha_v << ", " << opt_alpha_u << ", " << opt_lambda_u
+            << ", " << opt_lambda_v << "]";
 
-        reset(opt_lambda_u, opt_lambda_v, opt_alpha_u, opt_alpha_v);
+        set_penalty(opt_lambda_u, opt_lambda_v, opt_alpha_u, opt_alpha_v);
         initialize_uv();
         solve();  // Use MoMA::u and MoMA::v as start points
 
@@ -152,11 +154,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                               const arma::vec &alpha_v,
                               const arma::vec &lambda_u,
                               const arma::vec &lambda_v,
-                              int selection_criterion_alpha_u,  // flags; = 0 means grid, =
-                                                                // 01 means BIC search
-                              int selection_criterion_alpha_v,
-                              int selection_criterion_lambda_u,
-                              int selection_criterion_lambda_v,
+                              SelectionScheme select_scheme_alpha_u,
+                              SelectionScheme select_scheme_alpha_v,
+                              SelectionScheme select_scheme_lambda_u,
+                              SelectionScheme select_scheme_lambda_v,
                               int max_bic_iter,
                               int rank)
 {
@@ -170,22 +171,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     // grid_au = alpha_u, bic_au_grid = [-1].
     // If alpha_u is selected via nested BIC search,
     // then grid_au = [-1], bic_au_grid = alpha_u
-    const arma::vec &grid_lu = construct_grid_for_search(lambda_u, !selection_criterion_lambda_u);
-    const arma::vec &grid_lv = construct_grid_for_search(lambda_v, !selection_criterion_lambda_v);
-    const arma::vec &grid_au = construct_grid_for_search(alpha_u, !selection_criterion_alpha_u);
-    const arma::vec &grid_av = construct_grid_for_search(alpha_v, !selection_criterion_alpha_v);
-
-    // Test that if a grid is set to be BIC-search grid, then
-    // the above code should set grid_xx to the vector [-1]
-    if ((selection_criterion_alpha_u == 1 && (grid_au.n_elem != 1 || grid_au(0) != -1)) ||
-        (selection_criterion_alpha_v == 1 && (grid_av.n_elem != 1 || grid_av(0) != -1)) ||
-        (selection_criterion_lambda_u == 1 && (grid_lu.n_elem != 1 || grid_lu(0) != -1)) ||
-        (selection_criterion_lambda_v == 1 && (grid_lv.n_elem != 1 || grid_lv(0) != -1)))
-    {
-        MoMALogger::error("Wrong grid-search grid!")
-            << "grid_lu.n_elem=" << grid_lu.n_elem << ", grid_av.n_elem=" << grid_av.n_elem
-            << ", grid_lu.n_elem" << grid_lu.n_elem << ", grid_lv.n_elem" << grid_lv.n_elem;
-    }
+    const arma::vec &grid_lu = construct_grid_for_search(lambda_u, select_scheme_lambda_u);
+    const arma::vec &grid_lv = construct_grid_for_search(lambda_v, select_scheme_lambda_v);
+    const arma::vec &grid_au = construct_grid_for_search(alpha_u, select_scheme_alpha_u);
+    const arma::vec &grid_av = construct_grid_for_search(alpha_v, select_scheme_alpha_v);
 
     int n_lambda_u = grid_lu.n_elem;
     int n_lambda_v = grid_lv.n_elem;
@@ -194,8 +183,6 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
 
     RcppFiveDList five_d_list(n_alpha_u, n_lambda_u, n_alpha_v, n_lambda_v, rank);
 
-    const arma::mat original_X =
-        X;  // keep a copy of X, because MoMA::X will be contanminated during defaltion
     for (int i = 0; i < n_alpha_u; i++)
     {
         for (int j = 0; j < n_lambda_u; j++)
@@ -205,23 +192,15 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                 for (int m = 0; m < n_lambda_v; m++)
                 {
                     arma::vec bic_au_grid =
-                        construct_grid_no_search(alpha_u, selection_criterion_alpha_u, i);
+                        construct_grid_no_search(alpha_u, select_scheme_alpha_u, i);
                     arma::vec bic_lu_grid =
-                        construct_grid_no_search(lambda_u, selection_criterion_lambda_u, j);
+                        construct_grid_no_search(lambda_u, select_scheme_lambda_u, j);
                     arma::vec bic_av_grid =
-                        construct_grid_no_search(alpha_v, selection_criterion_alpha_v, k);
+                        construct_grid_no_search(alpha_v, select_scheme_alpha_v, k);
                     arma::vec bic_lv_grid =
-                        construct_grid_no_search(lambda_v, selection_criterion_lambda_v, m);
+                        construct_grid_no_search(lambda_v, select_scheme_lambda_v, m);
 
-                    if ((selection_criterion_alpha_u == 0 && bic_au_grid.n_elem != 1) ||
-                        (selection_criterion_alpha_v == 0 && bic_av_grid.n_elem != 1) ||
-                        (selection_criterion_lambda_u == 0 && bic_lu_grid.n_elem != 1) ||
-                        (selection_criterion_lambda_v == 0 && bic_lv_grid.n_elem != 1))
-                    {
-                        MoMALogger::error("Wrong BIC search grid!");
-                    }
-
-                    set_X(original_X);
+                    reset_X();
                     for (int pc = 0; pc < rank; pc++)
                     {
                         // MoMA::criterion_search returns a list containing two lists:
@@ -241,16 +220,41 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         arma::vec curv = Rcpp::as<Rcpp::NumericVector>(v_result["vector"]);
                         double d       = arma::as_scalar(curu.t() * X * curv);
 
-                        five_d_list.insert(
-                            Rcpp::List::create(Rcpp::Named("u") = u_result,
-                                               Rcpp::Named("v") = v_result, Rcpp::Named("k") = pc,
-                                               Rcpp::Named("X") = X, Rcpp::Named("d") = d),
-                            i, j, k, m, pc);
+                        Rcpp::List wrap_up;
+                        if (ds == DeflationScheme::PCA_Hotelling ||
+                            ds == DeflationScheme::PCA_Schur_Complement ||
+                            ds == DeflationScheme::PCA_Projection)
+                        {
+                            wrap_up = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
+                                Rcpp::Named("k") = pc, Rcpp::Named("X") = X, Rcpp::Named("d") = d);
+                        }
+                        else if (ds == DeflationScheme::CCA)
+                        {
+                            wrap_up = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
+                                Rcpp::Named("k") = pc, Rcpp::Named("X") = X_working,
+                                Rcpp::Named("Y") = Y_working,  // an extra "Y" element
+                                Rcpp::Named("d") = d);
+                        }
+                        else if (ds == DeflationScheme::LDA)
+                        {
+                            wrap_up = Rcpp::List::create(
+                                Rcpp::Named("u") = u_result, Rcpp::Named("v") = v_result,
+                                Rcpp::Named("k") = pc, Rcpp::Named("X") = X_working,
+                                Rcpp::Named("d") = d);
+                        }
+                        else
+                        {
+                            MoMALogger::error("Not implemented.");
+                        }
+
+                        five_d_list.insert(wrap_up, i, j, k, m, pc);
 
                         // Deflate the matrix
                         if (pc < rank - 1)
                         {
-                            deflate(d);
+                            deflate();
                         }
                     }
                 }
@@ -298,7 +302,7 @@ Rcpp::List MoMA::multi_rank(int rank, arma::vec initial_u, arma::vec initial_v)
         // deflate X
         if (i < rank - 1)
         {
-            deflate(d(i));
+            deflate();
             // After deflation MoMA::u and MoMA::v are
             // re-initialized as leading SVs of the deflated matrix
             // MoMA::X = MoMA::X - d u v^T
@@ -355,7 +359,7 @@ Rcpp::List MoMA::grid_search(const arma::vec &alpha_u,
                         << " lambda_u " << lambda_u(i) << " lambda_v " << lambda_v(j) << " alpha_u "
                         << alpha_u(k) << " alpha_v " << alpha_v(m);
 
-                    reset(lambda_u(i), lambda_v(j), alpha_u(k), alpha_v(m));
+                    set_penalty(lambda_u(i), lambda_v(j), alpha_u(k), alpha_v(m));
 
                     // MoMA::solve use the result from last
                     // iteration as starting point

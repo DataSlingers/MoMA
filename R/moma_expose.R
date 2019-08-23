@@ -2,7 +2,7 @@ moma_svd <- function(
                      X,
                      u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
                      Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
-                     pg_setting = moma_pg_settings(),
+                     pg_settings = moma_pg_settings(),
                      k = 1, # number of pairs of singular vecters
                      select = c("gridsearch", "nestedBIC")) {
     if (!inherits(alpha_u, c("numeric", "integer")) ||
@@ -62,22 +62,21 @@ moma_svd <- function(
     }
 
     # Sparsity arguments
-    # "moma_sparsity" includes all penalty types, including fused lasso
-    # group lasso and so on.
-    if (!inherits(u_sparsity, "moma_sparsity") || !inherits(v_sparsity, "moma_sparsity")) {
+    # "_moma_sparsity_type" includes all penalty types
+    if (!inherits(u_sparsity, "_moma_sparsity_type") || !inherits(v_sparsity, "_moma_sparsity_type")) {
         moma_error(
             "Sparse penalty should be of class ",
-            sQuote("moma_sparsity"),
+            sQuote("_moma_sparsity_type"),
             ". Try using, for example, `u_sparsity = lasso()`."
         )
     }
 
     # PG loop settings
-    if (!inherits(pg_setting, "moma_pg_settings")) {
+    if (!inherits(pg_settings, "moma_pg_settings")) {
         moma_error(
-            "pg_setting penalty should be of class ",
+            "pg_settings penalty should be of class ",
             sQuote("moma_pg_settings"),
-            ". Try using, for example, `pg_setting = moma_pg_settings(MAX_ITER=1e+4)`."
+            ". Try using, for example, `pg_settings = moma_pg_settings(MAX_ITER=1e+4)`."
         )
     }
 
@@ -100,7 +99,7 @@ moma_svd <- function(
             prox_arg_list_u = add_default_prox_args(u_sparsity),
             prox_arg_list_v = add_default_prox_args(v_sparsity)
         ),
-        pg_setting
+        pg_settings
     )
 
     if (is_multiple_para) {

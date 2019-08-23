@@ -428,29 +428,29 @@ test_that("Correct match for PG loop settings", {
 
 
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "ista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_settings = moma_pg_settings(solver = "ista")),
         "Initializing a ISTA solver"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "fista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_settings = moma_pg_settings(solver = "fista")),
         "Initializing a FISTA solver"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "onestepista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_settings = moma_pg_settings(solver = "onestepista")),
         "Initializing an one-step ISTA solver"
     )
 
 
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "ista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_settings = moma_pg_settings(solver = "ista")),
         "Releasing a ISTA object"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "fista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_settings = moma_pg_settings(solver = "fista")),
         "Releasing a FISTA object"
     )
     expect_output(
-        moma_svd(matrix(runif(12), 3, 4), pg_setting = moma_pg_settings(solver = "onestepista")),
+        moma_svd(matrix(runif(12), 3, 4), pg_settings = moma_pg_settings(solver = "onestepista")),
         "Releasing a OneStepISTA object"
     )
 
@@ -460,11 +460,11 @@ test_that("Correct match for PG loop settings", {
         "EPS 1e-10 MAX_ITER 1000 EPS_inner 1e-10 MAX_ITER_inner 100000 solver ISTA"
     )
 
-    # Test pg_setting() passes correct values to C++ side
+    # Test pg_settings() passes correct values to C++ side
     expect_output(
         moma_svd(
             matrix(runif(12), 3, 4),
-            pg_setting = moma_pg_settings(
+            pg_settings = moma_pg_settings(
                 EPS = 1.212312e-5,
                 MAX_ITER = 1.2957e+7,
                 EPS_inner = 1.987e-6,
@@ -477,14 +477,14 @@ test_that("Correct match for PG loop settings", {
     expect_error(
         moma_svd(
             matrix(runif(12), 3, 4),
-            pg_setting = c(
+            pg_settings = c(
                 EPS = 1.212312e-5,
                 MAX_ITER = 1.2957e+7,
                 EPS_inner = 1.987e-6,
                 MAX_ITER_inner = 98728376
             )
         ),
-        paste0("pg_setting penalty should be of class ", sQuote("moma_pg_settings"))
+        paste0("pg_settings penalty should be of class ", sQuote("moma_pg_settings"))
     )
 
     on.exit(MoMA::moma_logger_level(old_logger_level))

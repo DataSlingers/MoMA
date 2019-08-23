@@ -35,7 +35,15 @@ class MoMA
     double lambda_v;
     bool is_initialzied;  // only MoMA::initialze_uv() sets it to true
     bool is_solved;       // only MoMA::solve() sets it true.
-    arma::mat X;          // TODO: move to private. It is not MoMA's duty to keep a copy of X
+    arma::mat X;          // on X we perform the algorithm
+
+    arma::mat X_working;  // keep track of deflated matrices
+    arma::mat Y_working;
+
+    arma::mat X_original;  // const
+    arma::mat Y_original;
+
+    const DeflationScheme ds;
 
     // they are used in MoMA::evaluate_loss
     arma::mat Omega_u;
@@ -89,7 +97,38 @@ class MoMA
          long i_MAX_ITER,
          double i_EPS_inner,
          long i_MAX_ITER_inner,
-         std::string i_solver);
+         std::string i_solver,
+         DeflationScheme i_ds = DeflationScheme::PCA_Hotelling);
+
+    MoMA(
+        // Pass X_ as a reference to avoid copy
+        const arma::mat &X_working,
+        const arma::mat &Y_working,
+        /*
+         * sparsity - enforced through penalties
+         */
+        double i_lambda_u,  // regularization level
+        double i_lambda_v,
+        Rcpp::List i_prox_arg_list_u,
+        Rcpp::List i_prox_arg_list_v,
+
+        /*
+         * smoothness - enforced through constraints
+         */
+        double i_alpha_u,  // Smoothing levels
+        double i_alpha_v,
+        const arma::mat &i_Omega_u,  // Smoothing matrices
+        const arma::mat &i_Omega_v,
+
+        /*
+         * Algorithm parameters:
+         */
+        double i_EPS,
+        long i_MAX_ITER,
+        double i_EPS_inner,
+        long i_MAX_ITER_inner,
+        std::string i_solver,
+        DeflationScheme i_ds);
 
     // solve sfpca by iteratively solving
     // penalized regressions
@@ -97,9 +136,8 @@ class MoMA
 
     double evaluate_loss();
 
-    // deflate u * v.t() out of X by the amount of d
-    // deflation happens in place, so MoMA::X is contaminated
-    int deflate(double d);
+    // Deflation happens in place, so MoMA::X is contaminated
+    int deflate();
 
     int initialize_uv();
 
@@ -107,8 +145,8 @@ class MoMA
     int check_convergence(int iter, double tol);
 
     // change penalty level
-    int reset(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v);
-    int set_X(arma::mat new_X);
+    int set_penalty(double newlambda_u, double newlambda_v, double newalpha_u, double newalpha_v);
+    int reset_X();
 
     // following functions are implemented in `moma_level1.cpp`
     Rcpp::List criterion_search(const arma::vec &bic_au_grid,
@@ -134,11 +172,10 @@ class MoMA
                             const arma::vec &alpha_v,
                             const arma::vec &lambda_u,
                             const arma::vec &lambda_v,
-                            int selection_criterion_alpha_u,  // flags; = 0 means grid, = 01
-                                                              // means BIC search
-                            int selection_criterion_alpha_v,
-                            int selection_criterion_lambda_u,
-                            int selection_criterion_lambda_v,
+                            SelectionScheme select_scheme_alpha_u,
+                            SelectionScheme select_scheme_alpha_v,
+                            SelectionScheme select_scheme_lambda_u,
+                            SelectionScheme select_scheme_lambda_v,
                             int max_bic_iter = 5,
                             int rank         = 1);
 };

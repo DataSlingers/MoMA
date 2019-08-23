@@ -9,7 +9,7 @@ test_that("moma_* works", {
         moma_lasso(non_negative = TRUE)$sparsity_type$nonneg == TRUE,
         all(c("lambda", "select_scheme", "non_negative") %in% names(formals(moma_lasso))),
         moma_lasso()$lambda == 0,
-        moma_lasso()$select_scheme == "g"
+        moma_lasso()$select_scheme == "grid"
     ))
 
     expect_warning(

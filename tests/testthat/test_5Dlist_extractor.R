@@ -38,10 +38,10 @@ five_D_list_instance <- do.call(
     c(
         public_arg_list,
         list(
-            selection_criterion_alpha_u = 0, # grid
-            selection_criterion_alpha_v = 0, # grid
-            selection_criterion_lambda_u = 0, # grid
-            selection_criterion_lambda_v = 0 # grid
+            select_scheme_alpha_u = 0, # grid
+            select_scheme_alpha_v = 0, # grid
+            select_scheme_lambda_u = 0, # grid
+            select_scheme_lambda_v = 0 # grid
         )
     )
 )

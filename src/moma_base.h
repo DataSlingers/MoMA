@@ -20,4 +20,22 @@ static constexpr double MOMA_INFTY                = std::numeric_limits<double>:
 static const arma::vec MOMA_EMPTY_GRID_OF_LENGTH1 = -arma::ones<arma::vec>(1);
 static const double MOMA_FLOATPOINT_EPS           = 1e-8;
 #define MOMA_FUSEDLASSODP_BUFFERSIZE 5000
+enum class DeflationScheme
+{
+    PCA_Hotelling        = 1,
+    CCA                  = 2,
+    LDA                  = 3,
+    PLS                  = 4,
+    PCA_Schur_Complement = 5,
+    PCA_Projection       = 6
+};
+
+enum class SelectionScheme
+{
+    grid = 0,
+    BIC  = 1,
+    // AIC = 2
+    // eBIC = 3
+};
+
 #endif

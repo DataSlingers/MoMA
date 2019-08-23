@@ -1,47 +1,3 @@
-#' \code{SFPCA} \code{R6} object
-#'
-#' An \code{R6} object for performing SFPCA and parameter selection
-#'
-#' During initialziation of an \code{SFPCA} object, \code{R}
-#' calls the \code{C++}-side function, \code{cpp_multirank_BIC_grid_search}, and
-#' wraps the results returned. The \code{SFPCA} object also records penalty levels
-#' and selection schemes of tuning parameters. Several helper
-#' methods are provivded to facilitate access to results.
-#' Initialization is delegated to \code{\link{moma_sfpca}}.
-#' @seealso \code{\link{moma_sfpca}},
-#' \code{\link{moma_spca}},
-#' \code{\link{moma_fpca}},
-#' \code{\link{moma_twspca}},
-#' \code{\link{moma_twfpca}}
-#'
-#' @section Members:
-#'
-#' \describe{
-#'   \item{\code{center,scale}}{The attributes "\code{scaled:center}" and "\code{scaled:scale}" of function \code{scale}.
-#' The numeric centering and scalings used (if any) of the data matrix.}
-#'   \item{\code{grid_result}}{a 5-D list containing the results evaluated on the paramter grid.}
-#'   \item{\code{selection_scheme_list}}{a list with elements \code{selection_criterion_alpha_u},
-#'            \code{selection_criterion_alpha_v},
-#'            \code{selection_criterion_lambda_u},
-#'            \code{selection_criterion_lambda_v}. Each of them is either 0 or 1. 0 stands for grid search
-#' and 1 stands for BIC search. TODO: descibe the mixed selection procedure.}
-#' }
-#' @section Methods:
-#'
-#' \describe{
-#'   \item{\code{get_mat_by_index}}{Arguments: \code{alpha_u}, \code{alpha_v}, \code{lambda_u}, \code{lambda_v}
-#' are the indices of the parameters in the paramter grid, which is specified during initialization.
-#'
-#' Obtain the right and left sigular penalized vectors, which are packed into matrices \code{U} and \code{V}.}
-#'   \item{\code{print}}{Display tuning parameters and selection schemes.}
-#'   \item{\code{left_project}}{Arguments: \code{newX}, a matrix (un-centered and un-scaled) of
-#' the same number of columns as the original data matrix.
-#'
-#' Project the new data into the space spaned by the
-#' penalized left singular vectors, after scaling and centering as needed.}
-#' }
-#' @return an \code{SFPCA} R6 object.
-#' @export
 SFPCA <- R6::R6Class("SFPCA",
     private = list(
         check_input_index = TRUE,
@@ -50,10 +6,70 @@ SFPCA <- R6::R6Class("SFPCA",
             # internal functions
             private$check_input_index <- FALSE
             res <- self$get_mat_by_index(
-                alpha_u, alpha_v, lambda_u, lambda_v
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v
             )
             private$check_input_index <- TRUE
             return(res)
+        },
+        private_left_project = function(newX, ...,
+                                                alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, rank = 1) {
+            private$check_input_index <- FALSE
+            res <- self$left_project(
+                newX = newX,
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v,
+                rank = rank
+            )
+            private$check_input_index <- TRUE
+            return(res)
+        },
+        private_error_if_not_indices = function(...,
+                                                        alpha_u, alpha_v, lambda_u, lambda_v) {
+            error_if_not_finite_numeric_scalar(alpha_u)
+            error_if_not_finite_numeric_scalar(alpha_v)
+            error_if_not_finite_numeric_scalar(lambda_u)
+            error_if_not_finite_numeric_scalar(lambda_v)
+
+            error_if_not_wholenumber(alpha_u)
+            error_if_not_wholenumber(alpha_v)
+            error_if_not_wholenumber(lambda_u)
+            error_if_not_wholenumber(lambda_v)
+        },
+        private_error_if_extra_arg = function(..., is_missing) {
+            is_fixed <- self$fixed_list == TRUE
+            param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
+            if (any(is_missing == FALSE & is_fixed == TRUE)) { # elementwise and
+                output_para <- is_missing == FALSE & is_fixed == TRUE
+                moma_error(
+                    paste0(
+                        "Invalid index: ",
+                        paste(param_str_list[output_para], collapse = ", "),
+                        ". Do not specify indexes of parameters ",
+                        "i) that are chosen by BIC, or ",
+                        "ii) that are not specified during initialization of the SFPCA object, or ",
+                        "iii) that are scalars during initialization of the SFPCA object."
+                    )
+                )
+            }
+        },
+        private_error_if_miss_arg = function(..., is_missing) {
+            is_fixed <- self$fixed_list == TRUE
+            param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
+            if (any(is_missing == TRUE & is_fixed == FALSE)) {
+                output_para <- is_missing == TRUE & is_fixed == FALSE
+                moma_error(
+                    paste0(
+                        "Please spesify the following argument(s): ",
+                        paste(param_str_list[output_para], collapse = ", "),
+                        "."
+                    )
+                )
+            }
         }
     ),
     public = list(
@@ -69,8 +85,8 @@ SFPCA <- R6::R6Class("SFPCA",
         alpha_v = NULL,
         lambda_u = NULL,
         lambda_v = NULL,
-        selection_scheme_list = NULL,
-        pg_setting = NULL,
+        select_scheme_list = NULL,
+        pg_settings = NULL,
         n = NULL,
         p = NULL,
         X = NULL,
@@ -81,11 +97,18 @@ SFPCA <- R6::R6Class("SFPCA",
                                       center = TRUE, scale = FALSE,
                                       u_sparsity = empty(), v_sparsity = empty(), lambda_u = 0, lambda_v = 0, # lambda_u/_v is a vector or scalar
                                       Omega_u = NULL, Omega_v = NULL, alpha_u = 0, alpha_v = 0, # so is alpha_u/_v
-                                      pg_setting = moma_pg_settings(),
-                                      selection_scheme_str = "gggg",
+                                      pg_settings = moma_pg_settings(),
+                                      select_scheme_list = list(
+                                          select_scheme_alpha_u = SELECTION_SCHEME[["grid"]],
+                                          select_scheme_alpha_v = SELECTION_SCHEME[["grid"]],
+                                          select_scheme_lambda_u = SELECTION_SCHEME[["grid"]],
+                                          select_scheme_lambda_v = SELECTION_SCHEME[["grid"]]
+                                      ),
                                       max_bic_iter = 5,
-                                      rank = 1) {
+                                      rank = 1,
+                                      deflation_scheme = DEFLATION_SCHEME[["PCA_Hotelling"]]) {
             chkDots(...)
+
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
             error_if_not_valid_parameters(alpha_u)
@@ -99,6 +122,7 @@ SFPCA <- R6::R6Class("SFPCA",
             self$lambda_v <- lambda_v
 
             # Step 1.2: matrix
+            X <- as.matrix(X)
             error_if_not_valid_data_matrix(X)
             n <- dim(X)[1]
             p <- dim(X)[2]
@@ -117,60 +141,42 @@ SFPCA <- R6::R6Class("SFPCA",
             self$n <- n
             self$p <- p
             self$X <- X
+            self$X_coln <- colnames(X) %||% paste0("Xcol_", seq_len(p))
+            self$X_rown <- rownames(X) %||% paste0("Xrow_", seq_len(n))
 
             # Step 1.3: sparsity
-            error_if_not_of_class(u_sparsity, "moma_sparsity")
-            error_if_not_of_class(v_sparsity, "moma_sparsity")
+            error_if_not_of_class(u_sparsity, "_moma_sparsity_type")
+            error_if_not_of_class(v_sparsity, "_moma_sparsity_type")
             self$u_sparsity <- u_sparsity
             self$v_sparsity <- v_sparsity
 
             # Step 1.4: PG loop settings
-            error_if_not_of_class(pg_setting, "moma_pg_settings")
-            self$pg_setting <- pg_setting
+            error_if_not_of_class(pg_settings, "moma_pg_settings")
+            self$pg_settings <- pg_settings
 
             # Step 1.5: smoothness
+            # if alpha = 0: overwrite Omega_u to identity matrix whatever it was
+            # if alpha is a grid or a non-zero scalar:
+            #       if Omega missing: set to second-difference matrix
+            #       else check validity
             Omega_u <- check_omega(Omega_u, alpha_u, n)
             Omega_v <- check_omega(Omega_v, alpha_v, p)
             self$Omega_u <- Omega_u
             self$Omega_v <- Omega_v
 
             # Step 1.6: check selection scheme string
-            # "g" stands for grid search, "b" stands for BIC
-            error_if_not_fourchar_bg_string(selection_scheme_str)
+            # `select_scheme_list` will be passed to C++ functions
+            error_if_not_valid_select_scheme_list(select_scheme_list)
 
-            # turn "b"/"g" to 1/0
-            # `selection_scheme_list` will be passed to C++ functions
-            selection_scheme_list <- list(
-                selection_criterion_alpha_u = 0,
-                selection_criterion_alpha_v = 0,
-                selection_criterion_lambda_u = 0,
-                selection_criterion_lambda_v = 0
-            )
-            # `fixed_list` will be stored in the R6 object
-            fixed_list <- list(
-                # "Fixed" parameters are those
-                # i) that are chosen by BIC, or
-                # ii) that are not specified during initialization of the SFCPA object, or
-                # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
-                is_alpha_u_fixed = FALSE,
-                is_alpha_v_fixed = FALSE,
-                is_lambda_u_fixed = FALSE,
-                is_lambda_v_fixed = FALSE
-            )
             parameter_length_list <- vapply(FUN = length, list(
                 self$alpha_u,
                 self$alpha_v,
                 self$lambda_u,
                 self$lambda_v
-            ), integer(1))
+            ), integer(1)) # order is important
 
-            for (i in 1:4) {
-                para_select_str_i <- substr(selection_scheme_str, i, i)
-                selection_scheme_list[[i]] <- ifelse(para_select_str_i == "g", 0, 1)
-                fixed_list[[i]] <- para_select_str_i == "b" || parameter_length_list[[i]] == 1
-            }
-            self$selection_scheme_list <- selection_scheme_list
-            self$fixed_list <- fixed_list
+            self$select_scheme_list <- select_scheme_list
+            self$fixed_list <- get_fixed_indicator_list(select_scheme_list, parameter_length_list)
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
@@ -197,19 +203,25 @@ SFPCA <- R6::R6Class("SFPCA",
                     rank = rank
                 ),
                 list(
-                    Omega_u = check_omega(Omega_u, alpha_u, n),
-                    Omega_v = check_omega(Omega_v, alpha_v, p),
+                    Omega_u = Omega_u,
+                    Omega_v = Omega_v,
                     prox_arg_list_u = add_default_prox_args(u_sparsity),
                     prox_arg_list_v = add_default_prox_args(v_sparsity)
                 ),
-                pg_setting,
-                selection_scheme_list,
+                pg_settings,
+                select_scheme_list,
                 list(
                     max_bic_iter = max_bic_iter
+                ),
+                list(
+                    deflation_scheme = deflation_scheme
                 )
             )
             # make sure we explicitly specify ALL arguments
-            if (length(algo_settings_list) != length(formals(cpp_multirank_BIC_grid_search))) {
+            if (length(setdiff(
+                names(algo_settings_list),
+                names(formals(cpp_multirank_BIC_grid_search))
+            )) != 0) {
                 moma_error("Incomplete arguments in SFPCA::initialize.")
             }
 
@@ -221,39 +233,27 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         get_mat_by_index = function(..., alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
-            if (private$check_input_index) {
-                chkDots(...)
-            }
+            chkDots(...)
 
-            error_if_not_finite_numeric_scalar(alpha_u)
-            error_if_not_finite_numeric_scalar(alpha_v)
-            error_if_not_finite_numeric_scalar(lambda_u)
-            error_if_not_finite_numeric_scalar(lambda_v)
-
-            error_if_not_wholenumber(alpha_u)
-            error_if_not_wholenumber(alpha_v)
-            error_if_not_wholenumber(lambda_u)
-            error_if_not_wholenumber(lambda_v)
+            private$private_error_if_not_indices(
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v
+            )
 
             # A "fixed" parameter should not be specified
             # at all (this is a bit stringent, can be improved later).
             # "Fixed" parameters are those
             # i) that are chosen by BIC, or
-            # ii) that are not specified during initialization of the SFCPA object, or
-            # iii) that are scalars as opposed to vectors during initialization of the SFCPA object.
+            # ii) that are not specified during initialization of the SFPCA object, or
+            # iii) that are scalars as opposed to vectors during initialization of the SFPCA object.
+
+            # When `get_mat_by_index` is called internally
+            # we skip the input checking
             if (private$check_input_index) {
                 is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-                is_fixed <- self$fixed_list
-                if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                    moma_error(
-                        paste0(
-                            "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
-                            "i) that are chosen by BIC, or ",
-                            "ii) that are not specified during initialization of the SFCPA object, or ",
-                            "iii) that are scalars during initialization of the SFCPA object."
-                        )
-                    )
-                }
+                private$private_error_if_extra_arg(is_missing = is_missing)
             }
 
             n <- self$n
@@ -263,6 +263,12 @@ SFPCA <- R6::R6Class("SFPCA",
             U <- matrix(0, nrow = n, ncol = rank)
             V <- matrix(0, nrow = p, ncol = rank)
             d <- vector(mode = "numeric", length = rank)
+
+            chosen_lambda_u <- vector(mode = "numeric", length = rank)
+            chosen_alpha_u <- vector(mode = "numeric", length = rank)
+            chosen_lambda_v <- vector(mode = "numeric", length = rank)
+            chosen_alpha_v <- vector(mode = "numeric", length = rank)
+
             for (i in (1:self$rank)) {
                 rank_i_result <- get_5Dlist_elem(self$grid_result,
                     alpha_u_i = alpha_u,
@@ -270,23 +276,36 @@ SFPCA <- R6::R6Class("SFPCA",
                     alpha_v_i = alpha_v,
                     lambda_v_i = lambda_v, rank_i = i
                 )[[1]]
+
                 U[, i] <- rank_i_result$u$vector
                 V[, i] <- rank_i_result$v$vector
                 d[i] <- rank_i_result$d
+
+                chosen_lambda_u[i] <- rank_i_result$u$lambda
+                chosen_alpha_u[i] <- rank_i_result$u$alpha
+                chosen_lambda_v[i] <- rank_i_result$v$lambda
+                chosen_alpha_v[i] <- rank_i_result$v$alpha
             }
+
 
             dimnames(V) <-
                 list(self$X_coln, paste0("PC", seq_len(rank)))
             dimnames(U) <-
                 list(self$X_rown, paste0("PC", seq_len(rank)))
-            return(list(U = U, V = V, d = d))
+            return(list(
+                U = U, V = V, d = d,
+                chosen_lambda_u = chosen_lambda_u,
+                chosen_lambda_v = chosen_lambda_v,
+                chosen_alpha_u = chosen_alpha_u,
+                chosen_alpha_v = chosen_alpha_v
+            ))
         },
 
         interpolate = function(..., alpha_u = 0, alpha_v = 0, lambda_u = 0, lambda_v = 0, exact = FALSE) {
             chkDots(...)
 
             # If BIC scheme has been used for any parameters, exit.
-            if (any(self$selection_scheme_list != 0)) {
+            if (any(self$select_scheme_list != 0)) {
                 moma_error("R6 object SFPCA do not support interpolation when BIC selection scheme has been used.")
             }
 
@@ -299,31 +318,8 @@ SFPCA <- R6::R6Class("SFPCA",
             # Parameters that are specified explictly is not "fixed".
             # Parameters that are "fixed" must not be specified.
             is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-            is_fixed <- self$fixed_list == TRUE
-            param_str_list <- c("alpha_u", "alpha_v", "lambda_u", "lambda_v")
-            if (any(is_missing == FALSE & is_fixed == TRUE)) {
-                output_para <- is_missing == FALSE & is_fixed == TRUE
-                moma_error(
-                    paste0(
-                        "Invalid index in SFPCA::interpolate: ",
-                        paste(param_str_list[output_para], collapse = ", "),
-                        ". Do not specify indexes of parameters ",
-                        "i) that are chosen by BIC, or ",
-                        "ii) that are not specified during initialization of the SFCPA object, or ",
-                        "iii) that are scalars during initialization of the SFCPA object."
-                    )
-                )
-            }
-            if (any(is_missing == TRUE & is_fixed == FALSE)) {
-                output_para <- is_missing == TRUE & is_fixed == FALSE
-                moma_error(
-                    paste0(
-                        "Please spesify the following argument(s): ",
-                        paste(param_str_list[output_para], collapse = ", "),
-                        "."
-                    )
-                )
-            }
+            private$private_error_if_extra_arg(is_missing = is_missing)
+            private$private_error_if_miss_arg(is_missing = is_missing)
 
             if (exact) {
                 alpha_u <- ifelse(self$fixed_list$is_alpha_u_fixed, self$alpha_u, alpha_u)
@@ -339,7 +335,7 @@ SFPCA <- R6::R6Class("SFPCA",
                     # sparsity
                     Omega_u = self$Omega_u, Omega_v = self$Omega_v,
                     alpha_u = alpha_u, alpha_v = alpha_v,
-                    pg_setting = self$pg_setting,
+                    pg_settings = self$pg_settings,
                     k = self$rank
                 )
                 return(list(U = a$u, V = a$v))
@@ -456,7 +452,7 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         print = function() {
-            selection_list_str <- lapply(self$selection_scheme_list, function(x) {
+            selection_list_str <- lapply(self$select_scheme_list, function(x) {
                 if (x == 0) {
                     return("grid search")
                 }
@@ -480,38 +476,32 @@ SFPCA <- R6::R6Class("SFPCA",
         },
 
         left_project = function(newX, ...,
-                                        alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1) {
+                                        alpha_u = 1, alpha_v = 1, lambda_u = 1, lambda_v = 1, rank = 1) {
 
             # check indexes
-            is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
-            is_fixed <- self$fixed_list
-            if (any(is_fixed == TRUE & is_missing == FALSE)) {
-                moma_error(
-                    paste0(
-                        "Invalid index in SFPCA::get_mat_by_index. Do not specify indexes of parameters ",
-                        "i) that are chosen by BIC, or ",
-                        "ii) that are not specified during initialization of the SFCPA object, or ",
-                        "iii) that are scalars during initialization of the SFCPA object."
-                    )
-                )
+            if (private$check_input_index) {
+                # The order is important!
+                is_missing <- list(missing(alpha_u), missing(alpha_v), missing(lambda_u), missing(lambda_v))
+                private$private_error_if_extra_arg(is_missing = is_missing)
             }
 
-            error_if_not_finite_numeric_scalar(alpha_u)
-            error_if_not_finite_numeric_scalar(alpha_v)
-            error_if_not_finite_numeric_scalar(lambda_u)
-            error_if_not_finite_numeric_scalar(lambda_v)
+            if (rank > self$rank) {
+                moma_error("Invalid `rank` in SFPCA::left_project.")
+            }
 
-            error_if_not_wholenumber(alpha_u)
-            error_if_not_wholenumber(alpha_v)
-            error_if_not_wholenumber(lambda_u)
-            error_if_not_wholenumber(lambda_v)
+            private$private_error_if_not_indices(
+                alpha_u = alpha_u,
+                alpha_v = alpha_v,
+                lambda_u = lambda_u,
+                lambda_v = lambda_v
+            )
 
             V <- private$private_get_mat_by_index(
                 alpha_u = alpha_u,
                 alpha_v = alpha_v,
                 lambda_u = lambda_u,
                 lambda_v = lambda_v
-            )$V
+            )$V[, 1:rank]
 
 
             # newX should be uncencter and unscaled.
@@ -529,10 +519,11 @@ SFPCA <- R6::R6Class("SFPCA",
                 )
             }
 
-            PV <- solve(crossprod(V), t(V))
+            PV <- solve(crossprod(V), t(V)) # project onto the span of V
             scaled_data <- scale(newX, self$center, self$scale)
             result <- scaled_data %*% t(PV)
-            colnames(result) <- paste0("PC", seq_len(self$rank))
+            colnames(result) <- paste0("PC", seq_len(rank))
+
             return(list(
                 scaled_data = scaled_data,
                 proj_data = result,
@@ -543,37 +534,64 @@ SFPCA <- R6::R6Class("SFPCA",
     )
 )
 
-#' Perform two-way sparse and functional PCA
+#' Deflation Schemes for PCA
 #'
-#' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns.
-#' @param X data matrix.
-#' @param ... force users to specify arguments by names
-#' @param center a logical value indicating whether the variables should be shifted to be zero centered.
-#' Defaults to \code{TRUE}.
-#' @param scale a logical value indicating whether the variables should be scaled to have unit variance.
-#' Defaults to \code{FALSE}.
-#' @param u_sparse,v_sparse an object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
-#'        specified by functions described in \code{\link{moma_sparsity}}. It specifies the type of sparsity-inducing
-#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameter must not be
+#' In \code{MoMA} three deflation schemes are provided for PCA.
+#' Using terminology in the reference, they are Hotelling's deflation,
+#' two-way projection deflation, and Schur complement deflation.
+#'
+#' See the parameter \code{deflation_scheme} argument in the function
+#' \code{moma_sfpca}. Also refer to the reference below
+#' for theoretical properties.
+#'
+#' @references Michael Weylandt. "Multi-Rank Sparse and Functional PCA: Manifold Optimization and
+#' Iterative Deflation Techniques." arXiv:1907.12012v1, 2019.
+#' @name PCA_deflation
+NULL
+
+#' Sparse and functional PCA
+#'
+#' \code{moma_sfpca} creates an \code{SFPCA} R6 object and returns it.
+#' @param u_sparse,v_sparse An object of class inheriting from "\code{moma_sparsity_type}". Most conveniently
+#'        specified by functions described in \code{\link{moma_sparsity_options}}. It specifies the type of sparsity-inducing
+#'        penalty function used in the model. Note that for \code{moma_spca}, these two parameters must not be
 #'        specified at the same time. For \code{moma_fpca} and \code{moma_twfpca}, they must not be specified.
-#' @param u_smooth,v_smooth an object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
+#' @param u_smooth,v_smooth An object of class inheriting from "\code{moma_smoothness_type}". Most conveniently
 #'          specified by functions described in \code{moma_smoothness}. It specifies the type of smoothness
-#           terms used in the model. Note that for \code{moma_fpca}, these two parameter must not be
+#'           terms used in the model. Note that for \code{moma_fpca}, these two parameters must not be
 #'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
-#' @param pg_setting an object of class inheriting from "\code{moma_sparsity}". Most conviently
-#'          specified by functions described in \code{\link{moma_pg_settings}}. It specifies the type of algorithm
-#'          used to solve the problem, acceptable level of precision, and the maximum number of iterations allowed.
-#' @param max_bic_iter a positive integer. Defaults to 5. The maximum number of iterations allowed
-#' in nested greedy BIC selection scheme.
-#' @param rank a positive integer. Defaults to 1. The maximal rank, i.e., maximal number of principal components to be used.
+#' @param deflation_scheme A string specifying the deflation scheme.
+#'          It should be one of \code{"PCA_Hotelling", "PCA_Schur_Complement", "PCA_Projection"}.
+#'
+#' In the discussion below, let \eqn{u,v} be the normalized vectors obtained by
+#' scaling the penalized singular vectors.
+#'
+#' When \code{deflation_scheme = "Hotelling_deflation"} is specified, the following deflation
+#' scheme is used. \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-d_{t} \boldsymbol{u}_{t} \boldsymbol{v}_{t}^{T}},
+#' where \eqn{d_{t}=\boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}.
+#'
+#' When \code{deflation_scheme = "PCA_Schur_Complement"} is specified, the following deflation
+#' scheme is used: \eqn{\boldsymbol{X}_{t} :=\left(\boldsymbol{I}_{n}-
+#' \boldsymbol{u}_{t} \boldsymbol{u}_{t}^{T}\right) \boldsymbol{X}_{t-1}
+#' \left(\boldsymbol{I}_{p}-\boldsymbol{v}_{t} \boldsymbol{v}_{t}^{T}\right)}.
+#'
+#' When \code{deflation_scheme = "PCA_Projection"} is specified, the following deflation
+#' scheme is used:
+#' \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-\frac{\boldsymbol{X}_{t-1}
+#' \boldsymbol{v}_{t} \boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1}}{\boldsymbol{u}_{t}^{T}
+#' \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}}.
+#' @return An R6 object which provides helper functions to access the results. See \code{\link{moma_R6}}.
+#' @inheritParams moma_sfcca
+#' @name moma_sfpca
 #' @export
 moma_sfpca <- function(X, ...,
                        center = TRUE, scale = FALSE,
                        u_sparse = moma_empty(), v_sparse = moma_lasso(),
                        u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                       pg_setting = moma_pg_settings(),
+                       pg_settings = moma_pg_settings(),
                        max_bic_iter = 5,
-                       rank = 1) {
+                       rank = 1,
+                       deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
 
     error_if_not_of_class(u_sparse, "moma_sparsity_type")
@@ -594,30 +612,33 @@ moma_sfpca <- function(X, ...,
         Omega_v = v_smooth$Omega,
         alpha_u = u_smooth$alpha,
         alpha_v = v_smooth$alpha,
-        pg_setting = pg_setting,
-        selection_scheme_str = paste0( # the order is important
-            u_smooth$select_scheme,
-            v_smooth$select_scheme,
-            u_sparse$select_scheme,
-            v_sparse$select_scheme
+        pg_settings = pg_settings,
+        # Map strings to encoding
+        select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[[u_smooth$select_scheme]],
+            select_scheme_alpha_v = SELECTION_SCHEME[[v_smooth$select_scheme]],
+            select_scheme_lambda_u = SELECTION_SCHEME[[u_sparse$select_scheme]],
+            select_scheme_lambda_v = SELECTION_SCHEME[[v_sparse$select_scheme]]
         ),
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = DEFLATION_SCHEME[[deflation_scheme]]
     ))
 }
 
 #' Perform one-way sparse PCA
 #'
-#' \code{moma_spca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_spca} is a function for performing one-way sparse PCA.
 #' @export
-#' @describeIn moma_sfpca a function for one-way sparse PCA
+#' @describeIn moma_sfpca a function for performing one-way sparse PCA
 moma_spca <- function(X, ...,
                       center = TRUE, scale = FALSE,
                       u_sparse = moma_empty(), v_sparse = moma_lasso(),
                       #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
-                      rank = 1) {
+                      rank = 1,
+                      deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_sparse)
     is_v_penalized <- !missing(v_sparse)
@@ -634,9 +655,10 @@ moma_spca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = u_sparse, v_sparse = v_sparse,
         # u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
     # moma_error("Not implemented: SPCA")
 }
@@ -644,16 +666,17 @@ moma_spca <- function(X, ...,
 
 #' Perform two-way sparse PCA
 #'
-#' \code{moma_twspca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_twspca} is a function for performing two-way sparse PCA.
 #' @export
-#' @describeIn moma_sfpca a function for two-way sparse PCA
+#' @describeIn moma_sfpca a function for performing two-way sparse PCA
 moma_twspca <- function(X, ...,
                         center = TRUE, scale = FALSE,
                         u_sparse = moma_lasso(), v_sparse = moma_lasso(),
                         #    u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
-                        rank = 1) {
+                        rank = 1,
+                        deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_sparse)
     is_v_penalized <- !missing(v_sparse)
@@ -670,24 +693,26 @@ moma_twspca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = u_sparse, v_sparse = v_sparse,
         # u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }
 
 #' Perform one-way functional PCA
 #'
-#' \code{moma_fpca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_fpca} is a function for performing one-way functional PCA.
 #' @export
-#' @describeIn moma_sfpca a function for one-way functional PCA
+#' @describeIn moma_sfpca a function for performing one-way functional PCA
 moma_fpca <- function(X, ...,
                       center = TRUE, scale = FALSE,
                       #    u_sparse = moma_empty(), v_sparse = moma_empty(),
                       u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                      pg_setting = moma_pg_settings(),
+                      pg_settings = moma_pg_settings(),
                       max_bic_iter = 5,
-                      rank = 1) {
+                      rank = 1,
+                      deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_smooth)
     is_v_penalized <- !missing(v_smooth)
@@ -704,24 +729,26 @@ moma_fpca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = moma_empty(), v_sparse = moma_empty(),
         u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }
 
 #' Perform two-way functional PCA
 #'
-#' \code{moma_twfpca} is a wrapper around R6 object \code{SFPCA}
+#' \code{moma_twfpca} is a function for performing two-way functional PCA.
 #' @export
-#' @describeIn moma_sfpca a function for two-way functional PCA
+#' @describeIn moma_sfpca a function for performing two-way functional PCA
 moma_twfpca <- function(X, ...,
                         center = TRUE, scale = FALSE,
                         #    u_sparse = moma_empty(), v_sparse = moma_empty(),
                         u_smooth = moma_smoothness(), v_smooth = moma_smoothness(),
-                        pg_setting = moma_pg_settings(),
+                        pg_settings = moma_pg_settings(),
                         max_bic_iter = 5,
-                        rank = 1) {
+                        rank = 1,
+                        deflation_scheme = "PCA_Hotelling") {
     chkDots(...)
     is_u_penalized <- !missing(u_smooth)
     is_v_penalized <- !missing(v_smooth)
@@ -738,8 +765,9 @@ moma_twfpca <- function(X, ...,
         center = center, scale = scale,
         u_sparse = moma_empty(), v_sparse = moma_empty(),
         u_smooth = u_smooth, v_smooth = v_smooth,
-        pg_setting = pg_setting,
+        pg_settings = pg_settings,
         max_bic_iter = max_bic_iter,
-        rank = rank
+        rank = rank,
+        deflation_scheme = deflation_scheme
     ))
 }
