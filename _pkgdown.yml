@@ -1,7 +1,7 @@
 template:
   params:
-    package: tidytemplate
-
+    bootswatch: flatly
+    
 navbar:
   type: inverse
   right:
