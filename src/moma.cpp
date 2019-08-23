@@ -202,7 +202,7 @@ int MoMA::deflate()
         initialize_uv();
         return 0;
     }
-    else if (ds == DeflationScheme::PCA_Schur_complement)
+    else if (ds == DeflationScheme::PCA_Schur_Complement)
     {
         double d = arma::as_scalar(u.t() * X * v);
         if (d <= 0.0)
@@ -388,7 +388,7 @@ int MoMA::set_penalty(double newlambda_u, double newlambda_v, double newalpha_u,
 
 int MoMA::reset_X()
 {
-    if (ds == DeflationScheme::PCA_Hotelling || ds == DeflationScheme::PCA_Schur_complement ||
+    if (ds == DeflationScheme::PCA_Hotelling || ds == DeflationScheme::PCA_Schur_Complement ||
         ds == DeflationScheme::PCA_Projection)
     {
         X = X_original;

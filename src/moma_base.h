@@ -26,7 +26,7 @@ enum class DeflationScheme
     CCA                  = 2,
     LDA                  = 3,
     PLS                  = 4,
-    PCA_Schur_complement = 5,
+    PCA_Schur_Complement = 5,
     PCA_Projection       = 6
 };
 

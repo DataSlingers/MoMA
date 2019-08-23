@@ -561,7 +561,7 @@ NULL
 #'           terms used in the model. Note that for \code{moma_fpca}, these two parameters must not be
 #'          specified at the same time. For \code{moma_spca} and \code{moma_twspca}, they must not be specified.
 #' @param deflation_scheme A string specifying the deflation scheme.
-#'          It should be one of \code{"PCA_Hotelling", "PCA_Schur_complement", "PCA_Projection"}.
+#'          It should be one of \code{"PCA_Hotelling", "PCA_Schur_Complement", "PCA_Projection"}.
 #'
 #' In the discussion below, let \eqn{u,v} be the normalized vectors obtained by
 #' scaling the penalized singular vectors.
@@ -570,7 +570,7 @@ NULL
 #' scheme is used. \eqn{\boldsymbol{X}_{t} :=\boldsymbol{X}_{t-1}-d_{t} \boldsymbol{u}_{t} \boldsymbol{v}_{t}^{T}},
 #' where \eqn{d_{t}=\boldsymbol{u}_{t}^{T} \boldsymbol{X}_{t-1} \boldsymbol{v}_{t}}.
 #'
-#' When \code{deflation_scheme = "PCA_Schur_complement"} is specified, the following deflation
+#' When \code{deflation_scheme = "PCA_Schur_Complement"} is specified, the following deflation
 #' scheme is used: \eqn{\boldsymbol{X}_{t} :=\left(\boldsymbol{I}_{n}-
 #' \boldsymbol{u}_{t} \boldsymbol{u}_{t}^{T}\right) \boldsymbol{X}_{t-1}
 #' \left(\boldsymbol{I}_{p}-\boldsymbol{v}_{t} \boldsymbol{v}_{t}^{T}\right)}.

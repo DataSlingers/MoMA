@@ -223,7 +223,7 @@ To experiment with different deflation schemes to achieve a certain type of orth
 ```{r eval = FALSE}
 
 # Note `deflation_scheme` should be one of
-# "PCA_Hotelling", "PCA_Schur_complement", "PCA_Projection"
+# "PCA_Hotelling", "PCA_Schur_Complement", "PCA_Projection"
 res <- moma_sfpca(
     X,
     center = FALSE,
@@ -233,6 +233,6 @@ res <- moma_sfpca(
     ),
     v_smooth = moma_smoothness(Omega_v, alpha = 2),
     rank = 3,
-    deflation_scheme = "PCA_Schur_complement"
+    deflation_scheme = "PCA_Schur_Complement"
 )
 ```

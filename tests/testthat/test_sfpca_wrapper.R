@@ -1115,11 +1115,11 @@ test_that("Special-case functions: interpolate gives expected results", {
     # TODO
 })
 
-test_that("SFPCA object: correct deflation, PCA_Schur_complement", {
+test_that("SFPCA object: correct deflation, PCA_Schur_Complement", {
     set.seed(12)
     X <- matrix(runif(12), 4, 3)
 
-    a <- SFPCA$new(X, rank = 3, deflation_scheme = DEFLATION_SCHEME[["PCA_Schur_complement"]])
+    a <- SFPCA$new(X, rank = 3, deflation_scheme = DEFLATION_SCHEME[["PCA_Schur_Complement"]])
     rank1 <- a$grid_result[[1]]
     rank2 <- a$grid_result[[2]]
     rank3 <- a$grid_result[[3]]
@@ -1184,7 +1184,7 @@ test_that("SFPCA object: orthogonality", {
     X <- matrix(runif(12), 4, 3) * 10
 
     deflation_choices <- c(
-        DEFLATION_SCHEME[["PCA_Schur_complement"]],
+        DEFLATION_SCHEME[["PCA_Schur_Complement"]],
         DEFLATION_SCHEME[["PCA_Projection"]]
     )
 
@@ -1222,7 +1222,7 @@ test_that("SFPCA object: orthogonality", {
         expect_equal(norm(t(u2) %*% rank3$X), 0)
         expect_equal(norm(t(v2) %*% t(rank3$X)), 0)
 
-        if (ds == DEFLATION_SCHEME[["PCA_Schur_complement"]]) {
+        if (ds == DEFLATION_SCHEME[["PCA_Schur_Complement"]]) {
             # Subsequent Orthogonality
             expect_equal(norm(t(u1) %*% rank3$X), 0)
             expect_equal(norm(t(v1) %*% t(rank3$X)), 0)
