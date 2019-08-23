@@ -29,4 +29,13 @@ enum class DeflationScheme
     PCA_Schur_complement = 5,
     PCA_Projection       = 6
 };
+
+enum class SelectionScheme
+{
+    grid = 0,
+    BIC  = 1,
+    // AIC = 2
+    // eBIC = 3
+};
+
 #endif

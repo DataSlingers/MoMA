@@ -43,7 +43,7 @@ class MoMA
     arma::mat X_original;  // const
     arma::mat Y_original;
 
-    DeflationScheme ds;
+    const DeflationScheme ds;
 
     // they are used in MoMA::evaluate_loss
     arma::mat Omega_u;
@@ -172,11 +172,10 @@ class MoMA
                             const arma::vec &alpha_v,
                             const arma::vec &lambda_u,
                             const arma::vec &lambda_v,
-                            int select_scheme_alpha_u,  // flags; = 0 means grid, = 01
-                                                        // means BIC search
-                            int select_scheme_alpha_v,
-                            int select_scheme_lambda_u,
-                            int select_scheme_lambda_v,
+                            SelectionScheme select_scheme_alpha_u,
+                            SelectionScheme select_scheme_alpha_v,
+                            SelectionScheme select_scheme_lambda_u,
+                            SelectionScheme select_scheme_lambda_v,
                             int max_bic_iter = 5,
                             int rank         = 1);
 };

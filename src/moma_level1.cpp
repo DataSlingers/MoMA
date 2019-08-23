@@ -3,25 +3,25 @@
 #include "moma.h"
 
 // auxiliary functions for MoMA::grid_BIC_mix
-const arma::vec &construct_grid_for_search(const arma::vec &grid, int want_grid)
+const arma::vec &construct_grid_for_search(const arma::vec &grid, SelectionScheme ss)
 {
-    if (want_grid == 1)
+    if (ss == SelectionScheme::grid)
     {
         return grid;
     }
-    else if (want_grid == 0)
+    else if (ss == SelectionScheme::BIC)
     {
         return MOMA_EMPTY_GRID_OF_LENGTH1;
     }
 }
 
-arma::vec construct_grid_no_search(const arma::vec &grid, int want_bic, int i)
+arma::vec construct_grid_no_search(const arma::vec &grid, SelectionScheme ss, int i)
 {
-    if (want_bic == 1)
+    if (ss == SelectionScheme::BIC)
     {
         return grid;
     }
-    else if (want_bic == 0)
+    else if (ss == SelectionScheme::grid)
     {
         return grid(i) * arma::ones<arma::vec>(1);
     }
@@ -154,11 +154,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                               const arma::vec &alpha_v,
                               const arma::vec &lambda_u,
                               const arma::vec &lambda_v,
-                              int select_scheme_alpha_u,  // flags; = 0 means grid, =
-                                                          // 01 means BIC search
-                              int select_scheme_alpha_v,
-                              int select_scheme_lambda_u,
-                              int select_scheme_lambda_v,
+                              SelectionScheme select_scheme_alpha_u,
+                              SelectionScheme select_scheme_alpha_v,
+                              SelectionScheme select_scheme_lambda_u,
+                              SelectionScheme select_scheme_lambda_v,
                               int max_bic_iter,
                               int rank)
 {
@@ -172,22 +171,10 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
     // grid_au = alpha_u, bic_au_grid = [-1].
     // If alpha_u is selected via nested BIC search,
     // then grid_au = [-1], bic_au_grid = alpha_u
-    const arma::vec &grid_lu = construct_grid_for_search(lambda_u, !select_scheme_lambda_u);
-    const arma::vec &grid_lv = construct_grid_for_search(lambda_v, !select_scheme_lambda_v);
-    const arma::vec &grid_au = construct_grid_for_search(alpha_u, !select_scheme_alpha_u);
-    const arma::vec &grid_av = construct_grid_for_search(alpha_v, !select_scheme_alpha_v);
-
-    // Test that if a grid is set to be BIC-search grid, then
-    // the above code should set grid_xx to the vector [-1]
-    if ((select_scheme_alpha_u == 1 && (grid_au.n_elem != 1 || grid_au(0) != -1)) ||
-        (select_scheme_alpha_v == 1 && (grid_av.n_elem != 1 || grid_av(0) != -1)) ||
-        (select_scheme_lambda_u == 1 && (grid_lu.n_elem != 1 || grid_lu(0) != -1)) ||
-        (select_scheme_lambda_v == 1 && (grid_lv.n_elem != 1 || grid_lv(0) != -1)))
-    {
-        MoMALogger::error("Wrong grid-search grid!")
-            << "grid_lu.n_elem=" << grid_lu.n_elem << ", grid_av.n_elem=" << grid_av.n_elem
-            << ", grid_lu.n_elem" << grid_lu.n_elem << ", grid_lv.n_elem" << grid_lv.n_elem;
-    }
+    const arma::vec &grid_lu = construct_grid_for_search(lambda_u, select_scheme_lambda_u);
+    const arma::vec &grid_lv = construct_grid_for_search(lambda_v, select_scheme_lambda_v);
+    const arma::vec &grid_au = construct_grid_for_search(alpha_u, select_scheme_alpha_u);
+    const arma::vec &grid_av = construct_grid_for_search(alpha_v, select_scheme_alpha_v);
 
     int n_lambda_u = grid_lu.n_elem;
     int n_lambda_v = grid_lv.n_elem;
@@ -212,14 +199,6 @@ Rcpp::List MoMA::grid_BIC_mix(const arma::vec &alpha_u,
                         construct_grid_no_search(alpha_v, select_scheme_alpha_v, k);
                     arma::vec bic_lv_grid =
                         construct_grid_no_search(lambda_v, select_scheme_lambda_v, m);
-
-                    if ((select_scheme_alpha_u == 0 && bic_au_grid.n_elem != 1) ||
-                        (select_scheme_alpha_v == 0 && bic_av_grid.n_elem != 1) ||
-                        (select_scheme_lambda_u == 0 && bic_lu_grid.n_elem != 1) ||
-                        (select_scheme_lambda_v == 0 && bic_lv_grid.n_elem != 1))
-                    {
-                        MoMALogger::error("Wrong BIC search grid!");
-                    }
 
                     reset_X();
                     for (int pc = 0; pc < rank; pc++)

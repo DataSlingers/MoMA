@@ -203,9 +203,11 @@ Rcpp::List cpp_multirank_BIC_grid_search(
                  EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver,
                  static_cast<DeflationScheme>(deflation_scheme));
 
-    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, select_scheme_alpha_u,
-                                select_scheme_alpha_v, select_scheme_lambda_u,
-                                select_scheme_lambda_v, max_bic_iter, rank);
+    return problem.grid_BIC_mix(
+        alpha_u, alpha_v, lambda_u, lambda_v, static_cast<SelectionScheme>(select_scheme_alpha_u),
+        static_cast<SelectionScheme>(select_scheme_alpha_v),
+        static_cast<SelectionScheme>(select_scheme_lambda_u),
+        static_cast<SelectionScheme>(select_scheme_lambda_v), max_bic_iter, rank);
 }
 
 // [[Rcpp::export]]
@@ -253,7 +255,9 @@ Rcpp::List cca(const arma::mat &X,  // We should not change any variable in R, s
                  EPS, MAX_ITER, EPS_inner, MAX_ITER_inner, solver,
                  static_cast<DeflationScheme>(deflation_scheme));
 
-    return problem.grid_BIC_mix(alpha_u, alpha_v, lambda_u, lambda_v, select_scheme_alpha_u,
-                                select_scheme_alpha_v, select_scheme_lambda_u,
-                                select_scheme_lambda_v, max_bic_iter, rank);
+    return problem.grid_BIC_mix(
+        alpha_u, alpha_v, lambda_u, lambda_v, static_cast<SelectionScheme>(select_scheme_alpha_u),
+        static_cast<SelectionScheme>(select_scheme_alpha_v),
+        static_cast<SelectionScheme>(select_scheme_lambda_u),
+        static_cast<SelectionScheme>(select_scheme_lambda_v), max_bic_iter, rank);
 }

@@ -36,6 +36,7 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
       lambda_u(i_lambda_u),
       lambda_v(i_lambda_v),
       X(i_X),  // no copy of the data
+      ds(i_ds),
       Omega_u(i_Omega_u),
       Omega_v(i_Omega_v),
       MAX_ITER(i_MAX_ITER),
@@ -58,7 +59,6 @@ MoMA::MoMA(const arma::mat &i_X,  // Pass X_ as a reference to avoid copy
                i_X.n_cols)
 // const reference must be passed to initializer list
 {
-    ds         = i_ds;
     X_original = i_X;
 
     if (i_EPS >= 1 || i_EPS_inner >= 1)
