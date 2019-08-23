@@ -6,6 +6,8 @@
     }
 }
 
+`%not.in%` <- function(x, y) !("%in%"(x, y))
+
 is_valid_data_matrix <- function(x) {
     return(is.double(x) && all(is.finite(x)))
 }
@@ -91,17 +93,76 @@ error_if_not_of_class <- function(x, cl) {
     }
 }
 
-error_if_not_fourchar_bg_string <- function(x) {
+error_if_not_valid_select_scheme_list <- function(x, uv_naming = TRUE) {
     nm <- deparse(substitute(x))
 
-    if (!inherits(x, "character") ||
-        nchar(x) != 4 ||
-        !all(strsplit(x, split = "")[[1]] %in% c("b", "g"))) {
-        moma_error(
-            sQuote(nm),
-            " should be a four-char string containing only 'b's and 'g's."
+    to_test_names <- names(x)
+    target_names <- if (uv_naming) {
+        list(
+            "select_scheme_alpha_u",
+            "select_scheme_alpha_v",
+            "select_scheme_lambda_u",
+            "select_scheme_lambda_v"
+        )
+    } else {
+        list(
+            "select_scheme_alpha_x",
+            "select_scheme_alpha_y",
+            "select_scheme_lambda_x",
+            "select_scheme_lambda_y"
         )
     }
+
+
+    wrong_names <- length(setdiff(to_test_names, target_names)) != 0
+    wrong_values <- any(x %not.in% SELECTION_SCHEME)
+
+    if (wrong_names || wrong_values) {
+        moma_error(
+            sQuote(nm),
+            ": ",
+            x,
+            " is not a valid select_scheme_list."
+        )
+    }
+}
+
+get_fixed_indicator_list <- function(select_scheme_list, length_list, uv_naming = TRUE) {
+    # assume `select_scheme_list` and `length_list` are ordered
+    # appropriately: alpha_u, alpha_v, lambda_u, lambda_v
+
+    fixed_indicator_list <- if (uv_naming) {
+        list(
+            # "Fixed" parameters are those
+            # i) that are chosen by BIC, or
+            # ii) that are not specified during initialization of the SFPCA object, or
+            # iii) that are scalars as opposed to vectors during initialization of the SFPCA object.
+            is_alpha_u_fixed = FALSE,
+            is_alpha_v_fixed = FALSE,
+            is_lambda_u_fixed = FALSE,
+            is_lambda_v_fixed = FALSE
+        )
+    } else {
+        list(
+            # "Fixed" parameters are those
+            # i) that are chosen by BIC, or
+            # ii) that are not specified during initialization of the SFPCA object, or
+            # iii) that are scalars as opposed to vectors during initialization of the SFPCA object.
+            is_alpha_x_fixed = FALSE,
+            is_alpha_y_fixed = FALSE,
+            is_lambda_x_fixed = FALSE,
+            is_lambda_y_fixed = FALSE
+        )
+    }
+
+
+    for (i in 1:4) {
+        fixed_indicator_list[[i]] <-
+            (select_scheme_list[[i]] != SELECTION_SCHEME[["grid"]]) ||
+                (length_list[[i]] == 1)
+    }
+
+    return(fixed_indicator_list)
 }
 
 MOMA_EMPTYMAT <- matrix() # the default `w` argument for unordered fusion
@@ -209,6 +270,8 @@ second_diff_mat <- function(n) {
     return(crossprod(diff(diag(n))))
 }
 
+# MUST be consistent with
+# `DeflationScheme` in moma_base.h
 DEFLATION_SCHEME <- c(
     PCA_Hotelling = 1,
     CCA = 2,
@@ -217,6 +280,19 @@ DEFLATION_SCHEME <- c(
     PCA_Schur_complement = 5,
     PCA_Projection = 6
 )
+
+# MUST be consistent with
+# `SelectionScheme` in moma_base.h
+SELECTION_SCHEME <- c(
+    grid = 0,
+    bic = 1
+    # AIC = 2
+    # eBIC = 3
+)
+
+match_selection_scheme <- function(x) {
+    match.arg(x, choices = names(SELECTION_SCHEME))
+}
 
 # project rows of X to the column
 # space of V

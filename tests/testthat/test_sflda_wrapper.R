@@ -309,7 +309,12 @@ test_that("SFLDA object: select_scheme", {
         alpha_y = seq(0, 1, 0.4),
         lambda_x = seq(0, 1, 0.41),
         lambda_y = seq(0, 1, 0.42),
-        select_scheme_str = "bgbg"
+        select_scheme_list = list(
+            select_scheme_alpha_x = SELECTION_SCHEME[["bic"]],
+            select_scheme_alpha_y = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_x = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_y = SELECTION_SCHEME[["grid"]]
+        )
     )
 
     # check the selection scheme has been correctly
@@ -325,7 +330,12 @@ test_that("SFLDA object: select_scheme", {
         alpha_y = seq(0, 1, 0.4),
         lambda_x = seq(0, 1, 0.41),
         lambda_y = seq(0, 1, 0.42),
-        select_scheme_str = "bbbb"
+        select_scheme_list = list(
+            select_scheme_alpha_x = SELECTION_SCHEME[["bic"]],
+            select_scheme_alpha_y = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_x = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_y = SELECTION_SCHEME[["bic"]]
+        )
     )
 
     # check the selection scheme has been correctly

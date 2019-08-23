@@ -104,9 +104,15 @@ SFCCA <- R6::R6Class("SFCCA",
                                       x_sparsity = empty(), y_sparsity = empty(), lambda_x = 0, lambda_y = 0, # lambda_x/_y is a vector or scalar
                                       Omega_x = NULL, Omega_y = NULL, alpha_x = 0, alpha_y = 0, # so is alpha_x/_y
                                       pg_settings = moma_pg_settings(),
-                                      select_scheme_str = "gggg",
+                                      select_scheme_list = list(
+                                          select_scheme_alpha_x = SELECTION_SCHEME[["grid"]],
+                                          select_scheme_alpha_y = SELECTION_SCHEME[["grid"]],
+                                          select_scheme_lambda_x = SELECTION_SCHEME[["grid"]],
+                                          select_scheme_lambda_y = SELECTION_SCHEME[["grid"]]
+                                      ),
                                       max_bic_iter = 5,
-                                      rank = 1) {
+                                      rank = 1,
+                                      deflation_scheme = DEFLATION_SCHEME["CCA"]) {
             chkDots(...)
             # Step 1: check ALL arguments
             # Step 1.1: lambdas and alphas
@@ -177,28 +183,9 @@ SFCCA <- R6::R6Class("SFCCA",
             self$Omega_y <- Omega_y
 
             # Step 1.6: check selection scheme string
-            # "g" stands for grid search, "b" stands for BIC
-            error_if_not_fourchar_bg_string(select_scheme_str)
-
-            # turn "b"/"g" to 1/0
             # `select_scheme_list` will be passed to C++ functions
-            select_scheme_list <- list(
-                select_scheme_alpha_x = 0,
-                select_scheme_alpha_y = 0,
-                select_scheme_lambda_x = 0,
-                select_scheme_lambda_y = 0
-            )
-            # `fixed_list` will be stored in the R6 object
-            fixed_list <- list(
-                # "Fixed" parameters are those
-                # i) that are chosen by BIC, or
-                # ii) that are not specified during initialization of the SFCCA object, or
-                # iii) that are scalars as opposed to vectors during initialization of the SFCCA object.
-                is_alpha_x_fixed = FALSE,
-                is_alpha_y_fixed = FALSE,
-                is_lambda_x_fixed = FALSE,
-                is_lambda_y_fixed = FALSE
-            )
+            # Note `select_scheme_list` here follows _u/_v naming convention
+            error_if_not_valid_select_scheme_list(select_scheme_list, uv_naming = FALSE)
 
             parameter_length_list <- vapply(FUN = length, list(
                 self$alpha_x,
@@ -207,15 +194,9 @@ SFCCA <- R6::R6Class("SFCCA",
                 self$lambda_y
             ), integer(1))
 
-            for (i in 1:4) {
-                select_scheme_list[[i]] <-
-                    ifelse(substr(select_scheme_str, i, i) == "g", 0, 1)
-
-                fixed_list[[i]] <-
-                    substr(select_scheme_str, i, i) == "b" || parameter_length_list[i] == 1
-            }
             self$select_scheme_list <- select_scheme_list
-            self$fixed_list <- fixed_list
+            self$fixed_list <- get_fixed_indicator_list(select_scheme_list, parameter_length_list, uv_naming = FALSE)
+
 
             # Step 1.7: check rank
             # TODO: check that `rank` < min(rank(X), rank(Y))
@@ -229,6 +210,8 @@ SFCCA <- R6::R6Class("SFCCA",
             self$rank <- rank
 
             # Step 2: pack all arguments in a list
+            # WARNING
+            # _x/_y convention on R side but _u/_v on C++ side
             algo_settings_list <- c(
                 list(
                     X = X,
@@ -257,7 +240,7 @@ SFCCA <- R6::R6Class("SFCCA",
                     max_bic_iter = max_bic_iter
                 ),
                 list(
-                    deflation_scheme = DEFLATION_SCHEME["CCA"] # CCA_SPECIAL_PART
+                    deflation_scheme = deflation_scheme # CCA_SPECIAL_PART
                 )
             )
             # make sure we explicitly specify ALL arguments
@@ -563,11 +546,12 @@ moma_sfcca <- function(X, ..., Y,
         alpha_x = x_smooth$alpha,
         alpha_y = y_smooth$alpha,
         pg_settings = pg_settings,
-        select_scheme_str = paste0( # the order is important
-            x_smooth$select_scheme,
-            y_smooth$select_scheme,
-            x_sparse$select_scheme,
-            y_sparse$select_scheme
+        # Map strings to encoding
+        select_scheme_list = list(
+            select_scheme_alpha_x = SELECTION_SCHEME[[x_smooth$select_scheme]],
+            select_scheme_alpha_y = SELECTION_SCHEME[[y_smooth$select_scheme]],
+            select_scheme_lambda_x = SELECTION_SCHEME[[x_sparse$select_scheme]],
+            select_scheme_lambda_y = SELECTION_SCHEME[[y_sparse$select_scheme]]
         ),
         max_bic_iter = max_bic_iter,
         rank = rank

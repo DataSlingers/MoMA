@@ -76,18 +76,13 @@ test_that("SFPCA object: correct arguments", {
     expect_equal(a$u_sparsity, lasso())
     expect_equal(a$v_sparsity, empty())
 
-    expect_error(
-        SFPCA$new(matrix(runif(12), 3, 4),
-            select_scheme_str = "bbba"
-        ),
-        paste0(
-            sQuote("select_scheme_str"),
-            " should be a four-char string containing only 'b's and 'g's"
-        )
-    )
-
     a <- SFPCA$new(matrix(runif(12), 3, 4),
-        select_scheme_str = "ggbb"
+        select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[["grid"]],
+            select_scheme_alpha_v = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_v = SELECTION_SCHEME[["bic"]]
+        )
     ) # in order of alpha_u/v, lambda_u/v
 
     expect_true(all(a$select_scheme_list == c(0, 0, 1, 1)))
@@ -196,7 +191,12 @@ test_that("SFPCA object: as SVD", {
     # test selection with BIC seach and grid search
     a <- SFPCA$new(X,
         rank = 3, center = FALSE, scale = FALSE,
-        alpha_u = seq(0, 2, 0.2), select_scheme_str = "bggg"
+        alpha_u = seq(0, 2, 0.2), select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_alpha_v = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_u = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_v = SELECTION_SCHEME[["grid"]]
+        )
     )
     expect_true(all(a$select_scheme_list == c(1, 0, 0, 0)))
 
@@ -213,7 +213,12 @@ test_that("SFPCA object: print fucntion", {
         lambda_u = c(2, 3),
         alpha_v = c(3, 4),
         lambda_v = c(6, 7),
-        select_scheme_str = "bgbg"
+        select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_alpha_v = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_v = SELECTION_SCHEME[["grid"]]
+        )
     )
     print_message <- capture.output(print(a))
 
@@ -244,7 +249,12 @@ test_that("SFPCA object: left-project fucntion", {
         lambda_u = c(2),
         alpha_v = c(3),
         lambda_v = c(6),
-        select_scheme_str = "bbbb"
+        select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_alpha_v = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_v = SELECTION_SCHEME[["bic"]]
+        )
     )
     expect_error(
         a$left_project(matrix(0, 4, 1)),
@@ -272,7 +282,12 @@ test_that("SFPCA object: left-project fucntion", {
         lambda_u = c(2),
         alpha_v = c(1, 2, 3), # grid search
         lambda_v = c(6),
-        select_scheme_str = "bgbb"
+        select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_alpha_v = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_u = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_v = SELECTION_SCHEME[["bic"]]
+        )
     )
     for (i in 1:3) {
         V_left_prejct <- a$left_project(new_data, alpha_v = i, rank = 3)$V
@@ -333,7 +348,12 @@ test_that("SFPCA object: `fixed_list` functions as expected", {
     a <- SFPCA$new(X,
         alpha_u = c(1, 2),
         alpha_v = c(1, 2, 3), # selected by BIC
-        select_scheme_str = "gbgg"
+        select_scheme_list = list(
+            select_scheme_alpha_u = SELECTION_SCHEME[["grid"]],
+            select_scheme_alpha_v = SELECTION_SCHEME[["bic"]],
+            select_scheme_lambda_u = SELECTION_SCHEME[["grid"]],
+            select_scheme_lambda_v = SELECTION_SCHEME[["grid"]]
+        )
     )
     expect_no_error(
         a$get_mat_by_index()
@@ -1099,7 +1119,7 @@ test_that("SFPCA object: correct deflation, PCA_Schur_complement", {
     set.seed(12)
     X <- matrix(runif(12), 4, 3)
 
-    a <- SFPCA$new(X, rank = 3, deflation_scheme = "PCA_Schur_complement")
+    a <- SFPCA$new(X, rank = 3, deflation_scheme = DEFLATION_SCHEME[["PCA_Schur_complement"]])
     rank1 <- a$grid_result[[1]]
     rank2 <- a$grid_result[[2]]
     rank3 <- a$grid_result[[3]]
@@ -1128,7 +1148,7 @@ test_that("SFPCA object: correct deflation, PCA_Projection", {
     set.seed(12)
     X <- matrix(runif(12), 4, 3)
 
-    a <- SFPCA$new(X, rank = 3, deflation_scheme = "PCA_Projection")
+    a <- SFPCA$new(X, rank = 3, deflation_scheme = DEFLATION_SCHEME[["PCA_Projection"]])
     rank1 <- a$grid_result[[1]]
     rank2 <- a$grid_result[[2]]
     rank3 <- a$grid_result[[3]]
@@ -1164,8 +1184,8 @@ test_that("SFPCA object: orthogonality", {
     X <- matrix(runif(12), 4, 3) * 10
 
     deflation_choices <- c(
-        "PCA_Schur_complement",
-        "PCA_Projection"
+        DEFLATION_SCHEME[["PCA_Schur_complement"]],
+        DEFLATION_SCHEME[["PCA_Projection"]]
     )
 
     for (ds in deflation_choices) {
@@ -1202,7 +1222,7 @@ test_that("SFPCA object: orthogonality", {
         expect_equal(norm(t(u2) %*% rank3$X), 0)
         expect_equal(norm(t(v2) %*% t(rank3$X)), 0)
 
-        if (ds == "PCA_Schur_complement") {
+        if (ds == DEFLATION_SCHEME[["PCA_Schur_complement"]]) {
             # Subsequent Orthogonality
             expect_equal(norm(t(u1) %*% rank3$X), 0)
             expect_equal(norm(t(v1) %*% t(rank3$X)), 0)

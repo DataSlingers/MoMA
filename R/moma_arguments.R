@@ -251,6 +251,8 @@ create_moma_sparsity_func <- function(f) {
         # Step 3: check select_scheme
         error_if_not_valid_select_str(select_scheme)
 
+        select_scheme <- match_selection_scheme(select_scheme)
+
         # step 4: return
         # WARNING: do not define local variables before
         # `mget(ls())`
@@ -504,6 +506,8 @@ moma_smoothness <- function(Omega = NULL, ..., alpha = 0, select_scheme = "g") {
 
     # Step 3: check select_scheme
     error_if_not_valid_select_str(select_scheme)
+
+    select_scheme <- match_selection_scheme(select_scheme)
 
     a <- list(
         Omega = Omega,
