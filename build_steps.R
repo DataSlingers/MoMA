@@ -19,8 +19,18 @@ before_install <- function() {
 }
 
 after_success <- function() {
-    devtools::install()
-    rmarkdown::render("README.Rmd")
+    devtools::install(
+        reload = TRUE, quick = TRUE, quiet = FALSE, upgrade = FALSE,
+        auth_token = Sys.getenv("GITHUB_TOKEN") %||% devtools::github_pat(FALSE)
+    )
+
+    rmarkdown::render("README.Rmd", clean = FALSE)
+    unlink("README.knit.md", force = TRUE)
+    unlink("README.utf8.md", force = TRUE)
+
+    ## Build pkgdown site
+    pkgdown::build_site()
+
     unlink(Sys.glob("moma.Rcheck"), recursive = TRUE, force = TRUE)
     unlink(Sys.glob("moma*.tar.gz"), recursive = TRUE, force = TRUE)
     file.rename(".gitignore.deploy", ".gitignore")
