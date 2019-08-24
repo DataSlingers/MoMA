@@ -64,7 +64,7 @@ The newest version of the package can be installed from Github:
 
 ```{r, eval=FALSE}
 library(devtools)
-install_github("michaelweylandt/MoMA", ref = "build")
+install_github("DataSlingers/MoMA", ref = "master")
 ```
 
 ## Usage

@@ -37,5 +37,5 @@ to submit your code and you agree to license it under the GPL v2 or later.
 
 If this is your first time contributing to the `MoMA` package, please also
 add yourself to the
-[`CONTRIBUTORS.md`](https://github.com/michaelweylandt/MoMA/blob/master/CONTRIBUTORS.md)
+[`CONTRIBUTORS.md`](https://github.com/DataSlingers/MoMA/blob/master/CONTRIBUTORS.md)
 file.

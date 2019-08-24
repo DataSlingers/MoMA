@@ -1,11 +1,11 @@
 The `MoMA` issue tracker is used for bug reports and feature requests only.
 
 Please see the
-[support guidelines](https://github.com/michaelweylandt/MoMA/blob/master/.github/SUPPORT.md)
+[support guidelines](https://github.com/DataSlingers/MoMA/blob/master/.github/SUPPORT.md)
 for getting help using `MoMA.` Before submitting an issue, please confirm
 the issue has not already been addressed in a newer version of `MoMA.`
 The newest version can be installed following the instructions in the
-[README](https://github.com/michaelweylandt/MoMA/blob/README.Rmd)
+[README](https://github.com/DataSlingers/MoMA/blob/README.Rmd)
 
 Please also search the issue tracker to see if your bug / feature
 request has already been reported before opening a new issue.  If your
