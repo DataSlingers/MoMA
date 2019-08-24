@@ -25,5 +25,5 @@ Suggests:
 LinkingTo: Rcpp (>= 0.12.0), RcppArmadillo (>= 0.8.300.1.0)
 RoxygenNote: 6.0.1
 VignetteBuilder: knitr
-URL: https://github.com/michaelweylandt/MoMA
-BugReports: https://github.com/michaelweylandt/MoMA/issues
+URL: https://github.com/DataSlingers/MoMA
+BugReports: https://github.com/DataSlingers/MoMA/issues
