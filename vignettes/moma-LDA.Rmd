@@ -1,0 +1,44 @@
+---
+title: "Linear Discriminant Analysis with MoMA"
+author: "Luofeng Liao"
+date: "`r Sys.Date()`"
+output: html_vignette
+bibliography: vignettes.bibtex
+vignette: >
+  %\VignetteIndexEntry{Linear Discriminant Analysis with MoMA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r echo=FALSE,cache=FALSE}
+set.seed(1234)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+## The `iris` Data Set
+
+Citing the R package `datasets`, "this famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor, and virginica."
+
+There are four features in the data set: `Sepal.Length`, `Sepal.Width`, `Petal.Length`, `Petal.Width`.
+
+```{r eval = FALSE}
+library(MoMA)
+
+## collect data
+X <- iris[, 1:4]
+grouping <- as.factor(rep(c("s", "c", "v"), rep(50, 3)))
+
+## range of penalty
+lambda <- seq(0, 1, 0.1)
+
+## run!
+a <- moma_sflda(
+    X = X,
+    Y_factor = grouping,
+    x_sparse = moma_lasso(lambda = lambda),
+    rank = 3
+)
+
+plot(a) # start a Shiny app and play with it!
+```
+

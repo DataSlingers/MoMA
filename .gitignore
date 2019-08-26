@@ -1,0 +1,28 @@
+# Travis deploy file
+deployed*
+
+# RStudio and R working files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+vignettes/*_cache/
+vignettes/*_files/
+vignettes/*.R
+
+# Platform specific compiled files
+src/*.gcda
+src/*.o
+src/*.so
+src/*.dll
+inst/doc
+
+# VS Code configuration files
+.vscode/*
+
+# Development scripts
+.github/*
+script/*
+.clang-format
+.travis.yml

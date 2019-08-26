@@ -1,0 +1,151 @@
+---
+title: "Introduction to the `MoMA` Package"
+author: "Michael Weylandt, Luofeng Liao"
+date: "`r Sys.Date()`"
+output: html_vignette
+bibliography: vignettes.bibtex
+vignette: >
+  %\VignetteIndexEntry{MoMA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r echo=FALSE,cache=FALSE}
+set.seed(1234)
+knitr::opts_chunk$set(cache = TRUE, collapse = TRUE)
+```
+
+The unified SFPCA (Sparse and Functional Principal Component Analysis) method enjoys many advantages over existing approaches to regularized PC, because it
+
+* allows for arbitrary degrees and forms of regularization;
+
+* unifies many existing methods;
+
+* admits a tractable, efficient, and theoretically well-grounded algorithm.
+
+The problem is formulated as follows.
+
+$$\max_{u,\,,v}{u}^{T} {X} {v}-\lambda_{{u}} P_{{u}}({u})-\lambda_{{v}} P_{{v}}({v})$$
+$$\text{s.t.  } \| u \| _ {S_u} \leq 1, \, \| v \| _ {S_v} \leq 1.$$
+Typically, we take ${S}_{{u}}={I}+\alpha_{{u}} {\Omega}_{{u}}$ where $\Omega_u$ is the second- or fourth-difference matrix, so that the $\|u \|_{S_u}$ penalty term encourages smoothness in the estimated singular vectors. $P_u$ and $P_v$ are sparsity inducing penalties that satisfy the following conditions:
+
+* $P \geq 0$, $P$ defined on $[0,+\infty)$;
+
+* $P(cx) = c P (x), \forall \, c > 0$.
+
+## A Wide Range of Modeling Options
+
+Currently, the package supports arbitrary combination of the following.
+
+#### Various sparsity-inducing penalties
+
+So far, we have incorporated the following penalties in MoMA. The code under each penalty is only an example specification of the penalty. They should be carefully tailored based on your particular data set.
+
+* LASSO (least absolute shrinkage and selection operator), see `moma_lasso`;
+``` {r eval = FALSE}
+# `non_negative`: impose non-negativity constraint or not
+moma_lasso(non_negative = TURE)
+```
+
+* SCAD `moma_lasso`(smoothly clipped absolute deviation), see `moma_scad`;
+``` {r eval = FALSE}
+# `gamma` is the non-convexity parameter
+moma_scad(gamma = 3, non_negative = TURE)
+```
+
+* MCP (minimax concave penalty), see `moma_mcp`;
+``` {r eval = FALSE}
+# `gamma` is the non-convexity parameter
+moma_mcp(gamma = 3, non_negative = TURE)
+```
+
+* SLOPE (sorted $\ell$-one penalized estimation), see `moma_slope`;
+``` {r eval = FALSE}
+# `gamma` is the non-convexity parameter
+moma_slope(gamma = 3, non_negative = TURE)
+```
+
+* Group LASSO, see `moma_grplasso`;
+``` {r eval = FALSE}
+# `g` is a factor indicating the grouping
+moma_grplasso(g = g, non_negative = TURE)
+```
+
+* Fused LASSO, see `moma_fusedlasso`;
+``` {r eval = FALSE}
+# `algo` is indicates which algorithm to solve the proximal operator
+# "dp": dynamic programming, "path": path-based algorithm
+moma_fusedlasso(algo = "dp")
+```
+
+* L1 trend filtering, see `moma_l1tf`;
+``` {r eval = FALSE}
+# `l1tf_k = 2` imposes piece-wise linear
+moma_l1tf(l1tf_k = 2)
+```
+
+* Sparse fused LASSO, see `moma_spfusedlasso`;
+``` {r eval = FALSE}
+# `lambda2` is penalty level for the adjacent difference
+moma_spfusedlasso(lambda2 = 1)
+```
+
+* Cluster penalty, see `moma_cluster`.
+``` {r eval = FALSE}
+# `w` is a symmectric matrix, whose entry, w[i][j], is the weight connecting
+# the i-th and the j-th element
+moma_cluster(w = w)
+```
+
+#### Parameter selection schemes
+
+* Exhaustive search
+
+* Nested BIC. See `select_scheme` for details.
+
+#### Multivariate methods
+
+* PCA (Principal Component Analysis). See `moma_sfpca`.
+
+* CCA (Canonical Component Analysis). See `moma_sfcca`.
+
+* LDA (Linear Discriminant Anlsysis). See `moma_sflda`.
+
+* PLS (Partial Least Square) (TODO)
+
+* Correspondence Analysis (TODO)
+
+#### Deflation schemes
+
+* Hotelling's deflation (PCA)
+
+* Projection deflation (PCA, CCA, LDA)
+
+* Schur's complement (PCA)
+
+## Excellent User Experience
+
+* Easy-to-use functions. Let $\Delta$ be a second-difference matrix of appropriate size, such that $u^T\Delta u = \sum_i (u_{i} - u_{i-1} )^2$. For a matrix $X$, one line of code can solve the following penalized singular value decomposition problem:
+
+$$\max_{u,\, v} \, {u}^{T} {X} {v} - 4  \sum_i | v_i - v_{i-1}|$$
+$$ \text{s.t.  } u^T(I + 3 \Delta) u \leq 1,\, v^Tv \leq 1.$$
+
+```{r eval=FALSE}
+# `p` is the length of `u`
+moma_sfpca(X,
+    center = FALSE,
+    v_sparse = moma_fusedlasso(lambda = 4),
+    u_smooth = moma_smoothness(second_diff_mat(p), alpha = 3)
+)
+```
+
+
+* R6 methods to support access of results.
+
+* Shiny supports interation with MoMA.
+
+* Fast. `MoMA` uses the `Rcpp` and `RcppArmadillo` libraries for speed
+[@Eddelbuettel:2011; @Eddelbuettel:2014; @Sanderson:2016].
+
+## References
+

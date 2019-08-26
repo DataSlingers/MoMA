@@ -1,0 +1,98 @@
+---
+title: "Principal Component Analysis with MoMA"
+author: "Luofeng Liao"
+date: "`r Sys.Date()`"
+output: html_vignette
+bibliography: vignettes.bibtex
+vignette: >
+  %\VignetteIndexEntry{Principal Component Analysis with MoMA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r echo=FALSE,cache=FALSE}
+set.seed(1234)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+## The `mtcar` Data Set
+
+Citing the R documentation of the `mtcar` (Motor Trend Car Road Tests) data set, "the data was extracted from the 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models)".
+
+The data format is as follows.
+
+```
+[, 1]	mpg: Miles/(US) gallon
+[, 2]	cyl: Number of cylinders
+[, 3]	disp: Displacement (cu.in.)
+[, 4]	hp: Gross horsepower
+[, 5]	drat: Rear axle ratio
+[, 6]	wt: Weight (1000 lbs)
+[, 7]	qsec: 1/4 mile time
+[, 8]	vs: Engine (0 = V-shaped, 1 = straight)
+[, 9]	am: Transmission (0 = automatic, 1 = manual)
+[,10]	gear: Number of forward gears
+[,11]	carb: Number of carburetors
+```
+
+Suppose we are interested in creating new "features" that
+
+* are linear combinations of known features,
+
+* cpature as much information as possible, and 
+
+* comprise of only some of the known features.
+
+Then we can use the `moma_spca()` function (Sparse Principal Component Analysis).
+
+```{r message=FALSE}
+library(MoMA)
+
+# Get rid of two categorical variables:
+# X[, 8]: Engine (0 = V-shaped, 1 = straight)
+# X[, 9]: Transmission (0 = automatic, 1 = manual
+X <- as.matrix(datasets::mtcars[, c(1:7, 10, 11)])
+lambda_len <- 30
+
+a <- moma_spca(X,
+    center = TRUE, scale = TRUE,
+    v_sparse = moma_lasso(
+        lambda = seq(0, 5, length.out = lambda_len)
+    ),
+    rank = 2
+)
+```
+
+
+## Access the Results
+
+#### Get the loadings by `get_mat_by_index()$V`.
+```{r}
+ld_10 <- a$get_mat_by_index(lambda_v = 10)
+
+cat("chosen lambda for the first PC = ", ld_10$chosen_lambda_v[1], "\n")
+cat("chosen lambda for the second PC = ", ld_10$chosen_lambda_v[2], "\n")
+print(ld_10$V)
+```
+
+#### Project New Data
+
+Project new data onto the space spanned by new principal components.
+
+```{r}
+# Let's pretend the first ten rows of `mtcars` are new data
+newX <- X[1:10, ]
+
+# `rank = 2`: the dimension of projected space
+# `lambda_v`: an integer, the penalty level
+a$left_project(newX = newX, rank = 2, lambda_v = 5)$proj_data
+```
+
+#### Start a Shiny App
+
+Start a Shiny App and see how penalty levels affect loadings and the 2-D projection of original data.
+
+```{r eval = FALSE}
+plot(a)
+```
+

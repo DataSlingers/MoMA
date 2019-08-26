@@ -1,0 +1,72 @@
+template:
+  params:
+    bootswatch: flatly
+    
+navbar:
+  type: inverse
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/DataSlingers/MoMA
+  left:
+    - text: Intro
+      href: articles/moma-quick-start.html
+    - text: Reference
+      href: reference/index.html
+    - text: Articles
+      menu:
+      - text: Funtional Data Analysis
+        href: articles/moma-functional-data-analysis.html
+      - text: Principal Component Anlaysis
+        href: articles/moma-PCA.html
+      - text: Linear Discriminant Analysis
+        href: articles/moma-LDA.html
+
+reference:
+  - title: Home Page
+    desc: ~
+    contents:
+    - 'MoMA'
+  - title: Sparsity Choices
+    desc: ~
+    contents:
+    - 'moma_sparsity_options'
+    - '`lasso`'
+    - '`mcp`'
+    - '`scad`'
+    - '`fused_lasso`'
+    - '`sparse_fused_lasso`'
+    - '`slope`'
+    - '`group_lasso`'
+    - '`l1_trend_filtering`'
+    - '`cluster`'
+  - title: Smoothness Choices
+    desc: ~
+    contents: 
+    - '`moma_smoothness`'
+    - '`second_diff_mat`'
+  - title: Selection Scheme of Tuning Parameters
+    desc: ~
+    contents:
+    - '`select_scheme`'
+  - title: Deflation Schemes
+    desc: ~
+    contents: 
+      - '`PCA_deflation`'
+      - '`CCA_deflation`'
+      - '`LDA_deflation`'
+  - title: Multivariate Models
+    desc: ~
+    contents:
+    - '`moma_R6`'
+    - '`moma_sfcca`'
+    - '`moma_sflda`'
+    - '`moma_sfpca`'
+  - title: Logging
+    desc: ~
+    contents:
+    - '`moma_logger_level`'
+    - '`moma_session_info`'
+  - title: Algorithm Settings
+    desc: ~
+    contents:
+    - '`moma_pg_settings`'
